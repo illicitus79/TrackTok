@@ -9,6 +9,7 @@ Comprehensive OpenAPI 3.0 documentation system with automatic Postman collection
 ### 1. Common API Schemas (`app/schemas/common.py`)
 
 Created standard schemas for API documentation:
+
 - `ErrorResponseSchema` - Generic error format
 - `ValidationErrorSchema` - Field validation errors
 - `UnauthorizedErrorSchema` - 401 responses
@@ -24,6 +25,7 @@ Created standard schemas for API documentation:
 ### 2. Export Script (`scripts/export_openapi.py`)
 
 Comprehensive export functionality:
+
 - **OpenAPI Export**: Generates `openapi.json` with full spec
 - **Postman Export**: Converts OpenAPI to Postman Collection v2.1
 - **Command-line Interface**: Multiple export options
@@ -31,6 +33,7 @@ Comprehensive export functionality:
 - **Organized Tags**: Groups endpoints by category
 
 **Features:**
+
 - Security schemes (Bearer JWT, X-Tenant-Id header)
 - Server configurations (dev/prod with subdomain support)
 - Comprehensive API description (auth, multi-tenancy, rate limiting, pagination)
@@ -43,6 +46,7 @@ Comprehensive export functionality:
 ### 3. Makefile Targets
 
 Added convenient shortcuts:
+
 ```makefile
 make openapi    # Export OpenAPI spec
 make postman    # Export Postman collection
@@ -52,7 +56,9 @@ make docs       # Export both
 ### 4. Documentation
 
 Created comprehensive documentation:
+
 - **API_DOCS.md**: Complete API documentation guide
+
   - Authentication flows
   - Multi-tenancy setup
   - Rate limiting details
@@ -73,6 +79,7 @@ Created comprehensive documentation:
 ### 5. README Updates
 
 Enhanced main README with:
+
 - OpenAPI/Postman features in feature list
 - Interactive API docs section
 - Export command examples
@@ -82,6 +89,7 @@ Enhanced main README with:
 ### 6. Configuration
 
 OpenAPI already configured in `app/core/config.py`:
+
 ```python
 API_TITLE = "TrackTok API"
 API_VERSION = "v1"
@@ -94,6 +102,7 @@ OPENAPI_REDOC_PATH = "/redoc"
 ### 7. .gitignore
 
 Added entries for generated files:
+
 ```
 openapi.json
 postman_collection.json
@@ -102,6 +111,7 @@ postman_collection.json
 ## Available Endpoints
 
 ### API Documentation
+
 - `GET /api/docs/swagger` - Swagger UI (interactive testing)
 - `GET /api/docs/redoc` - ReDoc (clean documentation)
 - `GET /api/docs/openapi.json` - Raw OpenAPI spec
@@ -132,6 +142,7 @@ python scripts/export_openapi.py --both \
 The export script enhances the base flask-smorest spec with:
 
 ### Security Schemes
+
 ```json
 {
   "bearerAuth": {
@@ -150,6 +161,7 @@ The export script enhances the base flask-smorest spec with:
 ```
 
 ### Servers
+
 ```json
 [
   {
@@ -170,7 +182,9 @@ The export script enhances the base flask-smorest spec with:
 ```
 
 ### Tags
+
 All endpoints are organized into categories:
+
 - Authentication
 - Tenants
 - Users
@@ -182,7 +196,9 @@ All endpoints are organized into categories:
 - Preferences
 
 ### Info Section
+
 Comprehensive description including:
+
 - Authentication guide
 - Multi-tenancy explanation
 - Rate limiting details
@@ -195,32 +211,34 @@ Comprehensive description including:
 Generated collection includes:
 
 ### Collection-Level Auth
+
 ```json
 {
   "auth": {
     "type": "bearer",
-    "bearer": [
-      {"key": "token", "value": "{{jwt_token}}"}
-    ]
+    "bearer": [{ "key": "token", "value": "{{jwt_token}}" }]
   }
 }
 ```
 
 ### Variables
+
 ```json
 {
   "variable": [
-    {"key": "base_url", "value": "http://localhost:5000"},
-    {"key": "jwt_token", "value": ""},
-    {"key": "tenant_id", "value": ""}
+    { "key": "base_url", "value": "http://localhost:5000" },
+    { "key": "jwt_token", "value": "" },
+    { "key": "tenant_id", "value": "" }
   ]
 }
 ```
 
 ### Organized Folders
+
 Requests grouped by API category (Authentication, Expenses, etc.)
 
 ### Pre-filled Requests
+
 - Headers (Content-Type, X-Tenant-Id)
 - Query parameters with examples
 - Path variables with defaults
@@ -256,18 +274,21 @@ Requests grouped by API category (Authentication, Expenses, etc.)
 ## Integration Points
 
 ### CI/CD Pipeline
+
 - Validate OpenAPI spec on PR
 - Generate docs on merge to main
 - Upload artifacts to docs site
 - Check for breaking changes
 
 ### Documentation Site
+
 - Auto-generate HTML from OpenAPI
 - Host Swagger UI on docs site
 - Provide download links for exports
 - Version documentation
 
 ### Client SDK Generation
+
 ```bash
 # Generate Python client
 openapi-generator-cli generate \
@@ -283,6 +304,7 @@ openapi-generator-cli generate \
 ```
 
 ### API Monitoring
+
 - Import spec into API monitoring tools
 - Validate responses against schema
 - Track endpoint usage
@@ -291,6 +313,7 @@ openapi-generator-cli generate \
 ## Testing
 
 ### Manual Testing
+
 ```bash
 # Start app
 flask run
@@ -306,6 +329,7 @@ ls -la openapi.json postman_collection.json
 ```
 
 ### Automated Testing
+
 ```python
 # tests/test_openapi.py
 from openapi_spec_validator import validate_spec
@@ -323,7 +347,7 @@ def test_openapi_valid():
 
 1. Add blueprint with @blp.route decorator
 2. Add Marshmallow schemas for request/response
-3. Register blueprint in app/__init__.py
+3. Register blueprint in app/**init**.py
 4. Run `make docs` to update exports
 5. Update API_DOCS.md if needed
 6. Commit both code and exports
@@ -348,24 +372,28 @@ def test_openapi_valid():
 ## Benefits
 
 ### For Developers
+
 - Interactive testing with Swagger UI
 - Auto-generated documentation
 - Consistent API contracts
 - Easy client SDK generation
 
 ### For QA
+
 - Pre-built Postman collection
 - Organized test folders
 - Example requests
 - Easy environment switching
 
 ### For API Consumers
+
 - Clear, browsable documentation
 - Try-it-out functionality
 - Request/response examples
 - Error schema documentation
 
 ### For Project Management
+
 - API inventory tracking
 - Endpoint organization
 - Version management
@@ -396,17 +424,20 @@ def test_openapi_valid():
 ## Files Created/Modified
 
 ### Created
+
 - `app/schemas/common.py` - Common API schemas
 - `API_DOCS.md` - Complete API documentation
 - `docs/OPENAPI_EXPORT.md` - Export script reference
 
 ### Modified
+
 - `scripts/export_openapi.py` - Complete rewrite with Postman support
 - `Makefile` - Added openapi, postman, docs targets
 - `README.md` - Added OpenAPI/Postman sections
 - `.gitignore` - Added generated file entries
 
 ### Existing (Already Configured)
+
 - `app/core/config.py` - OpenAPI config already present
 - `app/core/extensions.py` - Flask-smorest Api already configured
 - `app/__init__.py` - Blueprints already registered

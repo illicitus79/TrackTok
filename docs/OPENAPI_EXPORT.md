@@ -12,7 +12,7 @@ The `scripts/export_openapi.py` script generates OpenAPI specifications and Post
 # Export OpenAPI specification only
 python scripts/export_openapi.py --openapi
 
-# Export Postman collection only  
+# Export Postman collection only
 python scripts/export_openapi.py --postman
 
 # Export both
@@ -48,6 +48,7 @@ python scripts/export_openapi.py --help
 ### OpenAPI Specification (`openapi.json`)
 
 Generated file includes:
+
 - All API endpoints with methods (GET, POST, PATCH, DELETE)
 - Request/response schemas with validation rules
 - Authentication schemes (Bearer JWT, Tenant Header)
@@ -58,6 +59,7 @@ Generated file includes:
 - Tags for endpoint organization
 
 **Features:**
+
 - OpenAPI 3.0.3 format
 - Security schemes for JWT Bearer and X-Tenant-Id header
 - Server variables for subdomain-based tenancy
@@ -68,6 +70,7 @@ Generated file includes:
 ### Postman Collection (`postman_collection.json`)
 
 Generated file includes:
+
 - All API requests organized by tags/folders
 - Pre-configured authorization (Bearer token)
 - Collection variables (base_url, jwt_token, tenant_id)
@@ -77,6 +80,7 @@ Generated file includes:
 - Request descriptions
 
 **Features:**
+
 - Postman Collection v2.1 format
 - Folder organization by API category
 - Bearer token authentication at collection level
@@ -89,6 +93,7 @@ Generated file includes:
 ### From Flask-smorest
 
 The script automatically extracts:
+
 - Blueprint endpoints with @blp.route decorators
 - Marshmallow schemas for requests/responses
 - Response status codes (@blp.response decorators)
@@ -99,6 +104,7 @@ The script automatically extracts:
 ### Additional Metadata
 
 The script enhances the spec with:
+
 - Comprehensive API description (authentication, multi-tenancy, rate limiting)
 - Server URLs for development and production
 - Security scheme definitions
@@ -172,25 +178,32 @@ The script enhances the spec with:
 ### OpenAPI Specification
 
 **Use with Swagger UI:**
+
 ```html
-<link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist/swagger-ui.css">
+<link
+  rel="stylesheet"
+  type="text/css"
+  href="https://unpkg.com/swagger-ui-dist/swagger-ui.css"
+/>
 <div id="swagger-ui"></div>
 <script src="https://unpkg.com/swagger-ui-dist/swagger-ui-bundle.js"></script>
 <script>
   SwaggerUIBundle({
-    url: './openapi.json',
-    dom_id: '#swagger-ui'
-  })
+    url: "./openapi.json",
+    dom_id: "#swagger-ui",
+  });
 </script>
 ```
 
 **Use with API clients:**
+
 - Import into Insomnia
 - Generate client SDKs with OpenAPI Generator
 - Validate API responses against spec
 - Generate mock servers
 
 **Use with documentation:**
+
 - Generate static docs with Redoc
 - Create API portals with Stoplight
 - Validate against OpenAPI standards
@@ -198,12 +211,14 @@ The script enhances the spec with:
 ### Postman Collection
 
 **Import to Postman:**
+
 1. Open Postman
 2. Click **Import** (top left)
 3. Select `postman_collection.json`
 4. Collection appears in sidebar
 
 **Configure Variables:**
+
 1. Click collection name
 2. Select **Variables** tab
 3. Set current values:
@@ -212,12 +227,14 @@ The script enhances the spec with:
    - `tenant_id`: Your organization's tenant ID
 
 **Test Endpoints:**
+
 1. Select a request from folder
 2. Review pre-filled parameters
 3. Click **Send**
 4. View response
 
 **Share with Team:**
+
 1. Export collection
 2. Share JSON file
 3. Team imports and uses same setup
@@ -267,7 +284,7 @@ subprocess.run(["python", "scripts/export_openapi.py", "--openapi"])
 # Generate HTML docs
 with open("openapi.json") as f:
     spec = json.load(f)
-    
+
 # Use Redoc to generate static HTML
 subprocess.run([
     "npx", "redoc-cli", "bundle", "openapi.json",
@@ -285,7 +302,7 @@ from openapi_spec_validator import validate_spec
 def test_openapi_compliance():
     with open("openapi.json") as f:
         spec = json.load(f)
-    
+
     # Validate against OpenAPI 3.0 spec
     validate_spec(spec)
 ```
@@ -295,6 +312,7 @@ def test_openapi_compliance():
 ### ImportError: No module named 'app'
 
 **Solution:** Run from project root:
+
 ```bash
 cd /path/to/TrackTok
 python scripts/export_openapi.py
@@ -303,6 +321,7 @@ python scripts/export_openapi.py
 ### ModuleNotFoundError: No module named 'redis'
 
 **Solution:** Install dependencies:
+
 ```bash
 pip install -r requirements.txt
 ```
@@ -310,6 +329,7 @@ pip install -r requirements.txt
 ### Export fails with Flask error
 
 **Solution:** Ensure app factory works:
+
 ```bash
 flask shell
 >>> from app import create_app
@@ -319,6 +339,7 @@ flask shell
 ### Empty paths in OpenAPI spec
 
 **Solution:** Ensure blueprints are registered:
+
 ```python
 # app/__init__.py
 api.register_blueprint(auth.blp)
@@ -329,6 +350,7 @@ api.register_blueprint(expenses.blp)
 ### Postman collection missing requests
 
 **Solution:** Check that endpoints have proper decorators:
+
 ```python
 @blp.route("/expenses")
 class ExpenseList(MethodView):
@@ -343,6 +365,7 @@ class ExpenseList(MethodView):
 ### Custom Server URLs
 
 Edit `scripts/export_openapi.py`:
+
 ```python
 openapi_dict["servers"] = [
     {
@@ -359,6 +382,7 @@ openapi_dict["servers"] = [
 ### Custom Postman Examples
 
 Add examples to OpenAPI spec:
+
 ```python
 # In your schema
 class ExpenseSchema(Schema):
@@ -373,10 +397,11 @@ class ExpenseSchema(Schema):
 ### Filter Endpoints
 
 Exclude certain paths from export:
+
 ```python
 # In export_openapi.py
 paths = {
-    path: spec 
+    path: spec
     for path, spec in openapi_dict["paths"].items()
     if not path.startswith("/internal/")
 }

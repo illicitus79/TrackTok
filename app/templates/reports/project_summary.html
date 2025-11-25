@@ -1,261 +1,292 @@
-{% extends "base.html" %}
-
-{% block title %}Project Summary Report - {{ project.name }}{% endblock %}
-
-{% block content %}
+{% extends "base.html" %} {% block title %}Project Summary Report - {{
+project.name }}{% endblock %} {% block content %}
 <div class="report-container">
-    <div class="report-header">
-        <div class="header-content">
-            <h1 class="gradient-text">Project Summary Report</h1>
-            <p class="subtitle">{{ project.name }}</p>
-        </div>
-        <div class="header-actions">
-            <button onclick="window.print()" class="btn-secondary">
-                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
-                </svg>
-                Print
-            </button>
-            <button onclick="exportCSV()" class="btn-secondary">
-                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                </svg>
-                Export CSV
-            </button>
-            <button onclick="exportXLSX()" class="btn-primary">
-                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                </svg>
-                Export Excel
-            </button>
-        </div>
+  <div class="report-header">
+    <div class="header-content">
+      <h1 class="gradient-text">Project Summary Report</h1>
+      <p class="subtitle">{{ project.name }}</p>
+    </div>
+    <div class="header-actions">
+      <button onclick="window.print()" class="btn-secondary">
+        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
+          />
+        </svg>
+        Print
+      </button>
+      <button onclick="exportCSV()" class="btn-secondary">
+        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          />
+        </svg>
+        Export CSV
+      </button>
+      <button onclick="exportXLSX()" class="btn-primary">
+        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          />
+        </svg>
+        Export Excel
+      </button>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">Total Spend</div>
+      <div class="stat-value" id="totalSpend">$0.00</div>
+      <div class="stat-change" id="budgetUtilization">0% of budget</div>
     </div>
 
-    <!-- Summary Cards -->
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-label">Total Spend</div>
-            <div class="stat-value" id="totalSpend">$0.00</div>
-            <div class="stat-change" id="budgetUtilization">0% of budget</div>
-        </div>
-        
-        <div class="stat-card">
-            <div class="stat-label">Remaining Budget</div>
-            <div class="stat-value" id="remainingBudget">$0.00</div>
-            <div class="stat-change" id="daysRemaining">0 days remaining</div>
-        </div>
-        
-        <div class="stat-card">
-            <div class="stat-label">Daily Burn Rate</div>
-            <div class="stat-value" id="dailyBurnRate">$0.00</div>
-            <div class="stat-change">Per day average</div>
-        </div>
-        
-        <div class="stat-card">
-            <div class="stat-label">Monthly Burn Rate</div>
-            <div class="stat-value" id="monthlyBurnRate">$0.00</div>
-            <div class="stat-change" id="projectedCompletion">Projected completion</div>
-        </div>
+    <div class="stat-card">
+      <div class="stat-label">Remaining Budget</div>
+      <div class="stat-value" id="remainingBudget">$0.00</div>
+      <div class="stat-change" id="daysRemaining">0 days remaining</div>
     </div>
 
-    <!-- Burn Rate Chart -->
-    <div class="chart-card">
-        <div class="card-header">
-            <h2>Burn Rate Trend (Last 30 Days)</h2>
-            <div class="chart-legend">
-                <span class="legend-item">
-                    <span class="legend-color" style="background: #3b82f6;"></span>
-                    Daily Spend
-                </span>
-                <span class="legend-item">
-                    <span class="legend-color" style="background: #8b5cf6;"></span>
-                    Cumulative
-                </span>
-            </div>
-        </div>
-        <div class="chart-container">
-            <canvas id="burnRateChart"></canvas>
-        </div>
+    <div class="stat-card">
+      <div class="stat-label">Daily Burn Rate</div>
+      <div class="stat-value" id="dailyBurnRate">$0.00</div>
+      <div class="stat-change">Per day average</div>
     </div>
 
-    <!-- Project Details -->
-    <div class="details-card">
-        <h2>Project Details</h2>
-        <table class="details-table">
-            <tr>
-                <td class="detail-label">Project Name:</td>
-                <td class="detail-value" id="projectName">-</td>
-            </tr>
-            <tr>
-                <td class="detail-label">Status:</td>
-                <td class="detail-value"><span class="badge" id="projectStatus">-</span></td>
-            </tr>
-            <tr>
-                <td class="detail-label">Start Date:</td>
-                <td class="detail-value" id="startDate">-</td>
-            </tr>
-            <tr>
-                <td class="detail-label">End Date:</td>
-                <td class="detail-value" id="endDate">-</td>
-            </tr>
-            <tr>
-                <td class="detail-label">Starting Budget:</td>
-                <td class="detail-value" id="startingBudget">-</td>
-            </tr>
-            <tr>
-                <td class="detail-label">Projected Estimate:</td>
-                <td class="detail-value" id="projectedEstimate">-</td>
-            </tr>
-            <tr>
-                <td class="detail-label">Expense Count:</td>
-                <td class="detail-value" id="expenseCount">-</td>
-            </tr>
-        </table>
+    <div class="stat-card">
+      <div class="stat-label">Monthly Burn Rate</div>
+      <div class="stat-value" id="monthlyBurnRate">$0.00</div>
+      <div class="stat-change" id="projectedCompletion">
+        Projected completion
+      </div>
     </div>
+  </div>
+
+  <!-- Burn Rate Chart -->
+  <div class="chart-card">
+    <div class="card-header">
+      <h2>Burn Rate Trend (Last 30 Days)</h2>
+      <div class="chart-legend">
+        <span class="legend-item">
+          <span class="legend-color" style="background: #3b82f6"></span>
+          Daily Spend
+        </span>
+        <span class="legend-item">
+          <span class="legend-color" style="background: #8b5cf6"></span>
+          Cumulative
+        </span>
+      </div>
+    </div>
+    <div class="chart-container">
+      <canvas id="burnRateChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Project Details -->
+  <div class="details-card">
+    <h2>Project Details</h2>
+    <table class="details-table">
+      <tr>
+        <td class="detail-label">Project Name:</td>
+        <td class="detail-value" id="projectName">-</td>
+      </tr>
+      <tr>
+        <td class="detail-label">Status:</td>
+        <td class="detail-value">
+          <span class="badge" id="projectStatus">-</span>
+        </td>
+      </tr>
+      <tr>
+        <td class="detail-label">Start Date:</td>
+        <td class="detail-value" id="startDate">-</td>
+      </tr>
+      <tr>
+        <td class="detail-label">End Date:</td>
+        <td class="detail-value" id="endDate">-</td>
+      </tr>
+      <tr>
+        <td class="detail-label">Starting Budget:</td>
+        <td class="detail-value" id="startingBudget">-</td>
+      </tr>
+      <tr>
+        <td class="detail-label">Projected Estimate:</td>
+        <td class="detail-value" id="projectedEstimate">-</td>
+      </tr>
+      <tr>
+        <td class="detail-label">Expense Count:</td>
+        <td class="detail-value" id="expenseCount">-</td>
+      </tr>
+    </table>
+  </div>
 </div>
 
 <script>
-const projectId = '{{ project_id }}';
-let burnRateChart = null;
+  const projectId = "{{ project_id }}";
+  let burnRateChart = null;
 
-async function loadReport() {
+  async function loadReport() {
     try {
-        const params = new URLSearchParams(window.location.search);
-        const url = `/api/v1/reports/project/${projectId}/summary?${params.toString()}`;
-        
-        const response = await fetch(url, {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-            }
-        });
-        
-        if (!response.ok) throw new Error('Failed to load report');
-        
-        const data = await response.json();
-        renderReport(data);
-    } catch (error) {
-        console.error('Error loading report:', error);
-        alert('Failed to load report data');
-    }
-}
+      const params = new URLSearchParams(window.location.search);
+      const url = `/api/v1/reports/project/${projectId}/summary?${params.toString()}`;
 
-function renderReport(data) {
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+        },
+      });
+
+      if (!response.ok) throw new Error("Failed to load report");
+
+      const data = await response.json();
+      renderReport(data);
+    } catch (error) {
+      console.error("Error loading report:", error);
+      alert("Failed to load report data");
+    }
+  }
+
+  function renderReport(data) {
     // Update stats
-    document.getElementById('totalSpend').textContent = window.TrackTok.formatCurrency(data.totals.total_spend);
-    document.getElementById('remainingBudget').textContent = window.TrackTok.formatCurrency(data.totals.remaining_budget || 0);
-    document.getElementById('dailyBurnRate').textContent = window.TrackTok.formatCurrency(data.burn_rate.daily);
-    document.getElementById('monthlyBurnRate').textContent = window.TrackTok.formatCurrency(data.burn_rate.monthly);
-    
+    document.getElementById("totalSpend").textContent =
+      window.TrackTok.formatCurrency(data.totals.total_spend);
+    document.getElementById("remainingBudget").textContent =
+      window.TrackTok.formatCurrency(data.totals.remaining_budget || 0);
+    document.getElementById("dailyBurnRate").textContent =
+      window.TrackTok.formatCurrency(data.burn_rate.daily);
+    document.getElementById("monthlyBurnRate").textContent =
+      window.TrackTok.formatCurrency(data.burn_rate.monthly);
+
     // Budget utilization
     if (data.totals.budget_utilization) {
-        document.getElementById('budgetUtilization').textContent = 
-            `${data.totals.budget_utilization.toFixed(1)}% of budget`;
+      document.getElementById(
+        "budgetUtilization"
+      ).textContent = `${data.totals.budget_utilization.toFixed(1)}% of budget`;
     }
-    
+
     // Days remaining
     if (data.burn_rate.days_remaining) {
-        document.getElementById('daysRemaining').textContent = 
-            `${data.burn_rate.days_remaining} days remaining`;
+      document.getElementById(
+        "daysRemaining"
+      ).textContent = `${data.burn_rate.days_remaining} days remaining`;
     }
-    
+
     // Projected completion
     if (data.burn_rate.projected_completion_date) {
-        document.getElementById('projectedCompletion').textContent = 
-            `Est. ${window.TrackTok.formatDate(data.burn_rate.projected_completion_date)}`;
+      document.getElementById(
+        "projectedCompletion"
+      ).textContent = `Est. ${window.TrackTok.formatDate(
+        data.burn_rate.projected_completion_date
+      )}`;
     }
-    
+
     // Project details
-    document.getElementById('projectName').textContent = data.project.name;
-    document.getElementById('projectStatus').textContent = data.project.status;
-    document.getElementById('projectStatus').className = `badge badge-${data.project.status}`;
-    document.getElementById('startDate').textContent = 
-        data.project.start_date ? window.TrackTok.formatDate(data.project.start_date) : '-';
-    document.getElementById('endDate').textContent = 
-        data.project.end_date ? window.TrackTok.formatDate(data.project.end_date) : '-';
-    document.getElementById('startingBudget').textContent = 
-        window.TrackTok.formatCurrency(data.totals.starting_budget || 0);
-    document.getElementById('projectedEstimate').textContent = 
-        window.TrackTok.formatCurrency(data.totals.projected_estimate || 0);
-    document.getElementById('expenseCount').textContent = 
-        window.TrackTok.formatNumber(data.totals.expense_count);
-    
+    document.getElementById("projectName").textContent = data.project.name;
+    document.getElementById("projectStatus").textContent = data.project.status;
+    document.getElementById(
+      "projectStatus"
+    ).className = `badge badge-${data.project.status}`;
+    document.getElementById("startDate").textContent = data.project.start_date
+      ? window.TrackTok.formatDate(data.project.start_date)
+      : "-";
+    document.getElementById("endDate").textContent = data.project.end_date
+      ? window.TrackTok.formatDate(data.project.end_date)
+      : "-";
+    document.getElementById("startingBudget").textContent =
+      window.TrackTok.formatCurrency(data.totals.starting_budget || 0);
+    document.getElementById("projectedEstimate").textContent =
+      window.TrackTok.formatCurrency(data.totals.projected_estimate || 0);
+    document.getElementById("expenseCount").textContent =
+      window.TrackTok.formatNumber(data.totals.expense_count);
+
     // Render burn rate chart
     renderBurnRateChart(data.burn_rate_chart);
-}
+  }
 
-function renderBurnRateChart(chartData) {
-    const ctx = document.getElementById('burnRateChart').getContext('2d');
-    
+  function renderBurnRateChart(chartData) {
+    const ctx = document.getElementById("burnRateChart").getContext("2d");
+
     if (burnRateChart) {
-        burnRateChart.destroy();
+      burnRateChart.destroy();
     }
-    
+
     burnRateChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: chartData.labels,
-            datasets: [
-                {
-                    label: 'Daily Spend',
-                    data: chartData.data,
-                    borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    fill: true,
-                    tension: 0.4,
-                },
-                {
-                    label: 'Cumulative',
-                    data: chartData.cumulative,
-                    borderColor: '#8b5cf6',
-                    backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                    fill: false,
-                    tension: 0.4,
-                    borderDash: [5, 5],
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false,
-                },
-                tooltip: {
-                    mode: 'index',
-                    intersect: false,
-                    callbacks: {
-                        label: (context) => {
-                            return `${context.dataset.label}: ${window.TrackTok.formatCurrency(context.parsed.y)}`;
-                        }
-                    }
-                }
+      type: "line",
+      data: {
+        labels: chartData.labels,
+        datasets: [
+          {
+            label: "Daily Spend",
+            data: chartData.data,
+            borderColor: "#3b82f6",
+            backgroundColor: "rgba(59, 130, 246, 0.1)",
+            fill: true,
+            tension: 0.4,
+          },
+          {
+            label: "Cumulative",
+            data: chartData.cumulative,
+            borderColor: "#8b5cf6",
+            backgroundColor: "rgba(139, 92, 246, 0.1)",
+            fill: false,
+            tension: 0.4,
+            borderDash: [5, 5],
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false,
+          },
+          tooltip: {
+            mode: "index",
+            intersect: false,
+            callbacks: {
+              label: (context) => {
+                return `${
+                  context.dataset.label
+                }: ${window.TrackTok.formatCurrency(context.parsed.y)}`;
+              },
             },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: (value) => window.TrackTok.formatCurrency(value)
-                    }
-                }
-            }
-        }
+          },
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: (value) => window.TrackTok.formatCurrency(value),
+            },
+          },
+        },
+      },
     });
-}
+  }
 
-function exportCSV() {
+  function exportCSV() {
     const params = new URLSearchParams(window.location.search);
-    params.set('project_id', projectId);
+    params.set("project_id", projectId);
     window.location.href = `/api/v1/reports/export/csv?${params.toString()}`;
-}
+  }
 
-function exportXLSX() {
+  function exportXLSX() {
     const params = new URLSearchParams(window.location.search);
-    params.set('project_id', projectId);
+    params.set("project_id", projectId);
     window.location.href = `/api/v1/reports/export/xlsx?${params.toString()}`;
-}
+  }
 
-// Load report on page load
-document.addEventListener('DOMContentLoaded', loadReport);
+  // Load report on page load
+  document.addEventListener("DOMContentLoaded", loadReport);
 </script>
 {% endblock %}

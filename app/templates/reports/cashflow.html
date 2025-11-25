@@ -1,279 +1,305 @@
-{% extends "base.html" %}
-
-{% block title %}Tenant Cashflow Report{% endblock %}
-
+{% extends "base.html" %} {% block title %}Tenant Cashflow Report{% endblock %}
 {% block content %}
 <div class="report-container">
-    <div class="report-header">
-        <div class="header-content">
-            <h1 class="gradient-text">Tenant Cashflow Report</h1>
-            <p class="subtitle">Organization-wide financial flow</p>
-        </div>
-        <div class="header-actions">
-            <div class="date-range">
-                <input type="date" id="fromDate" class="date-input">
-                <span>to</span>
-                <input type="date" id="toDate" class="date-input">
-                <button onclick="applyDateRange()" class="btn-secondary">Apply</button>
-            </div>
-            <button onclick="exportCSV()" class="btn-primary">
-                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3"/>
-                </svg>
-                Export
-            </button>
-        </div>
+  <div class="report-header">
+    <div class="header-content">
+      <h1 class="gradient-text">Tenant Cashflow Report</h1>
+      <p class="subtitle">Organization-wide financial flow</p>
     </div>
-
-    <!-- Summary Cards -->
-    <div class="stats-grid-4">
-        <div class="stat-card gradient-bg-green">
-            <div class="stat-label">Total Inflow</div>
-            <div class="stat-value" id="totalInflow">$0.00</div>
-            <div class="stat-change">Coming soon</div>
-        </div>
-        
-        <div class="stat-card gradient-bg-red">
-            <div class="stat-label">Total Outflow</div>
-            <div class="stat-value" id="totalOutflow">$0.00</div>
-            <div class="stat-change" id="avgOutflow">Average per day</div>
-        </div>
-        
-        <div class="stat-card" id="netCard">
-            <div class="stat-label">Net Cashflow</div>
-            <div class="stat-value" id="netCashflow">$0.00</div>
-            <div class="stat-change" id="daysCount">0 days</div>
-        </div>
-        
-        <div class="stat-card">
-            <div class="stat-label">Cumulative</div>
-            <div class="stat-value" id="cumulative">$0.00</div>
-            <div class="stat-change">End of period</div>
-        </div>
-    </div>
-
-    <!-- Cashflow Chart -->
-    <div class="chart-card">
-        <div class="card-header">
-            <h2>Cashflow Trend</h2>
-            <div class="chart-legend">
-                <span class="legend-item">
-                    <span class="legend-color" style="background: #10b981;"></span>
-                    Inflow
-                </span>
-                <span class="legend-item">
-                    <span class="legend-color" style="background: #ef4444;"></span>
-                    Outflow
-                </span>
-                <span class="legend-item">
-                    <span class="legend-color" style="background: #3b82f6;"></span>
-                    Net
-                </span>
-                <span class="legend-item">
-                    <span class="legend-color" style="background: #8b5cf6;"></span>
-                    Cumulative
-                </span>
-            </div>
-        </div>
-        <div class="chart-container-xlarge">
-            <canvas id="cashflowChart"></canvas>
-        </div>
-    </div>
-
-    <!-- Info Banner -->
-    <div class="info-banner">
-        <svg class="icon-info" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+    <div class="header-actions">
+      <div class="date-range">
+        <input type="date" id="fromDate" class="date-input" />
+        <span>to</span>
+        <input type="date" id="toDate" class="date-input" />
+        <button onclick="applyDateRange()" class="btn-secondary">Apply</button>
+      </div>
+      <button onclick="exportCSV()" class="btn-primary">
+        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 10v6m0 0l-3-3m3 3l3-3"
+          />
         </svg>
-        <div>
-            <strong>Note:</strong> Inflow tracking is a future feature. This report currently shows outflow (expenses) only.
-            The net cashflow reflects expense activity against starting account balances.
-        </div>
+        Export
+      </button>
     </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="stats-grid-4">
+    <div class="stat-card gradient-bg-green">
+      <div class="stat-label">Total Inflow</div>
+      <div class="stat-value" id="totalInflow">$0.00</div>
+      <div class="stat-change">Coming soon</div>
+    </div>
+
+    <div class="stat-card gradient-bg-red">
+      <div class="stat-label">Total Outflow</div>
+      <div class="stat-value" id="totalOutflow">$0.00</div>
+      <div class="stat-change" id="avgOutflow">Average per day</div>
+    </div>
+
+    <div class="stat-card" id="netCard">
+      <div class="stat-label">Net Cashflow</div>
+      <div class="stat-value" id="netCashflow">$0.00</div>
+      <div class="stat-change" id="daysCount">0 days</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">Cumulative</div>
+      <div class="stat-value" id="cumulative">$0.00</div>
+      <div class="stat-change">End of period</div>
+    </div>
+  </div>
+
+  <!-- Cashflow Chart -->
+  <div class="chart-card">
+    <div class="card-header">
+      <h2>Cashflow Trend</h2>
+      <div class="chart-legend">
+        <span class="legend-item">
+          <span class="legend-color" style="background: #10b981"></span>
+          Inflow
+        </span>
+        <span class="legend-item">
+          <span class="legend-color" style="background: #ef4444"></span>
+          Outflow
+        </span>
+        <span class="legend-item">
+          <span class="legend-color" style="background: #3b82f6"></span>
+          Net
+        </span>
+        <span class="legend-item">
+          <span class="legend-color" style="background: #8b5cf6"></span>
+          Cumulative
+        </span>
+      </div>
+    </div>
+    <div class="chart-container-xlarge">
+      <canvas id="cashflowChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Info Banner -->
+  <div class="info-banner">
+    <svg class="icon-info" fill="currentColor" viewBox="0 0 20 20">
+      <path
+        fill-rule="evenodd"
+        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+        clip-rule="evenodd"
+      />
+    </svg>
+    <div>
+      <strong>Note:</strong> Inflow tracking is a future feature. This report
+      currently shows outflow (expenses) only. The net cashflow reflects expense
+      activity against starting account balances.
+    </div>
+  </div>
 </div>
 
 <script>
-let cashflowChart = null;
-let reportData = null;
+  let cashflowChart = null;
+  let reportData = null;
 
-async function loadReport(fromDate, toDate) {
+  async function loadReport(fromDate, toDate) {
     try {
-        const url = `/api/v1/reports/tenant/cashflow?from=${fromDate}&to=${toDate}`;
-        
-        const response = await fetch(url, {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-            }
-        });
-        
-        if (!response.ok) throw new Error('Failed to load report');
-        
-        reportData = await response.json();
-        renderReport(reportData);
-    } catch (error) {
-        console.error('Error loading report:', error);
-        alert('Failed to load report data');
-    }
-}
+      const url = `/api/v1/reports/tenant/cashflow?from=${fromDate}&to=${toDate}`;
 
-function renderReport(data) {
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+        },
+      });
+
+      if (!response.ok) throw new Error("Failed to load report");
+
+      reportData = await response.json();
+      renderReport(reportData);
+    } catch (error) {
+      console.error("Error loading report:", error);
+      alert("Failed to load report data");
+    }
+  }
+
+  function renderReport(data) {
     // Update summary cards
-    document.getElementById('totalInflow').textContent = 
-        window.TrackTok.formatCurrency(data.summary.total_inflow);
-    document.getElementById('totalOutflow').textContent = 
-        window.TrackTok.formatCurrency(data.summary.total_outflow);
-    document.getElementById('netCashflow').textContent = 
-        window.TrackTok.formatCurrency(data.summary.net_cashflow);
-    document.getElementById('avgOutflow').textContent = 
-        `Avg: ${window.TrackTok.formatCurrency(data.summary.average_daily_outflow)}/day`;
-    document.getElementById('daysCount').textContent = 
-        `${data.summary.days} days`;
-    
+    document.getElementById("totalInflow").textContent =
+      window.TrackTok.formatCurrency(data.summary.total_inflow);
+    document.getElementById("totalOutflow").textContent =
+      window.TrackTok.formatCurrency(data.summary.total_outflow);
+    document.getElementById("netCashflow").textContent =
+      window.TrackTok.formatCurrency(data.summary.net_cashflow);
+    document.getElementById(
+      "avgOutflow"
+    ).textContent = `Avg: ${window.TrackTok.formatCurrency(
+      data.summary.average_daily_outflow
+    )}/day`;
+    document.getElementById(
+      "daysCount"
+    ).textContent = `${data.summary.days} days`;
+
     // Calculate final cumulative
     const datasets = data.chart.datasets;
-    const cumulativeData = datasets.find(d => d.label === 'Cumulative');
+    const cumulativeData = datasets.find((d) => d.label === "Cumulative");
     if (cumulativeData && cumulativeData.data.length > 0) {
-        const finalCumulative = cumulativeData.data[cumulativeData.data.length - 1];
-        document.getElementById('cumulative').textContent = 
-            window.TrackTok.formatCurrency(finalCumulative);
+      const finalCumulative =
+        cumulativeData.data[cumulativeData.data.length - 1];
+      document.getElementById("cumulative").textContent =
+        window.TrackTok.formatCurrency(finalCumulative);
     }
-    
+
     // Style net card based on value
-    const netCard = document.getElementById('netCard');
+    const netCard = document.getElementById("netCard");
     if (data.summary.net_cashflow >= 0) {
-        netCard.classList.add('gradient-bg-green');
-        netCard.classList.remove('gradient-bg-red');
+      netCard.classList.add("gradient-bg-green");
+      netCard.classList.remove("gradient-bg-red");
     } else {
-        netCard.classList.add('gradient-bg-red');
-        netCard.classList.remove('gradient-bg-green');
+      netCard.classList.add("gradient-bg-red");
+      netCard.classList.remove("gradient-bg-green");
     }
-    
+
     // Render chart
     renderCashflowChart(data.chart);
-}
+  }
 
-function renderCashflowChart(chartData) {
-    const ctx = document.getElementById('cashflowChart').getContext('2d');
-    
+  function renderCashflowChart(chartData) {
+    const ctx = document.getElementById("cashflowChart").getContext("2d");
+
     if (cashflowChart) {
-        cashflowChart.destroy();
+      cashflowChart.destroy();
     }
-    
+
     cashflowChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: chartData.labels,
-            datasets: chartData.datasets.map(dataset => ({
-                ...dataset,
-                tension: 0.4,
-            }))
+      type: "line",
+      data: {
+        labels: chartData.labels,
+        datasets: chartData.datasets.map((dataset) => ({
+          ...dataset,
+          tension: 0.4,
+        })),
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: "index",
+          intersect: false,
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: {
-                mode: 'index',
-                intersect: false,
+        plugins: {
+          legend: {
+            display: false,
+          },
+          tooltip: {
+            callbacks: {
+              label: (context) => {
+                return `${
+                  context.dataset.label
+                }: ${window.TrackTok.formatCurrency(context.parsed.y)}`;
+              },
             },
-            plugins: {
-                legend: {
-                    display: false,
-                },
-                tooltip: {
-                    callbacks: {
-                        label: (context) => {
-                            return `${context.dataset.label}: ${window.TrackTok.formatCurrency(context.parsed.y)}`;
-                        }
-                    }
-                }
+          },
+        },
+        scales: {
+          y: {
+            ticks: {
+              callback: (value) => window.TrackTok.formatCurrency(value),
             },
-            scales: {
-                y: {
-                    ticks: {
-                        callback: (value) => window.TrackTok.formatCurrency(value)
-                    }
-                }
-            }
-        }
+          },
+        },
+      },
     });
-}
+  }
 
-function applyDateRange() {
-    const fromDate = document.getElementById('fromDate').value;
-    const toDate = document.getElementById('toDate').value;
-    
+  function applyDateRange() {
+    const fromDate = document.getElementById("fromDate").value;
+    const toDate = document.getElementById("toDate").value;
+
     if (!fromDate || !toDate) {
-        alert('Please select both dates');
-        return;
+      alert("Please select both dates");
+      return;
     }
-    
-    loadReport(fromDate, toDate);
-}
 
-function exportCSV() {
-    const fromDate = document.getElementById('fromDate').value;
-    const toDate = document.getElementById('toDate').value;
+    loadReport(fromDate, toDate);
+  }
+
+  function exportCSV() {
+    const fromDate = document.getElementById("fromDate").value;
+    const toDate = document.getElementById("toDate").value;
     const params = new URLSearchParams({ from: fromDate, to: toDate });
     window.location.href = `/api/v1/reports/export/csv?${params.toString()}`;
-}
+  }
 
-function initializeDateInputs() {
+  function initializeDateInputs() {
     const toDate = new Date();
     const fromDate = new Date();
     fromDate.setDate(fromDate.getDate() - 90);
-    
-    document.getElementById('fromDate').value = fromDate.toISOString().split('T')[0];
-    document.getElementById('toDate').value = toDate.toISOString().split('T')[0];
-}
 
-// Initialize
-document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById("fromDate").value = fromDate
+      .toISOString()
+      .split("T")[0];
+    document.getElementById("toDate").value = toDate
+      .toISOString()
+      .split("T")[0];
+  }
+
+  // Initialize
+  document.addEventListener("DOMContentLoaded", () => {
     initializeDateInputs();
-    const fromDate = document.getElementById('fromDate').value;
-    const toDate = document.getElementById('toDate').value;
+    const fromDate = document.getElementById("fromDate").value;
+    const toDate = document.getElementById("toDate").value;
     loadReport(fromDate, toDate);
-});
+  });
 </script>
 
 <style>
-.stats-grid-4 {
+  .stats-grid-4 {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 1.5rem;
     margin: 2rem 0;
-}
+  }
 
-.gradient-bg-green {
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(20, 184, 166, 0.1) 100%);
+  .gradient-bg-green {
+    background: linear-gradient(
+      135deg,
+      rgba(16, 185, 129, 0.1) 0%,
+      rgba(20, 184, 166, 0.1) 100%
+    );
     border: 1px solid rgba(16, 185, 129, 0.2);
-}
+  }
 
-.gradient-bg-red {
-    background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%);
+  .gradient-bg-red {
+    background: linear-gradient(
+      135deg,
+      rgba(239, 68, 68, 0.1) 0%,
+      rgba(220, 38, 38, 0.1) 100%
+    );
     border: 1px solid rgba(239, 68, 68, 0.2);
-}
+  }
 
-.chart-container-xlarge {
+  .chart-container-xlarge {
     height: 600px;
     padding: 2rem;
-}
+  }
 
-.date-range {
+  .date-range {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-}
+  }
 
-.date-input {
+  .date-input {
     padding: 0.5rem 1rem;
     border-radius: 6px;
     border: 1px solid var(--border);
     background: var(--panel);
     color: var(--text);
     font-size: 0.875rem;
-}
+  }
 
-.info-banner {
+  .info-banner {
     display: flex;
     align-items: flex-start;
     gap: 1rem;
@@ -282,34 +308,34 @@ document.addEventListener('DOMContentLoaded', () => {
     border: 1px solid rgba(59, 130, 246, 0.2);
     border-radius: 8px;
     margin-top: 2rem;
-}
+  }
 
-.icon-info {
+  .icon-info {
     width: 20px;
     height: 20px;
     flex-shrink: 0;
     color: #3b82f6;
-}
+  }
 
-@media (max-width: 1200px) {
+  @media (max-width: 1200px) {
     .stats-grid-4 {
-        grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(2, 1fr);
     }
-}
+  }
 
-@media (max-width: 768px) {
+  @media (max-width: 768px) {
     .stats-grid-4 {
-        grid-template-columns: 1fr;
+      grid-template-columns: 1fr;
     }
-    
+
     .date-range {
-        flex-direction: column;
-        width: 100%;
+      flex-direction: column;
+      width: 100%;
     }
-    
+
     .date-input {
-        width: 100%;
+      width: 100%;
     }
-}
+  }
 </style>
 {% endblock %}

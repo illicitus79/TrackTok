@@ -3,6 +3,7 @@
 This guide covers setting up and running TrackTok on your **Windows development PC**.
 
 ## Table of Contents
+
 - [Prerequisites](#prerequisites)
 - [Initial Setup](#initial-setup)
 - [Running with Docker (Recommended)](#running-with-docker-recommended)
@@ -15,6 +16,7 @@ This guide covers setting up and running TrackTok on your **Windows development 
 ## Prerequisites
 
 ### Required Software
+
 - **Python 3.11+** - [Download](https://www.python.org/downloads/)
   - During installation, check "Add Python to PATH"
 - **PostgreSQL 16+** - [Download](https://www.postgresql.org/download/windows/)
@@ -23,6 +25,7 @@ This guide covers setting up and running TrackTok on your **Windows development 
 - **Docker Desktop** (Optional, recommended) - [Download](https://www.docker.com/products/docker-desktop/)
 
 ### Recommended Tools
+
 - **Visual Studio Code** - [Download](https://code.visualstudio.com/)
 - **Postman** - [Download](https://www.postman.com/downloads/) (for API testing)
 - **pgAdmin 4** - [Download](https://www.pgadmin.org/download/) (for database management)
@@ -30,6 +33,7 @@ This guide covers setting up and running TrackTok on your **Windows development 
 ## Initial Setup
 
 ### 1. Clone Repository
+
 ```powershell
 # Navigate to your development directory
 cd C:\i79\Dev
@@ -40,6 +44,7 @@ cd TrackTok
 ```
 
 ### 2. Configure Environment
+
 ```powershell
 # Copy environment template
 Copy-Item .env.example .env
@@ -49,6 +54,7 @@ notepad .env
 ```
 
 **Development .env Configuration:**
+
 ```env
 # Flask
 FLASK_APP=app
@@ -98,9 +104,11 @@ TEMPLATES_AUTO_RELOAD=True
 Docker provides the easiest setup with all dependencies isolated.
 
 ### 1. Start Docker Desktop
+
 Make sure Docker Desktop is running.
 
 ### 2. Build and Start Services
+
 ```powershell
 # Build and start all services (web, database, redis, worker, beat)
 docker-compose up -d --build
@@ -113,6 +121,7 @@ docker-compose ps
 ```
 
 ### 3. Initialize Database
+
 ```powershell
 # Run migrations
 docker-compose exec web flask db upgrade
@@ -122,6 +131,7 @@ docker-compose exec web python scripts/seed.py
 ```
 
 ### 4. Access Application
+
 - **Web App**: http://localhost:5000
 - **Swagger API Docs**: http://localhost:5000/api/docs
 - **Flower (Celery Monitor)**: http://localhost:5555
@@ -133,11 +143,14 @@ docker-compose exec web python scripts/seed.py
   - Database: tracktok
 
 ### 5. Login with Demo Account
+
 After running seed script:
+
 - **Email**: owner@acme.com
 - **Password**: Password123
 
 ### Common Docker Commands
+
 ```powershell
 # Start services
 docker-compose up -d
@@ -173,11 +186,13 @@ If you prefer to run services locally without Docker:
 ### 1. Install PostgreSQL
 
 During installation:
+
 - Set password for `postgres` user
 - Port: 5432 (default)
 - Remember the password!
 
 Create database:
+
 ```powershell
 # Open PowerShell and connect to PostgreSQL
 & "C:\Program Files\PostgreSQL\16\bin\psql.exe" -U postgres
@@ -192,6 +207,7 @@ GRANT ALL PRIVILEGES ON DATABASE tracktok_dev TO tracktok;
 ### 2. Install Redis
 
 Download and extract Redis for Windows, then:
+
 ```powershell
 # Navigate to Redis directory
 cd C:\path\to\redis
@@ -201,12 +217,14 @@ cd C:\path\to\redis
 ```
 
 **Or install as Windows Service:**
+
 ```powershell
 .\redis-server.exe --service-install
 .\redis-server.exe --service-start
 ```
 
 ### 3. Create Python Virtual Environment
+
 ```powershell
 # Navigate to project directory
 cd C:\i79\Dev\TrackTok
@@ -222,6 +240,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
 
 ### 4. Install Python Dependencies
+
 ```powershell
 # Make sure virtual environment is activated
 pip install --upgrade pip
@@ -229,6 +248,7 @@ pip install -r requirements.txt
 ```
 
 ### 5. Initialize Database
+
 ```powershell
 # Run migrations
 flask db upgrade
@@ -242,6 +262,7 @@ python scripts/seed.py
 You'll need **multiple terminal windows**:
 
 **Terminal 1 - Flask Web Server:**
+
 ```powershell
 cd C:\i79\Dev\TrackTok
 .\venv\Scripts\Activate.ps1
@@ -249,6 +270,7 @@ flask run --host=0.0.0.0 --port=5000
 ```
 
 **Terminal 2 - Celery Worker:**
+
 ```powershell
 cd C:\i79\Dev\TrackTok
 .\venv\Scripts\Activate.ps1
@@ -256,6 +278,7 @@ celery -A app.tasks.celery_app worker --loglevel=info --pool=solo
 ```
 
 **Terminal 3 - Celery Beat (Scheduler):**
+
 ```powershell
 cd C:\i79\Dev\TrackTok
 .\venv\Scripts\Activate.ps1
@@ -263,6 +286,7 @@ celery -A app.tasks.celery_app beat --loglevel=info
 ```
 
 **Terminal 4 - Flower (Optional - Celery Monitor):**
+
 ```powershell
 cd C:\i79\Dev\TrackTok
 .\venv\Scripts\Activate.ps1
@@ -270,6 +294,7 @@ celery -A app.tasks.celery_app flower --port=5555
 ```
 
 ### 7. Access Application
+
 - **Web App**: http://localhost:5000
 - **API Docs**: http://localhost:5000/api/docs
 - **Flower**: http://localhost:5555
@@ -298,6 +323,7 @@ flask db current
 ### Direct Database Access
 
 **Using psql (Command Line):**
+
 ```powershell
 # Connect to database
 & "C:\Program Files\PostgreSQL\16\bin\psql.exe" -U tracktok -d tracktok_dev
@@ -311,6 +337,7 @@ SELECT * FROM users LIMIT 10;         # View users
 ```
 
 **Using pgAdmin:**
+
 1. Open pgAdmin
 2. Create new server connection:
    - Host: localhost
@@ -321,6 +348,7 @@ SELECT * FROM users LIMIT 10;         # View users
 3. Browse tables and run queries
 
 ### Reset Database
+
 ```powershell
 # Drop and recreate database
 & "C:\Program Files\PostgreSQL\16\bin\psql.exe" -U postgres -c "DROP DATABASE tracktok_dev;"
@@ -339,6 +367,7 @@ python scripts/seed.py
 ### Making Code Changes
 
 With Docker (hot reload enabled):
+
 ```powershell
 # Edit files in your favorite editor
 # Changes are automatically detected
@@ -348,6 +377,7 @@ docker-compose restart web
 ```
 
 Without Docker:
+
 ```powershell
 # Flask will auto-reload on code changes
 # If it doesn't, restart Flask:
@@ -356,6 +386,7 @@ flask run
 ```
 
 ### Adding New Dependencies
+
 ```powershell
 # Install package
 pip install package-name
@@ -370,6 +401,7 @@ docker-compose up -d --build
 ### Creating API Endpoints
 
 1. **Define Schema** in `app/schemas/`:
+
 ```python
 from marshmallow import Schema, fields
 
@@ -380,6 +412,7 @@ class NewResourceSchema(Schema):
 ```
 
 2. **Create Model** in `app/models/`:
+
 ```python
 from app.models.base import BaseModel
 
@@ -389,12 +422,14 @@ class NewResource(BaseModel):
 ```
 
 3. **Create Migration**:
+
 ```powershell
 flask db migrate -m "Add new_resources table"
 flask db upgrade
 ```
 
 4. **Create API Endpoint** in `app/api/v1/`:
+
 ```python
 from flask_smorest import Blueprint
 
@@ -408,6 +443,7 @@ def list_resources():
 ```
 
 5. **Register Blueprint** in `app/__init__.py`:
+
 ```python
 from app.api.v1.new_resources import blp as new_resources_blp
 api.register_blueprint(new_resources_blp)
@@ -416,6 +452,7 @@ api.register_blueprint(new_resources_blp)
 ## Testing
 
 ### Run All Tests
+
 ```powershell
 # With Docker
 docker-compose exec web pytest
@@ -428,6 +465,7 @@ pytest --cov=app --cov-report=html
 ```
 
 ### Run Specific Tests
+
 ```powershell
 # Run specific test file
 pytest tests/unit/test_tenancy.py
@@ -440,6 +478,7 @@ pytest -k "test_budget"
 ```
 
 ### Run Linters
+
 ```powershell
 # Format code with black
 black app/ tests/
@@ -452,6 +491,7 @@ flake8 app/ tests/ --max-line-length=100
 ```
 
 ### Generate OpenAPI Documentation
+
 ```powershell
 # Export OpenAPI spec
 python scripts/export_openapi.py
@@ -464,6 +504,7 @@ python scripts/export_openapi.py
 ## Troubleshooting
 
 ### Port Already in Use
+
 ```powershell
 # Find process using port 5000
 netstat -ano | findstr :5000
@@ -475,6 +516,7 @@ taskkill /PID <PID> /F
 ### Database Connection Errors
 
 **Error: "could not connect to server"**
+
 ```powershell
 # Check if PostgreSQL is running
 Get-Service postgresql-x64-16
@@ -484,12 +526,14 @@ Start-Service postgresql-x64-16
 ```
 
 **Error: "password authentication failed"**
+
 - Check `DATABASE_URL` in `.env`
 - Verify password in PostgreSQL
 
 ### Redis Connection Errors
 
 **Error: "Error 10061 connecting to localhost:6379"**
+
 ```powershell
 # Check if Redis is running
 Get-Process redis-server
@@ -505,7 +549,9 @@ Start-Service Redis
 ### Celery Worker Issues on Windows
 
 **Error: "Process PoolExecutor is broken"**
+
 - Use `--pool=solo` flag:
+
 ```powershell
 celery -A app.tasks.celery_app worker --loglevel=info --pool=solo
 ```
@@ -513,6 +559,7 @@ celery -A app.tasks.celery_app worker --loglevel=info --pool=solo
 ### Python Virtual Environment Issues
 
 **Error: "cannot be loaded because running scripts is disabled"**
+
 ```powershell
 # Run PowerShell as Administrator
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
@@ -521,23 +568,28 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ### Docker Issues
 
 **Error: "docker-compose: command not found"**
+
 - Use `docker compose` (without hyphen) for Docker Desktop
 
 **Error: "Cannot connect to Docker daemon"**
+
 - Make sure Docker Desktop is running
 
 **Error: "Port is already allocated"**
+
 - Stop other services using the port, or change port in `docker-compose.yml`
 
 ### Migration Issues
 
 **Error: "Target database is not up to date"**
+
 ```powershell
 # Run pending migrations
 flask db upgrade
 ```
 
 **Error: "Can't locate revision identified by 'xxxx'"**
+
 ```powershell
 # Reset migrations (WARNING: loses data)
 flask db downgrade base
@@ -547,6 +599,7 @@ flask db upgrade
 ### Module Import Errors
 
 **Error: "ModuleNotFoundError: No module named 'app'"**
+
 ```powershell
 # Make sure you're in project root and venv is activated
 cd C:\i79\Dev\TrackTok
@@ -557,6 +610,7 @@ pip install -r requirements.txt
 ```
 
 ### Static Files Not Loading
+
 ```powershell
 # Clear browser cache
 # Or use Ctrl+F5 to hard refresh
@@ -569,6 +623,7 @@ pip install -r requirements.txt
 ### VS Code Setup
 
 Install recommended extensions:
+
 - Python
 - Pylance
 - Docker
@@ -576,6 +631,7 @@ Install recommended extensions:
 - Thunder Client (API testing)
 
 **VS Code Settings** (`.vscode/settings.json`):
+
 ```json
 {
   "python.defaultInterpreterPath": "${workspaceFolder}\\venv\\Scripts\\python.exe",
@@ -593,6 +649,7 @@ Install recommended extensions:
 ### Debugging in VS Code
 
 Create `.vscode/launch.json`:
+
 ```json
 {
   "version": "0.2.0",
@@ -616,6 +673,7 @@ Create `.vscode/launch.json`:
 ### Quick Commands (Create Shortcuts)
 
 Create `dev.ps1` script:
+
 ```powershell
 # Quick development commands
 
@@ -638,6 +696,7 @@ switch ($Command) {
 ```
 
 Usage:
+
 ```powershell
 .\dev.ps1 start
 .\dev.ps1 logs
@@ -655,14 +714,16 @@ Usage:
 ## Quick Reference
 
 ### Environment URLs
-| Service | URL | Credentials |
-|---------|-----|-------------|
-| Web App | http://localhost:5000 | owner@acme.com / Password123 |
-| Swagger API | http://localhost:5000/api/docs | - |
-| Flower | http://localhost:5555 | - |
-| Adminer | http://localhost:8080 | tracktok / tracktok |
+
+| Service     | URL                            | Credentials                  |
+| ----------- | ------------------------------ | ---------------------------- |
+| Web App     | http://localhost:5000          | owner@acme.com / Password123 |
+| Swagger API | http://localhost:5000/api/docs | -                            |
+| Flower      | http://localhost:5555          | -                            |
+| Adminer     | http://localhost:8080          | tracktok / tracktok          |
 
 ### Common Commands
+
 ```powershell
 # Docker
 docker-compose up -d              # Start services

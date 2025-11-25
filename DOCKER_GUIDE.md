@@ -10,21 +10,25 @@ This guide will help you get TrackTok running with Docker Compose.
 ## Quick Start
 
 1. **Copy environment file**
+
    ```bash
    cp .env.example .env
    ```
 
 2. **Start all services**
+
    ```bash
    docker-compose up -d
    ```
 
 3. **Initialize database**
+
    ```bash
    docker-compose exec web flask db upgrade
    ```
 
 4. **Seed demo data**
+
    ```bash
    docker-compose exec web python scripts/seed.py
    ```
@@ -38,34 +42,41 @@ This guide will help you get TrackTok running with Docker Compose.
 ## Services
 
 ### Web (Flask App)
+
 - **Container**: `tracktok-web`
 - **Port**: 5000
 - **Health Check**: http://localhost:5000/api/v1/health
 
 ### Database (PostgreSQL)
+
 - **Container**: `tracktok-db`
 - **Port**: 5432
 - **Credentials**: tracktok / tracktok
 - **Database**: tracktok
 
 ### Redis
+
 - **Container**: `tracktok-redis`
 - **Port**: 6379
 
 ### Worker (Celery)
+
 - **Container**: `tracktok-worker`
 - Processes background tasks (alerts, reports, etc.)
 
 ### Beat (Celery Scheduler)
+
 - **Container**: `tracktok-beat`
 - Schedules periodic tasks
 
 ### Flower (Celery Monitoring)
+
 - **Container**: `tracktok-flower`
 - **Port**: 5555
 - Monitor Celery tasks and workers
 
 ### Adminer (Database UI)
+
 - **Container**: `tracktok-adminer`
 - **Port**: 8080
 - Web-based database management
@@ -73,6 +84,7 @@ This guide will help you get TrackTok running with Docker Compose.
 ## Common Commands
 
 ### View Logs
+
 ```bash
 # All services
 docker-compose logs -f
@@ -83,6 +95,7 @@ docker-compose logs -f worker
 ```
 
 ### Execute Commands
+
 ```bash
 # Flask shell
 docker-compose exec web flask shell
@@ -96,6 +109,7 @@ docker-compose exec web flask tenants:create --name "Test Org" --slug test
 ```
 
 ### Restart Services
+
 ```bash
 # Restart all
 docker-compose restart
@@ -106,6 +120,7 @@ docker-compose restart worker
 ```
 
 ### Stop Services
+
 ```bash
 # Stop all (keeps data)
 docker-compose stop
@@ -118,6 +133,7 @@ docker-compose down -v
 ```
 
 ### Rebuild Images
+
 ```bash
 # Rebuild all images
 docker-compose build
@@ -143,6 +159,7 @@ docker-compose up -d --build
 ### Database Changes
 
 1. Create migration:
+
    ```bash
    docker-compose exec web flask db migrate -m "Add new field"
    ```
@@ -172,6 +189,7 @@ docker-compose exec web pytest tests/unit/test_tenancy.py
 ### Containers Won't Start
 
 Check logs:
+
 ```bash
 docker-compose logs
 ```
@@ -179,6 +197,7 @@ docker-compose logs
 ### Database Connection Issues
 
 1. Check if PostgreSQL is ready:
+
    ```bash
    docker-compose exec db pg_isready -U tracktok
    ```
@@ -191,6 +210,7 @@ docker-compose logs
 ### Worker Not Processing Tasks
 
 1. Check worker logs:
+
    ```bash
    docker-compose logs -f worker
    ```
@@ -205,15 +225,17 @@ docker-compose logs
 ### Port Already in Use
 
 If port 5000 is in use, modify `docker-compose.yml`:
+
 ```yaml
 web:
   ports:
-    - "5001:5000"  # Change 5000 to 5001
+    - "5001:5000" # Change 5000 to 5001
 ```
 
 ### Fresh Start
 
 Complete reset (WARNING: deletes all data):
+
 ```bash
 docker-compose down -v
 docker-compose up -d
@@ -226,7 +248,7 @@ docker-compose exec web python scripts/seed.py
 For production, create a `docker-compose.prod.yml`:
 
 ```yaml
-version: '3.8'
+version: "3.8"
 
 services:
   web:
@@ -244,6 +266,7 @@ services:
 ```
 
 Deploy:
+
 ```bash
 docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 ```
@@ -258,21 +281,23 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1'
+          cpus: "1"
           memory: 512M
         reservations:
-          cpus: '0.5'
+          cpus: "0.5"
           memory: 256M
 ```
 
 ## Backup and Restore
 
 ### Backup Database
+
 ```bash
 docker-compose exec db pg_dump -U tracktok tracktok > backup.sql
 ```
 
 ### Restore Database
+
 ```bash
 docker-compose exec -T db psql -U tracktok tracktok < backup.sql
 ```
@@ -282,6 +307,7 @@ docker-compose exec -T db psql -U tracktok tracktok < backup.sql
 ### Health Checks
 
 All services have health checks configured. View status:
+
 ```bash
 docker-compose ps
 ```
@@ -289,6 +315,7 @@ docker-compose ps
 ### Celery Monitoring
 
 Access Flower dashboard at http://localhost:5555 to monitor:
+
 - Active tasks
 - Task history
 - Worker status

@@ -1,179 +1,193 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Daily Digest - TrackTok</title>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f4f4f4;
-        }
-        .container {
-            background-color: #ffffff;
-            border-radius: 8px;
-            padding: 30px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .header {
-            text-align: center;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #e5e7eb;
-            margin-bottom: 30px;
-        }
-        .logo {
-            font-size: 28px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 10px;
-        }
-        h1 {
-            color: #111827;
-            font-size: 24px;
-            margin-bottom: 10px;
-        }
-        .summary {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin: 20px 0;
-        }
-        .stat-card {
-            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-            padding: 15px;
-            border-radius: 6px;
-            text-align: center;
-        }
-        .stat-value {
-            font-size: 24px;
-            font-weight: 700;
-            color: #111827;
-        }
-        .stat-label {
-            font-size: 12px;
-            color: #6b7280;
-            text-transform: uppercase;
-            font-weight: 600;
-        }
-        .alert-item {
-            padding: 15px;
-            margin: 10px 0;
-            border-left: 4px solid #3b82f6;
-            background-color: #f9fafb;
-            border-radius: 4px;
-        }
-        .alert-item.critical {
-            border-left-color: #dc2626;
-        }
-        .alert-item.error {
-            border-left-color: #f59e0b;
-        }
-        .alert-item.warning {
-            border-left-color: #eab308;
-        }
-        .alert-title {
-            font-weight: 600;
-            color: #111827;
-            margin-bottom: 5px;
-        }
-        .alert-message {
-            color: #4b5563;
-            font-size: 14px;
-        }
-        .cta-button {
-            display: inline-block;
-            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%);
-            color: #ffffff;
-            text-decoration: none;
-            padding: 12px 24px;
-            border-radius: 6px;
-            font-weight: 600;
-            margin: 20px 0;
-            text-align: center;
-        }
-        .footer {
-            text-align: center;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #e5e7eb;
-            color: #6b7280;
-            font-size: 14px;
-        }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+          "Oxygen", "Ubuntu", "Cantarell", sans-serif;
+        line-height: 1.6;
+        color: #333;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f4f4f4;
+      }
+      .container {
+        background-color: #ffffff;
+        border-radius: 8px;
+        padding: 30px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .header {
+        text-align: center;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #e5e7eb;
+        margin-bottom: 30px;
+      }
+      .logo {
+        font-size: 28px;
+        font-weight: 700;
+        background: linear-gradient(
+          135deg,
+          #3b82f6 0%,
+          #8b5cf6 50%,
+          #ec4899 100%
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 10px;
+      }
+      h1 {
+        color: #111827;
+        font-size: 24px;
+        margin-bottom: 10px;
+      }
+      .summary {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+        margin: 20px 0;
+      }
+      .stat-card {
+        background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+        padding: 15px;
+        border-radius: 6px;
+        text-align: center;
+      }
+      .stat-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: #111827;
+      }
+      .stat-label {
+        font-size: 12px;
+        color: #6b7280;
+        text-transform: uppercase;
+        font-weight: 600;
+      }
+      .alert-item {
+        padding: 15px;
+        margin: 10px 0;
+        border-left: 4px solid #3b82f6;
+        background-color: #f9fafb;
+        border-radius: 4px;
+      }
+      .alert-item.critical {
+        border-left-color: #dc2626;
+      }
+      .alert-item.error {
+        border-left-color: #f59e0b;
+      }
+      .alert-item.warning {
+        border-left-color: #eab308;
+      }
+      .alert-title {
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 5px;
+      }
+      .alert-message {
+        color: #4b5563;
+        font-size: 14px;
+      }
+      .cta-button {
+        display: inline-block;
+        background: linear-gradient(
+          135deg,
+          #3b82f6 0%,
+          #8b5cf6 50%,
+          #ec4899 100%
+        );
+        color: #ffffff;
+        text-decoration: none;
+        padding: 12px 24px;
+        border-radius: 6px;
+        font-weight: 600;
+        margin: 20px 0;
+        text-align: center;
+      }
+      .footer {
+        text-align: center;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #e5e7eb;
+        color: #6b7280;
+        font-size: 14px;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <div class="header">
-            <div class="logo">TrackTok</div>
-            <p style="color: #6b7280; margin: 0;">Daily Digest</p>
-        </div>
+      <div class="header">
+        <div class="logo">TrackTok</div>
+        <p style="color: #6b7280; margin: 0">Daily Digest</p>
+      </div>
 
-        <h1>Your Daily Summary</h1>
-        <p style="color: #6b7280;">{{ date }}</p>
+      <h1>Your Daily Summary</h1>
+      <p style="color: #6b7280">{{ date }}</p>
 
-        <div class="summary">
-            <div class="stat-card">
-                <div class="stat-value">{{ stats.total_alerts }}</div>
-                <div class="stat-label">Alerts</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value">{{ stats.unread_alerts }}</div>
-                <div class="stat-label">Unread</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value">${{ "%.2f"|format(stats.total_expenses) }}</div>
-                <div class="stat-label">Expenses Today</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value">{{ stats.expense_count }}</div>
-                <div class="stat-label">Transactions</div>
-            </div>
+      <div class="summary">
+        <div class="stat-card">
+          <div class="stat-value">{{ stats.total_alerts }}</div>
+          <div class="stat-label">Alerts</div>
         </div>
+        <div class="stat-card">
+          <div class="stat-value">{{ stats.unread_alerts }}</div>
+          <div class="stat-label">Unread</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">
+            ${{ "%.2f"|format(stats.total_expenses) }}
+          </div>
+          <div class="stat-label">Expenses Today</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{ stats.expense_count }}</div>
+          <div class="stat-label">Transactions</div>
+        </div>
+      </div>
 
-        {% if alerts %}
-        <h2 style="color: #111827; font-size: 18px; margin-top: 30px;">Recent Alerts</h2>
-        
-        {% for alert in alerts %}
-        <div class="alert-item {{ alert.severity }}">
-            <div class="alert-title">{{ alert.title }}</div>
-            <div class="alert-message">{{ alert.message }}</div>
-        </div>
-        {% endfor %}
-        
-        {% if stats.total_alerts > alerts|length %}
-        <p style="text-align: center; color: #6b7280; font-size: 14px;">
-            + {{ stats.total_alerts - alerts|length }} more alerts
+      {% if alerts %}
+      <h2 style="color: #111827; font-size: 18px; margin-top: 30px">
+        Recent Alerts
+      </h2>
+
+      {% for alert in alerts %}
+      <div class="alert-item {{ alert.severity }}">
+        <div class="alert-title">{{ alert.title }}</div>
+        <div class="alert-message">{{ alert.message }}</div>
+      </div>
+      {% endfor %} {% if stats.total_alerts > alerts|length %}
+      <p style="text-align: center; color: #6b7280; font-size: 14px">
+        + {{ stats.total_alerts - alerts|length }} more alerts
+      </p>
+      {% endif %} {% else %}
+      <p style="text-align: center; color: #6b7280; margin: 30px 0">
+        No alerts today. Your finances are looking good! 📊
+      </p>
+      {% endif %}
+
+      <div style="text-align: center">
+        <a href="{{ dashboard_url }}" class="cta-button">View Dashboard</a>
+      </div>
+
+      <div class="footer">
+        <p>You're receiving this daily digest because you opted in.</p>
+        <p>
+          <a
+            href="{{ preferences_url }}"
+            style="color: #3b82f6; text-decoration: none"
+            >Manage preferences</a
+          >
         </p>
-        {% endif %}
-        {% else %}
-        <p style="text-align: center; color: #6b7280; margin: 30px 0;">
-            No alerts today. Your finances are looking good! 📊
+        <p style="margin-top: 20px">
+          &copy; 2025 TrackTok. All rights reserved.
         </p>
-        {% endif %}
-
-        <div style="text-align: center;">
-            <a href="{{ dashboard_url }}" class="cta-button">View Dashboard</a>
-        </div>
-
-        <div class="footer">
-            <p>
-                You're receiving this daily digest because you opted in.
-            </p>
-            <p>
-                <a href="{{ preferences_url }}" style="color: #3b82f6; text-decoration: none;">Manage preferences</a>
-            </p>
-            <p style="margin-top: 20px;">
-                &copy; 2025 TrackTok. All rights reserved.
-            </p>
-        </div>
+      </div>
     </div>
-</body>
+  </body>
 </html>

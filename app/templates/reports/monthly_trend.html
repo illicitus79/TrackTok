@@ -1,295 +1,315 @@
-{% extends "base.html" %}
-
-{% block title %}Monthly Trend Report{% endblock %}
-
-{% block content %}
+{% extends "base.html" %} {% block title %}Monthly Trend Report{% endblock %} {%
+block content %}
 <div class="report-container">
-    <div class="report-header">
-        <div class="header-content">
-            <h1 class="gradient-text">Monthly Trend Report</h1>
-            <p class="subtitle" id="projectName">Loading...</p>
-        </div>
-        <div class="header-actions">
-            <select id="yearSelect" onchange="changeYear()" class="year-select">
-                <!-- Populated dynamically -->
-            </select>
-            <select id="groupBySelect" onchange="changeGroupBy()" class="group-select">
-                <option value="category">By Category</option>
-                <option value="account">By Account</option>
-            </select>
-            <button onclick="exportCSV()" class="btn-primary">
-                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3"/>
-                </svg>
-                Export
-            </button>
-        </div>
+  <div class="report-header">
+    <div class="header-content">
+      <h1 class="gradient-text">Monthly Trend Report</h1>
+      <p class="subtitle" id="projectName">Loading...</p>
     </div>
+    <div class="header-actions">
+      <select id="yearSelect" onchange="changeYear()" class="year-select">
+        <!-- Populated dynamically -->
+      </select>
+      <select
+        id="groupBySelect"
+        onchange="changeGroupBy()"
+        class="group-select"
+      >
+        <option value="category">By Category</option>
+        <option value="account">By Account</option>
+      </select>
+      <button onclick="exportCSV()" class="btn-primary">
+        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 10v6m0 0l-3-3m3 3l3-3"
+          />
+        </svg>
+        Export
+      </button>
+    </div>
+  </div>
 
-    <!-- Summary Cards -->
-    <div class="stats-grid-3">
-        <div class="stat-card">
-            <div class="stat-label">Total Spend</div>
-            <div class="stat-value" id="totalSpend">$0.00</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Average Monthly</div>
-            <div class="stat-value" id="avgMonthly">$0.00</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Highest Month</div>
-            <div class="stat-value" id="highestMonth">$0.00</div>
-        </div>
+  <!-- Summary Cards -->
+  <div class="stats-grid-3">
+    <div class="stat-card">
+      <div class="stat-label">Total Spend</div>
+      <div class="stat-value" id="totalSpend">$0.00</div>
     </div>
+    <div class="stat-card">
+      <div class="stat-label">Average Monthly</div>
+      <div class="stat-value" id="avgMonthly">$0.00</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Highest Month</div>
+      <div class="stat-value" id="highestMonth">$0.00</div>
+    </div>
+  </div>
 
-    <!-- Stacked Bar Chart -->
-    <div class="chart-card">
-        <div class="card-header">
-            <h2>Monthly Spending Breakdown</h2>
-            <p class="chart-subtitle">Click on a bar to see detailed breakdown</p>
-        </div>
-        <div class="chart-container-large">
-            <canvas id="monthlyTrendChart"></canvas>
-        </div>
+  <!-- Stacked Bar Chart -->
+  <div class="chart-card">
+    <div class="card-header">
+      <h2>Monthly Spending Breakdown</h2>
+      <p class="chart-subtitle">Click on a bar to see detailed breakdown</p>
     </div>
+    <div class="chart-container-large">
+      <canvas id="monthlyTrendChart"></canvas>
+    </div>
+  </div>
 
-    <!-- Monthly Details Table -->
-    <div class="table-card">
-        <div class="card-header">
-            <h2>Monthly Details</h2>
-        </div>
-        <div class="table-responsive">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Month</th>
-                        <th class="text-right">Total</th>
-                        <th class="text-right">Avg Daily</th>
-                        <th class="text-right">% of Year</th>
-                    </tr>
-                </thead>
-                <tbody id="monthlyTableBody">
-                    <tr>
-                        <td colspan="4" class="text-center">Loading...</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+  <!-- Monthly Details Table -->
+  <div class="table-card">
+    <div class="card-header">
+      <h2>Monthly Details</h2>
     </div>
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Month</th>
+            <th class="text-right">Total</th>
+            <th class="text-right">Avg Daily</th>
+            <th class="text-right">% of Year</th>
+          </tr>
+        </thead>
+        <tbody id="monthlyTableBody">
+          <tr>
+            <td colspan="4" class="text-center">Loading...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>
 
 <script>
-const projectId = '{{ project_id }}';
-let monthlyChart = null;
-let reportData = null;
+  const projectId = "{{ project_id }}";
+  let monthlyChart = null;
+  let reportData = null;
 
-async function loadReport(year, groupBy) {
+  async function loadReport(year, groupBy) {
     try {
-        const url = `/api/v1/reports/project/${projectId}/monthly-trend?year=${year}&group_by=${groupBy}`;
-        
-        const response = await fetch(url, {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-            }
-        });
-        
-        if (!response.ok) throw new Error('Failed to load report');
-        
-        reportData = await response.json();
-        renderReport(reportData);
-    } catch (error) {
-        console.error('Error loading report:', error);
-        alert('Failed to load report data');
-    }
-}
+      const url = `/api/v1/reports/project/${projectId}/monthly-trend?year=${year}&group_by=${groupBy}`;
 
-function renderReport(data) {
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+        },
+      });
+
+      if (!response.ok) throw new Error("Failed to load report");
+
+      reportData = await response.json();
+      renderReport(reportData);
+    } catch (error) {
+      console.error("Error loading report:", error);
+      alert("Failed to load report data");
+    }
+  }
+
+  function renderReport(data) {
     // Update header
-    document.getElementById('projectName').textContent = data.project.name;
-    
+    document.getElementById("projectName").textContent = data.project.name;
+
     // Update summary
-    document.getElementById('totalSpend').textContent = 
-        window.TrackTok.formatCurrency(data.summary.total_spend);
-    document.getElementById('avgMonthly').textContent = 
-        window.TrackTok.formatCurrency(data.summary.average_monthly);
-    document.getElementById('highestMonth').textContent = 
-        window.TrackTok.formatCurrency(data.summary.highest_month);
-    
+    document.getElementById("totalSpend").textContent =
+      window.TrackTok.formatCurrency(data.summary.total_spend);
+    document.getElementById("avgMonthly").textContent =
+      window.TrackTok.formatCurrency(data.summary.average_monthly);
+    document.getElementById("highestMonth").textContent =
+      window.TrackTok.formatCurrency(data.summary.highest_month);
+
     // Render chart
     renderStackedBarChart(data.chart);
-    
+
     // Render table
     renderMonthlyTable(data.chart);
-}
+  }
 
-function renderStackedBarChart(chartData) {
-    const ctx = document.getElementById('monthlyTrendChart').getContext('2d');
-    
+  function renderStackedBarChart(chartData) {
+    const ctx = document.getElementById("monthlyTrendChart").getContext("2d");
+
     if (monthlyChart) {
-        monthlyChart.destroy();
+      monthlyChart.destroy();
     }
-    
-    monthlyChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: chartData.labels,
-            datasets: chartData.datasets
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: {
-                mode: 'index',
-                intersect: false,
-            },
-            plugins: {
-                legend: {
-                    position: 'top',
-                    labels: {
-                        padding: 15,
-                        usePointStyle: true,
-                    }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: (context) => {
-                            return `${context.dataset.label}: ${window.TrackTok.formatCurrency(context.parsed.y)}`;
-                        },
-                        footer: (items) => {
-                            const total = items.reduce((sum, item) => sum + item.parsed.y, 0);
-                            return `Total: ${window.TrackTok.formatCurrency(total)}`;
-                        }
-                    }
-                }
-            },
-            scales: {
-                x: {
-                    stacked: true,
-                },
-                y: {
-                    stacked: true,
-                    beginAtZero: true,
-                    ticks: {
-                        callback: (value) => window.TrackTok.formatCurrency(value)
-                    }
-                }
-            },
-            onClick: (event, elements) => {
-                if (elements.length > 0) {
-                    const monthIndex = elements[0].index;
-                    showMonthDetails(monthIndex);
-                }
-            }
-        }
-    });
-}
 
-function renderMonthlyTable(chartData) {
-    const tbody = document.getElementById('monthlyTableBody');
-    tbody.innerHTML = '';
-    
+    monthlyChart = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: chartData.labels,
+        datasets: chartData.datasets,
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: "index",
+          intersect: false,
+        },
+        plugins: {
+          legend: {
+            position: "top",
+            labels: {
+              padding: 15,
+              usePointStyle: true,
+            },
+          },
+          tooltip: {
+            callbacks: {
+              label: (context) => {
+                return `${
+                  context.dataset.label
+                }: ${window.TrackTok.formatCurrency(context.parsed.y)}`;
+              },
+              footer: (items) => {
+                const total = items.reduce(
+                  (sum, item) => sum + item.parsed.y,
+                  0
+                );
+                return `Total: ${window.TrackTok.formatCurrency(total)}`;
+              },
+            },
+          },
+        },
+        scales: {
+          x: {
+            stacked: true,
+          },
+          y: {
+            stacked: true,
+            beginAtZero: true,
+            ticks: {
+              callback: (value) => window.TrackTok.formatCurrency(value),
+            },
+          },
+        },
+        onClick: (event, elements) => {
+          if (elements.length > 0) {
+            const monthIndex = elements[0].index;
+            showMonthDetails(monthIndex);
+          }
+        },
+      },
+    });
+  }
+
+  function renderMonthlyTable(chartData) {
+    const tbody = document.getElementById("monthlyTableBody");
+    tbody.innerHTML = "";
+
     const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-    
+
     chartData.monthly_totals.forEach((total, index) => {
-        const month = chartData.labels[index];
-        const days = daysInMonth[index];
-        const avgDaily = total / days;
-        const percentage = (total / reportData.summary.total_spend * 100).toFixed(1);
-        
-        const row = document.createElement('tr');
-        row.innerHTML = `
+      const month = chartData.labels[index];
+      const days = daysInMonth[index];
+      const avgDaily = total / days;
+      const percentage = (
+        (total / reportData.summary.total_spend) *
+        100
+      ).toFixed(1);
+
+      const row = document.createElement("tr");
+      row.innerHTML = `
             <td>${month}</td>
-            <td class="text-right font-mono">${window.TrackTok.formatCurrency(total)}</td>
-            <td class="text-right font-mono">${window.TrackTok.formatCurrency(avgDaily)}</td>
+            <td class="text-right font-mono">${window.TrackTok.formatCurrency(
+              total
+            )}</td>
+            <td class="text-right font-mono">${window.TrackTok.formatCurrency(
+              avgDaily
+            )}</td>
             <td class="text-right">${percentage}%</td>
         `;
-        tbody.appendChild(row);
+      tbody.appendChild(row);
     });
-}
+  }
 
-function showMonthDetails(monthIndex) {
+  function showMonthDetails(monthIndex) {
     const month = reportData.chart.labels[monthIndex];
     const datasets = reportData.chart.datasets;
-    
+
     let details = `Details for ${month}:\n\n`;
-    datasets.forEach(dataset => {
-        const value = dataset.data[monthIndex];
-        if (value > 0) {
-            details += `${dataset.label}: ${window.TrackTok.formatCurrency(value)}\n`;
-        }
+    datasets.forEach((dataset) => {
+      const value = dataset.data[monthIndex];
+      if (value > 0) {
+        details += `${dataset.label}: ${window.TrackTok.formatCurrency(
+          value
+        )}\n`;
+      }
     });
-    
+
     alert(details);
-}
+  }
 
-function populateYearSelect() {
+  function populateYearSelect() {
     const currentYear = new Date().getFullYear();
-    const select = document.getElementById('yearSelect');
-    
+    const select = document.getElementById("yearSelect");
+
     for (let year = currentYear; year >= currentYear - 5; year--) {
-        const option = document.createElement('option');
-        option.value = year;
-        option.textContent = year;
-        select.appendChild(option);
+      const option = document.createElement("option");
+      option.value = year;
+      option.textContent = year;
+      select.appendChild(option);
     }
-}
+  }
 
-function changeYear() {
-    const year = document.getElementById('yearSelect').value;
-    const groupBy = document.getElementById('groupBySelect').value;
+  function changeYear() {
+    const year = document.getElementById("yearSelect").value;
+    const groupBy = document.getElementById("groupBySelect").value;
     loadReport(year, groupBy);
-}
+  }
 
-function changeGroupBy() {
-    const year = document.getElementById('yearSelect').value;
-    const groupBy = document.getElementById('groupBySelect').value;
+  function changeGroupBy() {
+    const year = document.getElementById("yearSelect").value;
+    const groupBy = document.getElementById("groupBySelect").value;
     loadReport(year, groupBy);
-}
+  }
 
-function exportCSV() {
+  function exportCSV() {
     const params = new URLSearchParams();
-    params.set('project_id', projectId);
-    const year = document.getElementById('yearSelect').value;
-    params.set('from', `${year}-01-01`);
-    params.set('to', `${year}-12-31`);
+    params.set("project_id", projectId);
+    const year = document.getElementById("yearSelect").value;
+    params.set("from", `${year}-01-01`);
+    params.set("to", `${year}-12-31`);
     window.location.href = `/api/v1/reports/export/csv?${params.toString()}`;
-}
+  }
 
-// Initialize
-document.addEventListener('DOMContentLoaded', () => {
+  // Initialize
+  document.addEventListener("DOMContentLoaded", () => {
     populateYearSelect();
     const currentYear = new Date().getFullYear();
-    loadReport(currentYear, 'category');
-});
+    loadReport(currentYear, "category");
+  });
 </script>
 
 <style>
-.stats-grid-3 {
+  .stats-grid-3 {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 1.5rem;
     margin: 2rem 0;
-}
+  }
 
-.chart-container-large {
+  .chart-container-large {
     height: 500px;
     padding: 2rem;
-}
+  }
 
-.year-select,
-.group-select {
+  .year-select,
+  .group-select {
     padding: 0.5rem 1rem;
     border-radius: 6px;
     border: 1px solid var(--border);
     background: var(--panel);
     color: var(--text);
     font-size: 0.875rem;
-}
+  }
 
-@media (max-width: 768px) {
+  @media (max-width: 768px) {
     .stats-grid-3 {
-        grid-template-columns: 1fr;
+      grid-template-columns: 1fr;
     }
-}
+  }
 </style>
 {% endblock %}

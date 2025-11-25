@@ -1,154 +1,160 @@
-{% extends "base.html" %}
-
-{% block title %}Create Tenant - TrackTok{% endblock %}
-
-{% block content %}
+{% extends "base.html" %} {% block title %}Create Tenant - TrackTok{% endblock
+%} {% block content %}
 <div class="auth-container">
-    <div class="auth-card">
-        <div class="auth-header">
-            <h1>Create your tenant</h1>
-            <p>Get started with TrackTok in seconds</p>
-        </div>
-        
-        <form method="POST" action="{{ url_for('auth.TenantRegistration') }}" class="auth-form" id="registerForm">
-            {{ form.hidden_tag() }}
-            
-            <div class="form-group">
-                <label for="tenant_name" class="form-label">
-                    Tenant Name
-                    <span class="required">*</span>
-                </label>
-                {{ form.tenant_name(class="form-input", placeholder="Acme Inc.", autofocus=True) }}
-                {% if form.tenant_name.errors %}
-                    <div class="form-error">
-                        {% for error in form.tenant_name.errors %}
-                            <span>{{ error }}</span>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-                <div class="form-hint">Your organization or team name</div>
-            </div>
-            
-            <div class="form-group">
-                <label for="tenant_slug" class="form-label">
-                    Subdomain
-                    <span class="required">*</span>
-                </label>
-                <div class="input-group">
-                    {{ form.tenant_slug(class="form-input", placeholder="acme") }}
-                    <span class="input-group-text">.tracktok.com</span>
-                </div>
-                {% if form.tenant_slug.errors %}
-                    <div class="form-error">
-                        {% for error in form.tenant_slug.errors %}
-                            <span>{{ error }}</span>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-                <div class="form-hint">Lowercase letters, numbers, and hyphens only</div>
-            </div>
-            
-            <div class="form-group">
-                <label for="email" class="form-label">
-                    Email address
-                    <span class="required">*</span>
-                </label>
-                {{ form.email(class="form-input", placeholder="you@example.com", autocomplete="email") }}
-                {% if form.email.errors %}
-                    <div class="form-error">
-                        {% for error in form.email.errors %}
-                            <span>{{ error }}</span>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-            </div>
-            
-            <div class="form-group">
-                <label for="password" class="form-label">
-                    Password
-                    <span class="required">*</span>
-                </label>
-                {{ form.password(class="form-input", placeholder="••••••••", autocomplete="new-password") }}
-                {% if form.password.errors %}
-                    <div class="form-error">
-                        {% for error in form.password.errors %}
-                            <span>{{ error }}</span>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-                <div class="form-hint">Minimum 8 characters</div>
-            </div>
-            
-            <div class="form-group">
-                <label for="password_confirm" class="form-label">
-                    Confirm Password
-                    <span class="required">*</span>
-                </label>
-                {{ form.password_confirm(class="form-input", placeholder="••••••••", autocomplete="new-password") }}
-                {% if form.password_confirm.errors %}
-                    <div class="form-error">
-                        {% for error in form.password_confirm.errors %}
-                            <span>{{ error }}</span>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-            </div>
-            
-            <div class="form-check">
-                {{ form.accept_terms(class="form-checkbox") }}
-                <label for="accept_terms" class="form-check-label">
-                    I agree to the <a href="#" class="form-link">Terms of Service</a> and <a href="#" class="form-link">Privacy Policy</a>
-                </label>
-                {% if form.accept_terms.errors %}
-                    <div class="form-error">
-                        {% for error in form.accept_terms.errors %}
-                            <span>{{ error }}</span>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-            </div>
-            
-            <button type="submit" class="btn btn-primary btn-block">
-                Create Tenant
-            </button>
-        </form>
-        
-        <div class="auth-footer">
-            <p>
-                Already have an account?
-                <a href="{{ url_for('web.login') }}" class="gradient-text">Sign in</a>
-            </p>
-        </div>
+  <div class="auth-card">
+    <div class="auth-header">
+      <h1>Create your tenant</h1>
+      <p>Get started with TrackTok in seconds</p>
     </div>
-    
-    <!-- Decorative gradient -->
-    <div class="auth-gradient gradient-bg-emerald"></div>
-</div>
-{% endblock %}
 
-{% block extra_scripts %}
+    <form
+      method="POST"
+      action="{{ url_for('auth.TenantRegistration') }}"
+      class="auth-form"
+      id="registerForm"
+    >
+      {{ form.hidden_tag() }}
+
+      <div class="form-group">
+        <label for="tenant_name" class="form-label">
+          Tenant Name
+          <span class="required">*</span>
+        </label>
+        {{ form.tenant_name(class="form-input", placeholder="Acme Inc.",
+        autofocus=True) }} {% if form.tenant_name.errors %}
+        <div class="form-error">
+          {% for error in form.tenant_name.errors %}
+          <span>{{ error }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+        <div class="form-hint">Your organization or team name</div>
+      </div>
+
+      <div class="form-group">
+        <label for="tenant_slug" class="form-label">
+          Subdomain
+          <span class="required">*</span>
+        </label>
+        <div class="input-group">
+          {{ form.tenant_slug(class="form-input", placeholder="acme") }}
+          <span class="input-group-text">.tracktok.com</span>
+        </div>
+        {% if form.tenant_slug.errors %}
+        <div class="form-error">
+          {% for error in form.tenant_slug.errors %}
+          <span>{{ error }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+        <div class="form-hint">
+          Lowercase letters, numbers, and hyphens only
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="email" class="form-label">
+          Email address
+          <span class="required">*</span>
+        </label>
+        {{ form.email(class="form-input", placeholder="you@example.com",
+        autocomplete="email") }} {% if form.email.errors %}
+        <div class="form-error">
+          {% for error in form.email.errors %}
+          <span>{{ error }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label for="password" class="form-label">
+          Password
+          <span class="required">*</span>
+        </label>
+        {{ form.password(class="form-input", placeholder="••••••••",
+        autocomplete="new-password") }} {% if form.password.errors %}
+        <div class="form-error">
+          {% for error in form.password.errors %}
+          <span>{{ error }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+        <div class="form-hint">Minimum 8 characters</div>
+      </div>
+
+      <div class="form-group">
+        <label for="password_confirm" class="form-label">
+          Confirm Password
+          <span class="required">*</span>
+        </label>
+        {{ form.password_confirm(class="form-input", placeholder="••••••••",
+        autocomplete="new-password") }} {% if form.password_confirm.errors %}
+        <div class="form-error">
+          {% for error in form.password_confirm.errors %}
+          <span>{{ error }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="form-check">
+        {{ form.accept_terms(class="form-checkbox") }}
+        <label for="accept_terms" class="form-check-label">
+          I agree to the <a href="#" class="form-link">Terms of Service</a> and
+          <a href="#" class="form-link">Privacy Policy</a>
+        </label>
+        {% if form.accept_terms.errors %}
+        <div class="form-error">
+          {% for error in form.accept_terms.errors %}
+          <span>{{ error }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block">
+        Create Tenant
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      <p>
+        Already have an account?
+        <a href="{{ url_for('web.login') }}" class="gradient-text">Sign in</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- Decorative gradient -->
+  <div class="auth-gradient gradient-bg-emerald"></div>
+</div>
+{% endblock %} {% block extra_scripts %}
 <script>
-// Auto-generate slug from tenant name
-document.addEventListener('DOMContentLoaded', function() {
-    const tenantNameInput = document.getElementById('tenant_name');
-    const tenantSlugInput = document.getElementById('tenant_slug');
-    
+  // Auto-generate slug from tenant name
+  document.addEventListener("DOMContentLoaded", function () {
+    const tenantNameInput = document.getElementById("tenant_name");
+    const tenantSlugInput = document.getElementById("tenant_slug");
+
     if (tenantNameInput && tenantSlugInput) {
-        tenantNameInput.addEventListener('input', function() {
-            if (!tenantSlugInput.value || tenantSlugInput.dataset.autoGenerated === 'true') {
-                const slug = this.value
-                    .toLowerCase()
-                    .replace(/[^a-z0-9]+/g, '-')
-                    .replace(/^-+|-+$/g, '');
-                tenantSlugInput.value = slug;
-                tenantSlugInput.dataset.autoGenerated = 'true';
-            }
-        });
-        
-        tenantSlugInput.addEventListener('input', function() {
-            this.dataset.autoGenerated = 'false';
-        });
+      tenantNameInput.addEventListener("input", function () {
+        if (
+          !tenantSlugInput.value ||
+          tenantSlugInput.dataset.autoGenerated === "true"
+        ) {
+          const slug = this.value
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "");
+          tenantSlugInput.value = slug;
+          tenantSlugInput.dataset.autoGenerated = "true";
+        }
+      });
+
+      tenantSlugInput.addEventListener("input", function () {
+        this.dataset.autoGenerated = "false";
+      });
     }
-});
+  });
 </script>
 {% endblock %}

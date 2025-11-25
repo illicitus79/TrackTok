@@ -15,6 +15,7 @@ http://localhost:5000/api/docs/swagger
 ```
 
 Features:
+
 - Browse all API endpoints
 - View request/response schemas
 - Test endpoints directly from the browser
@@ -76,11 +77,11 @@ make docs
 
 After importing, set these collection variables:
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `base_url` | API base URL | `http://localhost:5000` |
-| `jwt_token` | JWT access token | Obtained from login endpoint |
-| `tenant_id` | Tenant ID | Your organization's tenant ID |
+| Variable    | Description      | Example                       |
+| ----------- | ---------------- | ----------------------------- |
+| `base_url`  | API base URL     | `http://localhost:5000`       |
+| `jwt_token` | JWT access token | Obtained from login endpoint  |
+| `tenant_id` | Tenant ID        | Your organization's tenant ID |
 
 ### Obtaining JWT Token
 
@@ -103,6 +104,7 @@ Authorization: Bearer <your-jwt-token>
 ### Obtaining Tokens
 
 **Login Endpoint:**
+
 ```http
 POST /api/v1/auth/login
 Content-Type: application/json
@@ -114,6 +116,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "access_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
@@ -143,6 +146,7 @@ https://{tenant-slug}.tracktok.com/api/v1/...
 ```
 
 Example:
+
 ```
 https://acme.tracktok.com/api/v1/projects
 ```
@@ -161,11 +165,11 @@ Authorization: Bearer <token>
 
 API endpoints are rate limited to ensure fair usage:
 
-| Endpoint Type | Limit |
-|--------------|-------|
-| Authentication | 10 requests/minute |
-| Read operations (GET) | 100 requests/hour |
-| Write operations (POST/PUT/PATCH/DELETE) | 50 requests/hour |
+| Endpoint Type                            | Limit              |
+| ---------------------------------------- | ------------------ |
+| Authentication                           | 10 requests/minute |
+| Read operations (GET)                    | 100 requests/hour  |
+| Write operations (POST/PUT/PATCH/DELETE) | 50 requests/hour   |
 
 ### Rate Limit Headers
 
@@ -195,10 +199,10 @@ List endpoints return paginated results:
 
 ### Request Parameters
 
-| Parameter | Type | Default | Max | Description |
-|-----------|------|---------|-----|-------------|
-| `page` | integer | 1 | - | Page number |
-| `per_page` | integer | 20 | 100 | Items per page |
+| Parameter  | Type    | Default | Max | Description    |
+| ---------- | ------- | ------- | --- | -------------- |
+| `page`     | integer | 1       | -   | Page number    |
+| `per_page` | integer | 20      | 100 | Items per page |
 
 ### Example Request
 
@@ -251,15 +255,15 @@ All errors follow a consistent structure:
 
 ### Common Error Codes
 
-| Code | HTTP Status | Description |
-|------|-------------|-------------|
-| `VALIDATION_ERROR` | 400 | Request validation failed |
-| `UNAUTHORIZED` | 401 | Authentication required or invalid token |
-| `FORBIDDEN` | 403 | Insufficient permissions |
-| `NOT_FOUND` | 404 | Resource not found |
-| `CONFLICT` | 409 | Resource conflict (e.g., duplicate) |
-| `RATE_LIMIT_EXCEEDED` | 429 | Too many requests |
-| `INTERNAL_ERROR` | 500 | Server error |
+| Code                  | HTTP Status | Description                              |
+| --------------------- | ----------- | ---------------------------------------- |
+| `VALIDATION_ERROR`    | 400         | Request validation failed                |
+| `UNAUTHORIZED`        | 401         | Authentication required or invalid token |
+| `FORBIDDEN`           | 403         | Insufficient permissions                 |
+| `NOT_FOUND`           | 404         | Resource not found                       |
+| `CONFLICT`            | 409         | Resource conflict (e.g., duplicate)      |
+| `RATE_LIMIT_EXCEEDED` | 429         | Too many requests                        |
+| `INTERNAL_ERROR`      | 500         | Server error                             |
 
 ### Validation Errors
 
@@ -278,41 +282,45 @@ Field-specific validation errors:
 
 ## Response Codes
 
-| Code | Meaning | Usage |
-|------|---------|-------|
-| 200 | OK | Successful GET, PATCH |
-| 201 | Created | Successful POST (resource created) |
-| 204 | No Content | Successful DELETE |
-| 400 | Bad Request | Invalid request data |
-| 401 | Unauthorized | Authentication required |
-| 403 | Forbidden | Insufficient permissions |
-| 404 | Not Found | Resource doesn't exist |
-| 409 | Conflict | Resource conflict |
-| 422 | Unprocessable Entity | Validation failed |
-| 429 | Too Many Requests | Rate limit exceeded |
-| 500 | Internal Server Error | Server error |
-| 503 | Service Unavailable | Service down |
+| Code | Meaning               | Usage                              |
+| ---- | --------------------- | ---------------------------------- |
+| 200  | OK                    | Successful GET, PATCH              |
+| 201  | Created               | Successful POST (resource created) |
+| 204  | No Content            | Successful DELETE                  |
+| 400  | Bad Request           | Invalid request data               |
+| 401  | Unauthorized          | Authentication required            |
+| 403  | Forbidden             | Insufficient permissions           |
+| 404  | Not Found             | Resource doesn't exist             |
+| 409  | Conflict              | Resource conflict                  |
+| 422  | Unprocessable Entity  | Validation failed                  |
+| 429  | Too Many Requests     | Rate limit exceeded                |
+| 500  | Internal Server Error | Server error                       |
+| 503  | Service Unavailable   | Service down                       |
 
 ## API Endpoints Overview
 
 ### Authentication
+
 - `POST /api/v1/auth/register` - Register new user
 - `POST /api/v1/auth/login` - Login and get tokens
 - `POST /api/v1/auth/refresh` - Refresh access token
 - `POST /api/v1/auth/logout` - Logout (invalidate token)
 
 ### Tenants
+
 - `POST /api/v1/tenants` - Create tenant
 - `GET /api/v1/tenants/{id}` - Get tenant details
 - `PATCH /api/v1/tenants/{id}` - Update tenant
 
 ### Users
+
 - `GET /api/v1/users` - List users (paginated)
 - `GET /api/v1/users/{id}` - Get user details
 - `PATCH /api/v1/users/{id}` - Update user
 - `DELETE /api/v1/users/{id}` - Deactivate user
 
 ### Projects
+
 - `POST /api/v1/projects` - Create project
 - `GET /api/v1/projects` - List projects (filtered, paginated)
 - `GET /api/v1/projects/{id}` - Get project with aggregates
@@ -320,6 +328,7 @@ Field-specific validation errors:
 - `DELETE /api/v1/projects/{id}` - Delete project
 
 ### Expenses
+
 - `POST /api/v1/expenses` - Create expense
 - `GET /api/v1/expenses` - List expenses (filtered, paginated)
 - `GET /api/v1/expenses/{id}` - Get expense details
@@ -327,12 +336,14 @@ Field-specific validation errors:
 - `DELETE /api/v1/expenses/{id}` - Delete expense
 
 ### Budgets
+
 - `POST /api/v1/budgets` - Create budget
 - `GET /api/v1/budgets` - List budgets
 - `GET /api/v1/budgets/{id}` - Get budget details
 - `PATCH /api/v1/budgets/{id}` - Update budget
 
 ### Reports
+
 - `GET /api/v1/reports/project/{id}/summary` - Project summary
 - `GET /api/v1/reports/project/{id}/category-breakdown` - Category breakdown
 - `GET /api/v1/reports/project/{id}/monthly-trend` - Monthly trend
@@ -341,6 +352,7 @@ Field-specific validation errors:
 - `GET /api/v1/reports/export/xlsx` - Export to Excel
 
 ### Alerts
+
 - `GET /api/v1/alerts` - List alerts
 - `GET /api/v1/alerts/{id}` - Get alert details
 - `PATCH /api/v1/alerts/{id}` - Mark alert as read
@@ -348,6 +360,7 @@ Field-specific validation errors:
 - `GET /api/v1/alerts/stats` - Alert statistics
 
 ### Preferences
+
 - `GET /api/v1/users/{id}/preferences` - Get user preferences
 - `PATCH /api/v1/users/{id}/preferences` - Update preferences
 - `GET /api/v1/users/me/preferences` - Get current user preferences

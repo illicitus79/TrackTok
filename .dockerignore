@@ -1,29 +1,33 @@
 # Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
+
+**pycache**/
+_.py[cod]
+_$py.class
+_.so
 .Python
-*.egg-info/
+_.egg-info/
 dist/
 build/
-*.egg
+\*.egg
 
 # Virtual environments
+
 venv/
 env/
 ENV/
 .venv
 
 # IDE
+
 .vscode/
 .idea/
-*.swp
-*.swo
-*~
+_.swp
+_.swo
+\*~
 .DS_Store
 
 # Testing
+
 .pytest_cache/
 .coverage
 htmlcov/
@@ -31,63 +35,77 @@ htmlcov/
 .hypothesis/
 
 # Environment
+
 .env
 .env.local
-.env.*.local
+.env.\*.local
 
 # Logs
-*.log
+
+\*.log
 logs/
 
 # Database
-*.db
-*.sqlite3
-*.sql
+
+_.db
+_.sqlite3
+\*.sql
 postgres-data/
 
 # Git
+
 .git/
 .gitignore
 .gitattributes
 
 # Documentation (not needed in container)
-*.md
+
+_.md
 docs/
-*.txt
+_.txt
 !requirements.txt
 
 # CI/CD
+
 .github/
 .gitlab-ci.yml
 .travis.yml
 
 # Docker
+
 Dockerfile
-docker-compose*.yml
+docker-compose\*.yml
 .dockerignore
 
 # Node (if any)
+
 node_modules/
 package-lock.json
 
 # Alembic bytecode
-alembic/versions/*.pyc
+
+alembic/versions/\*.pyc
 
 # Static build artifacts
+
 static/dist/
 
 # Celery
+
 celerybeat-schedule
 celerybeat.pid
 
 # Generated files
+
 openapi.json
 postman_collection.json
 
 # Uploads (use volumes instead)
+
 uploads/
 
 # Temporary files
+
 tmp/
 temp/
-*.tmp
+\*.tmp

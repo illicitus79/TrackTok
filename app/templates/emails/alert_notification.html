@@ -1,235 +1,243 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{ alert.title }} - TrackTok Alert</title>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f4f4f4;
-        }
-        .container {
-            background-color: #ffffff;
-            border-radius: 8px;
-            padding: 30px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .header {
-            text-align: center;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #e5e7eb;
-            margin-bottom: 30px;
-        }
-        .logo {
-            font-size: 28px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 10px;
-        }
-        .alert-badge {
-            display: inline-block;
-            padding: 6px 12px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            margin-bottom: 20px;
-        }
-        .badge-critical {
-            background-color: #7f1d1d;
-            color: #fca5a5;
-        }
-        .badge-error {
-            background-color: #991b1b;
-            color: #fecaca;
-        }
-        .badge-warning {
-            background-color: #78350f;
-            color: #fcd34d;
-        }
-        .badge-info {
-            background-color: #1e3a8a;
-            color: #93c5fd;
-        }
-        .alert-icon {
-            font-size: 48px;
-            margin: 20px 0;
-        }
-        h1 {
-            color: #111827;
-            font-size: 24px;
-            margin-bottom: 10px;
-        }
-        .message {
-            color: #4b5563;
-            font-size: 16px;
-            margin: 20px 0;
-            padding: 20px;
-            background-color: #f9fafb;
-            border-left: 4px solid #3b82f6;
-            border-radius: 4px;
-        }
-        .metadata {
-            background-color: #f3f4f6;
-            padding: 15px;
-            border-radius: 6px;
-            margin: 20px 0;
-        }
-        .metadata-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        .metadata-item:last-child {
-            border-bottom: none;
-        }
-        .metadata-label {
-            font-weight: 600;
-            color: #6b7280;
-        }
-        .metadata-value {
-            color: #111827;
-            font-weight: 500;
-        }
-        .cta-button {
-            display: inline-block;
-            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%);
-            color: #ffffff;
-            text-decoration: none;
-            padding: 12px 24px;
-            border-radius: 6px;
-            font-weight: 600;
-            margin: 20px 0;
-            text-align: center;
-        }
-        .footer {
-            text-align: center;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #e5e7eb;
-            color: #6b7280;
-            font-size: 14px;
-        }
-        .footer a {
-            color: #3b82f6;
-            text-decoration: none;
-        }
-        .preferences-link {
-            color: #6b7280;
-            font-size: 12px;
-            text-decoration: none;
-        }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+          "Oxygen", "Ubuntu", "Cantarell", sans-serif;
+        line-height: 1.6;
+        color: #333;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f4f4f4;
+      }
+      .container {
+        background-color: #ffffff;
+        border-radius: 8px;
+        padding: 30px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .header {
+        text-align: center;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #e5e7eb;
+        margin-bottom: 30px;
+      }
+      .logo {
+        font-size: 28px;
+        font-weight: 700;
+        background: linear-gradient(
+          135deg,
+          #3b82f6 0%,
+          #8b5cf6 50%,
+          #ec4899 100%
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 10px;
+      }
+      .alert-badge {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-bottom: 20px;
+      }
+      .badge-critical {
+        background-color: #7f1d1d;
+        color: #fca5a5;
+      }
+      .badge-error {
+        background-color: #991b1b;
+        color: #fecaca;
+      }
+      .badge-warning {
+        background-color: #78350f;
+        color: #fcd34d;
+      }
+      .badge-info {
+        background-color: #1e3a8a;
+        color: #93c5fd;
+      }
+      .alert-icon {
+        font-size: 48px;
+        margin: 20px 0;
+      }
+      h1 {
+        color: #111827;
+        font-size: 24px;
+        margin-bottom: 10px;
+      }
+      .message {
+        color: #4b5563;
+        font-size: 16px;
+        margin: 20px 0;
+        padding: 20px;
+        background-color: #f9fafb;
+        border-left: 4px solid #3b82f6;
+        border-radius: 4px;
+      }
+      .metadata {
+        background-color: #f3f4f6;
+        padding: 15px;
+        border-radius: 6px;
+        margin: 20px 0;
+      }
+      .metadata-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid #e5e7eb;
+      }
+      .metadata-item:last-child {
+        border-bottom: none;
+      }
+      .metadata-label {
+        font-weight: 600;
+        color: #6b7280;
+      }
+      .metadata-value {
+        color: #111827;
+        font-weight: 500;
+      }
+      .cta-button {
+        display: inline-block;
+        background: linear-gradient(
+          135deg,
+          #3b82f6 0%,
+          #8b5cf6 50%,
+          #ec4899 100%
+        );
+        color: #ffffff;
+        text-decoration: none;
+        padding: 12px 24px;
+        border-radius: 6px;
+        font-weight: 600;
+        margin: 20px 0;
+        text-align: center;
+      }
+      .footer {
+        text-align: center;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #e5e7eb;
+        color: #6b7280;
+        font-size: 14px;
+      }
+      .footer a {
+        color: #3b82f6;
+        text-decoration: none;
+      }
+      .preferences-link {
+        color: #6b7280;
+        font-size: 12px;
+        text-decoration: none;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <div class="header">
-            <div class="logo">TrackTok</div>
-            <p style="color: #6b7280; margin: 0;">Expense Tracking Alert</p>
+      <div class="header">
+        <div class="logo">TrackTok</div>
+        <p style="color: #6b7280; margin: 0">Expense Tracking Alert</p>
+      </div>
+
+      <div style="text-align: center">
+        <span class="alert-badge badge-{{ alert.severity }}">
+          {{ alert.severity|upper }} ALERT
+        </span>
+
+        {% if alert.severity == 'critical' %}
+        <div class="alert-icon">🚨</div>
+        {% elif alert.severity == 'error' %}
+        <div class="alert-icon">⚠️</div>
+        {% elif alert.severity == 'warning' %}
+        <div class="alert-icon">⚡</div>
+        {% else %}
+        <div class="alert-icon">💡</div>
+        {% endif %}
+      </div>
+
+      <h1>{{ alert.title }}</h1>
+
+      <div class="message">{{ alert.message }}</div>
+
+      {% if alert.metadata %}
+      <div class="metadata">
+        <h3 style="margin-top: 0; color: #111827; font-size: 16px">Details</h3>
+
+        {% if alert.metadata.account_name %}
+        <div class="metadata-item">
+          <span class="metadata-label">Account</span>
+          <span class="metadata-value">{{ alert.metadata.account_name }}</span>
         </div>
-
-        <div style="text-align: center;">
-            <span class="alert-badge badge-{{ alert.severity }}">
-                {{ alert.severity|upper }} ALERT
-            </span>
-            
-            {% if alert.severity == 'critical' %}
-                <div class="alert-icon">🚨</div>
-            {% elif alert.severity == 'error' %}
-                <div class="alert-icon">⚠️</div>
-            {% elif alert.severity == 'warning' %}
-                <div class="alert-icon">⚡</div>
-            {% else %}
-                <div class="alert-icon">💡</div>
-            {% endif %}
+        {% endif %} {% if alert.metadata.current_balance is defined %}
+        <div class="metadata-item">
+          <span class="metadata-label">Current Balance</span>
+          <span class="metadata-value"
+            >${{ "%.2f"|format(alert.metadata.current_balance) }}</span
+          >
         </div>
-
-        <h1>{{ alert.title }}</h1>
-
-        <div class="message">
-            {{ alert.message }}
+        {% endif %} {% if alert.metadata.threshold is defined %}
+        <div class="metadata-item">
+          <span class="metadata-label">Threshold</span>
+          <span class="metadata-value"
+            >${{ "%.2f"|format(alert.metadata.threshold) }}</span
+          >
         </div>
-
-        {% if alert.metadata %}
-        <div class="metadata">
-            <h3 style="margin-top: 0; color: #111827; font-size: 16px;">Details</h3>
-            
-            {% if alert.metadata.account_name %}
-            <div class="metadata-item">
-                <span class="metadata-label">Account</span>
-                <span class="metadata-value">{{ alert.metadata.account_name }}</span>
-            </div>
-            {% endif %}
-            
-            {% if alert.metadata.current_balance is defined %}
-            <div class="metadata-item">
-                <span class="metadata-label">Current Balance</span>
-                <span class="metadata-value">${{ "%.2f"|format(alert.metadata.current_balance) }}</span>
-            </div>
-            {% endif %}
-            
-            {% if alert.metadata.threshold is defined %}
-            <div class="metadata-item">
-                <span class="metadata-label">Threshold</span>
-                <span class="metadata-value">${{ "%.2f"|format(alert.metadata.threshold) }}</span>
-            </div>
-            {% endif %}
-            
-            {% if alert.metadata.project_name %}
-            <div class="metadata-item">
-                <span class="metadata-label">Project</span>
-                <span class="metadata-value">{{ alert.metadata.project_name }}</span>
-            </div>
-            {% endif %}
-            
-            {% if alert.metadata.budget is defined %}
-            <div class="metadata-item">
-                <span class="metadata-label">Budget</span>
-                <span class="metadata-value">${{ "%.2f"|format(alert.metadata.budget) }}</span>
-            </div>
-            {% endif %}
-            
-            {% if alert.metadata.projected_total is defined %}
-            <div class="metadata-item">
-                <span class="metadata-label">Projected Total</span>
-                <span class="metadata-value">${{ "%.2f"|format(alert.metadata.projected_total) }}</span>
-            </div>
-            {% endif %}
-            
-            {% if alert.metadata.confidence is defined %}
-            <div class="metadata-item">
-                <span class="metadata-label">Confidence</span>
-                <span class="metadata-value">{{ alert.metadata.confidence }}%</span>
-            </div>
-            {% endif %}
+        {% endif %} {% if alert.metadata.project_name %}
+        <div class="metadata-item">
+          <span class="metadata-label">Project</span>
+          <span class="metadata-value">{{ alert.metadata.project_name }}</span>
+        </div>
+        {% endif %} {% if alert.metadata.budget is defined %}
+        <div class="metadata-item">
+          <span class="metadata-label">Budget</span>
+          <span class="metadata-value"
+            >${{ "%.2f"|format(alert.metadata.budget) }}</span
+          >
+        </div>
+        {% endif %} {% if alert.metadata.projected_total is defined %}
+        <div class="metadata-item">
+          <span class="metadata-label">Projected Total</span>
+          <span class="metadata-value"
+            >${{ "%.2f"|format(alert.metadata.projected_total) }}</span
+          >
+        </div>
+        {% endif %} {% if alert.metadata.confidence is defined %}
+        <div class="metadata-item">
+          <span class="metadata-label">Confidence</span>
+          <span class="metadata-value">{{ alert.metadata.confidence }}%</span>
         </div>
         {% endif %}
+      </div>
+      {% endif %}
 
-        <div style="text-align: center;">
-            <a href="{{ dashboard_url }}" class="cta-button">View Dashboard</a>
-        </div>
+      <div style="text-align: center">
+        <a href="{{ dashboard_url }}" class="cta-button">View Dashboard</a>
+      </div>
 
-        <div class="footer">
-            <p>
-                This alert was sent because you have notifications enabled for {{ alert.alert_type|replace('_', ' ')|lower }}.
-            </p>
-            <p>
-                <a href="{{ preferences_url }}" class="preferences-link">Manage notification preferences</a>
-            </p>
-            <p style="margin-top: 20px;">
-                &copy; 2025 TrackTok. All rights reserved.
-            </p>
-        </div>
+      <div class="footer">
+        <p>
+          This alert was sent because you have notifications enabled for {{
+          alert.alert_type|replace('_', ' ')|lower }}.
+        </p>
+        <p>
+          <a href="{{ preferences_url }}" class="preferences-link"
+            >Manage notification preferences</a
+          >
+        </p>
+        <p style="margin-top: 20px">
+          &copy; 2025 TrackTok. All rights reserved.
+        </p>
+      </div>
     </div>
-</body>
+  </body>
 </html>

@@ -24,6 +24,7 @@ A production-ready, API-first multi-tenant expense tracking platform built with 
 ## 📋 Tech Stack
 
 **Backend:**
+
 - Python 3.11+
 - Flask 3.x
 - SQLAlchemy 2.x + Alembic
@@ -35,12 +36,14 @@ A production-ready, API-first multi-tenant expense tracking platform built with 
 - Marshmallow 3.x
 
 **Frontend:**
+
 - Jinja2 templates
 - Tailwind CSS 3.x
 - Alpine.js 3.x
 - Chart.js 4.x
 
 **DevOps:**
+
 - Docker & Docker Compose
 - GitHub Actions
 - pytest + factory_boy
@@ -131,6 +134,7 @@ celery -A app.tasks.celery_app beat --loglevel=info
 ### Interactive Documentation
 
 Access comprehensive API documentation:
+
 - **Swagger UI**: `http://localhost:5000/api/docs/swagger` - Interactive testing interface
 - **ReDoc**: `http://localhost:5000/api/docs/redoc` - Clean, readable documentation
 
