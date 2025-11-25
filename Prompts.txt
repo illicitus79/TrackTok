@@ -1,0 +1,542 @@
+0) Architecture decisions & stack (high-level context prompt)
+
+You are an expert Python/Flask architect. Design an API-first, production-ready multi-tenant expense tracker with:
+
+- **Stack**: Python 3.11+, Flask 3.x, SQLAlchemy 2.x, Alembic, PostgreSQL, Redis, Celery (alerts & scheduled jobs), Flask-JWT-Extended, flask-smorest (OpenAPI), Marshmallow, Flask-Migrate, Flask-Cors, APScheduler (optional), Tenacity (retry), loguru (logging).
+- **Frontend**: Server-rendered Flask/Jinja templates (for landing page & basic UI) + progressive enhancement with vanilla JS/Alpine.js. Charts via **Chart.js**. Styling with **Tailwind CSS** (JIT) or CSS variables; implement **dark mode** with accessible **gradient palettes**.
+- **API-first**: All features exposed via `/api/v1/*` REST endpoints returning JSON; web views consume the same API.
+- **Multi-tenancy**: Prefer **single database, single schema** with `tenant_id` discriminator column on all tenant-owned tables; enforce row-level filtering via a scoped session/Query class and a tenancy middleware that derives current tenant from **subdomain** or header `X-Tenant-Id`. Include optional **per-tenant custom domain** mapping.
+- **Security**: JWT auth, per-tenant RBAC (roles: Owner, Admin, Analyst, Member), rate limiting (Flask-Limiter), CSRF for HTML forms, CORS for API, audit logs, soft delete & immutable audit trails for financial records.
+- **Observability**: Structured JSON logs, request IDs, basic metrics (Prometheus exporter optional), error tracking hook (Sentry-ready).
+- **DevOps**: Dockerfile, docker-compose (web, db, redis, worker), GitHub Actions CI (lint/test/migrate), seed scripts, Makefile targets.
+- **Docs**: Auto-generated OpenAPI (Swagger UI), Postman collection export.
+- **Testing**: pytest + factory_boy, 80%+ coverage; tenancy enforcement tests; RBAC tests; API contract tests.
+
+Confirm feasibility, outline modules, directories, and key components before code generation.
+
+
+1) Project scaffolding & configuration
+
+Create the repository scaffold:
+
+- `app/__init__.py` (Flask app factory, register blueprints, JWT setup, DB, CORS, limiter, OpenAPI)
+- `app/config.py` (BaseConfig, Dev/Prod/Test; env vars for DB/Redis/JWT/SMTP)
+- `app/extensions.py` (db, migrate, jwt, cors, limiter, api docs, celery)
+- `app/tenancy/middleware.py` (resolve current tenant from subdomain or header)
+- `app/tenancy/context.py` (TenantContext local; helpers `get_current_tenant_id()`)
+- `app/models/*` (SQLAlchemy models)
+- `app/schemas/*` (Marshmallow schemas)
+- `app/api/v1/*` (blueprints: auth, tenants, users, projects, accounts, expenses, categories, dashboards, reports)
+- `app/services/*` (business logic: alerts, forecasting, reporting)
+- `app/tasks/*` (Celery tasks: low-balance alerts, nightly rollups)
+- `app/web/*` (Jinja templates, static assets, Tailwind config, JS bundles)
+- `app/utils/*` (logging, errors, pagination, filters)
+- `migrations/` (Alembic)
+- `tests/` (unit/integration)
+- `Dockerfile`, `docker-compose.yml`, `Makefile`, `.env.example`, `.flake8`, `pyproject.toml`, `README.md`
+
+Implement the app factory with environment loading, register OpenAPI via flask-smorest, and wire Celery with Redis.
+
+
+2) Data model prompts (multi-tenant)
+
+Define SQLAlchemy models with `tenant_id` on all tenant-owned tables:
+
+- `Tenant(id, name, slug, custom_domain, created_at, updated_at)`
+- `User(id, tenant_id, email, password_hash, role, is_active, created_at)`
+- `Project(id, tenant_id, name, description, start_date, end_date, starting_budget, projected_estimate, status)`
+- `Account(id, tenant_id, name, type, currency, opening_balance, current_balance, low_balance_threshold, is_archived)`
+- `Expense(id, tenant_id, project_id (nullable for unrelated), account_id, category_id (nullable), amount, currency, expense_date, vendor, note, is_project_related (bool), cross_project_ref_id (nullable), created_by, created_at, updated_at, soft_deleted_at)`
+- `Category(id, tenant_id, name, color, description)`
+- `AuditLog(id, tenant_id, actor_user_id, action, entity_type, entity_id, changes_json, created_at)`
+- `Alert(id, tenant_id, type (LOW_BALANCE/FORECAST_OVERSPEND), entity_type, entity_id, message, severity, is_read, created_at)`
+
+Constraints & indexes:
+- Composite indexes on `(tenant_id, project_id)`, `(tenant_id, account_id)`, `(tenant_id, expense_date)`.
+- Foreign keys enforce tenant consistency (tenant_id must match across relations).
+- Soft delete via `soft_deleted_at` on Expense.
+Add SQLAlchemy event/listener to default `tenant_id` from TenantContext and prevent cross-tenant FK mismatches.
+Create Alembic migrations.
+
+
+3) Tenancy enforcement & request lifecycle
+
+Implement tenancy middleware:
+
+- Resolve `current_tenant_id` via:
+  - Subdomain: `{slug}.yourapp.com` → lookup Tenant by `slug`.
+  - Or header `X-Tenant-Id` for API clients.
+- Store in request-local context (g or contextvars).
+- Create a custom `TenantQuery` / SQLAlchemy `Session` filter that automatically adds `tenant_id == current_tenant_id` for all queries on tenant-owned models.
+- Add guardrails: 403 if missing/invalid tenant, 409 for cross-tenant references.
+- Provide CLI commands:
+  - `flask tenants:create --name --slug --custom-domain`
+  - `flask tenants:list`
+  - `flask tenants:seed --demo-data`
+
+
+4) Auth & RBAC
+
+Build JWT auth endpoints:
+
+- `POST /api/v1/auth/register` (tenant-scoped user creation; role defaults to Member)
+- `POST /api/v1/auth/login` (email, password → JWT access & refresh tokens)
+- `POST /api/v1/auth/refresh`
+- `POST /api/v1/auth/invite` (Owner/Admin invites users via email)
+- Password hashing: passlib/argon2 or werkzeug.security generate_password_hash.
+- RBAC decorator `@roles_required('Owner', 'Admin', ...)` checking tenant + role.
+- Rate limit auth endpoints to prevent abuse.
+- Add CSRF protection for HTML forms on web routes (Flask-WTF).
+
+
+
+5) Core API endpoints (CRUD + business logic)
+
+Generate REST endpoints under `/api/v1` with OpenAPI docs & Marshmallow schemas:
+
+Tenants
+- `POST /tenants` (create tenant; provisioning)
+- `GET /tenants/{id}` (Owner only)
+- `PATCH /tenants/{id}` (update custom_domain, name)
+
+Users
+- `GET /users` (list tenant users, filter by role, pagination)
+- `PATCH /users/{id}` (activate/deactivate, role changes)
+
+Projects
+- `POST /projects` (name, starting_budget, projected_estimate, dates)
+- `GET /projects` (filters: status, date range, search)
+- `GET /projects/{id}` (includes aggregates)
+- `PATCH /projects/{id}` (update fields)
+- `DELETE /projects/{id}` (soft delete)
+
+Accounts (money sources)
+- `POST /accounts` (opening_balance, threshold)
+- `GET /accounts` (include current_balance and derived metrics)
+- `PATCH /accounts/{id}`
+- `POST /accounts/{id}/adjust_balance` (admin-only manual adjustments)
+
+Categories
+- `POST /categories` (name, color)
+- `GET /categories`
+
+Expenses
+- `POST /expenses` 
+  - Fields: amount, currency, expense_date, vendor, note, `project_id` (nullable), `is_project_related` (bool), `account_id`, `category_id` (nullable), `cross_project_ref_id` (optional).
+  - Business rule: debit `account.current_balance` transactionally.
+- `GET /expenses` (filters: project_id, category_id, account_id, date range, vendor, is_project_related; pagination, sorting)
+- `GET /expenses/{id}`
+- `PATCH /expenses/{id}` (edit; audit changes)
+- `DELETE /expenses/{id}` (soft delete and reverse account balance impact)
+
+Cross-project reference
+- Validate `cross_project_ref_id` is within same tenant; store a link entity if needed.
+
+Dashboards
+- `GET /dashboards/project/{project_id}`
+  - Returns aggregates: total_spend, remaining_budget, account balances, category breakdown, monthly trend, forecast vs actual (using projected_estimate).
+- `GET /dashboards/tenant`
+  - Returns tenant-wide spend, top vendors, low-balance accounts, alerts.
+
+Alerts
+- `GET /alerts` (list)
+- Background tasks generate LOW_BALANCE & FORECAST_OVERSPEND alerts.
+
+Reports (API-first)
+- `GET /reports/project/{id}/summary?from=&to=`
+- `GET /reports/project/{id}/category-breakdown?from=&to=`
+- `GET /reports/project/{id}/monthly-trend?year=`
+- `GET /reports/tenant/cashflow?from=&to=`
+- `GET /reports/export.csv` and `/reports/export.xlsx` (streaming)
+Implement CSV/XLSX exports using pandas (engine openpyxl for .xlsx).
+
+Pagination & error handling
+- Standardized pagination payload `{items, page, per_page, total}`.
+- Consistent error format `{error_code, message, details}`.
+Document everything in OpenAPI via flask-smorest.
+
+
+6) Business logic: balances, forecasting, low-balance alerts
+
+Implement services:
+
+- Balances: Every expense reduces `Account.current_balance`. On soft delete or edit, adjust balance delta accordingly (ACID transaction).
+- Remaining budget: `Project.remaining_budget = starting_budget - sum(project_expenses)`.
+- Forecast: Simple linear projection: monthly burn rate vs `projected_estimate`. Flag overspend probability when forecasted total exceeds estimate threshold (e.g., 90% confidence).
+- Alerts:
+  - LOW_BALANCE: when `current_balance <= low_balance_threshold`.
+  - FORECAST_OVERSPEND: when projected exceedance detected.
+- Celery periodic tasks:
+  - `check_low_balance_accounts()`
+  - `update_forecast_and_generate_alerts()`
+Schedule via Celery beat or APScheduler; send email (Flask-Mail/SMTP env) and in-app alerts.
+
+
+7) Dark-mode UI with accessible gradients + charts
+
+Create Jinja templates:
+- `web/templates/base.html`: dark mode root, visual tokens & gradients:
+  - CSS variables: `--bg: #0b0f1a; --panel: #121826; --text: #e5e7eb;`
+  - Gradients (accessible contrast):
+    - Indigo → Violet: `linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%)`
+    - Emerald → Teal: `linear-gradient(135deg, #10b981 0%, #14b8a6 50%, #06b6d4 100%)`
+- `web/templates/landing.html`: hero gradient, CTA “Create Tenant”
+- `web/templates/auth/*.html`: sign-in/up forms
+- `web/templates/dashboard/project.html`: cards + **Chart.js** visuals:
+  - Donut: category breakdown
+  - Stacked bar: monthly spend per account
+  - Line: cumulative spend vs projected estimate
+  - Sparkline for account balances
+Implement `static/css/dark.css` and optional Tailwind with `darkMode: 'class'`.
+Add JS that fetches `/api/v1/dashboards/project/{id}` and renders charts. Provide responsive legends and tooltips.
+Ensure WCAG AA contrast on text in gradient panels.
+
+
+8) Low balance alerts UI & notifications
+
+Add in-app notifications panel:
+- Bell icon shows unread alerts count.
+- `/api/v1/alerts` returns JSON; mark as read via `PATCH /alerts/{id}`.
+- Email notification template for alerts (Jinja email template).
+- Preferences: per-user toggles for email/push (future), frequency.
+
+
+9) Reports & exports (chart-based)
+
+Implement report views that consume the same `/reports/*` API:
+
+- Project Summary: totals, remaining, burn rate chart.
+- Category Breakdown: donut/pie with hover values; table detail with sorting.
+- Monthly Trend: stacked bar by account or category, with drilldowns.
+- Tenant Cashflow: line chart for inflow/outflow (future inflow APIs can be added).
+Add “Export CSV/XLSX” buttons invoking API endpoints; stream responses.
+Add “Print to PDF” (optional): render HTML and generate via WeasyPrint (if installed).
+
+
+10) Missing-but-important features (add to scope)
+
+- Search & filters: full-text search on vendor/notes (PostgreSQL tsvector).
+- Vendor entity (optional): normalize vendor names, analytics per vendor.
+- Tags: freeform tags on expenses for flexible segmentation.
+- Webhooks: per-tenant outbound webhooks on expense.created/updated/deleted.
+- API Keys: per-tenant service accounts with scoped API keys (JWT alternative).
+- Rate limiting: per-user & per-tenant quotas (Flask-Limiter).
+- Data import: CSV upload to create expenses/accounts; preview + validation.
+- Audit log viewer: diff view for edited expenses.
+- Internationalization: currency formatting, timezone awareness.
+- Backups: DB dump script & restore guide.
+- GDPR/Privacy basics: delete user (soft anonymize), data retention policy.
+
+
+11) OpenAPI & Postman
+
+Generate OpenAPI spec using flask-smorest:
+- Serve at `/api/docs` (Swagger UI) and `/api/openapi.json`.
+- Include auth flows, error schemas, pagination.
+Create script to auto-export a Postman collection from OpenAPI.
+
+
+12) CI/CD, Docker, seeds & Makefile
+
+Create:
+- `Dockerfile` (slim Python base, multi-stage for deps)
+- `docker-compose.yml` (web, db: postgres, redis, worker: celery, beat)
+- GitHub Actions workflow:
+  - Steps: checkout → setup Python → install → flake8/black → pytest → Alembic `upgrade head`.
+- `Makefile`:
+  - `make run`, `make worker`, `make beat`, `make test`, `make format`, `make seed`.
+- Seed script:
+  - Create demo tenant, accounts, categories, sample projects & expenses across months for charts.
+
+
+
+13) Testing suite (pytest)
+
+Write tests:
+- Tenancy: ensure queries never leak across tenants; 403 on wrong tenant id.
+- RBAC: role-based permissions on endpoints.
+- Balances: expense create/edit/delete adjust account balances correctly.
+- Forecast: alert generation when overspend predicted.
+- Reports: API returns correct aggregates; CSV/XLSX exports valid.
+- Auth flows: register/login/refresh tokens; rate limiting works.
+- UI smoke tests: render dashboard; charts receive API payloads.
+Aim for 80%+ coverage; parametrize with multiple tenants.
+
+
+
+Copilot/Codex PROMPTS (copy‑paste ready)
+Use these granular prompts as you build. Each prompt targets a specific deliverable/file or feature.
+
+Prompt A — App factory & extensions
+
+Generate `app/__init__.py` with a Flask app factory:
+
+- Load config from env (`FLASK_ENV`, `DATABASE_URL`, `REDIS_URL`, `JWT_SECRET_KEY`, etc.).
+- Initialize: SQLAlchemy, Alembic/Flask-Migrate, JWT, CORS, Limiter, OpenAPI (flask-smorest), Loguru logger, Celery (using Redis).
+- Register blueprints under `/api/v1` for: auth, tenants, users, projects, accounts, expenses, categories, dashboards, reports, alerts.
+- Register a web blueprint for landing & dashboard templates.
+- Add error handlers returning JSON: 400/401/403/404/409/500 with `{error_code, message, details}`.
+- Enable request ID logging and per-request timing.
+
+
+
+
+Prompt B — Tenancy middleware & context
+Implement `app/tenancy/middleware.py` and `context.py`:
+
+- Resolve current tenant by subdomain (`<slug>.localhost`) or header `X-Tenant-Id`.
+- Lookup Tenant; store `tenant_id` in `contextvars`.
+- A `require_tenant` decorator to enforce presence of tenant context; return 403 if missing.
+- A SQLAlchemy query filter that automatically adds `tenant_id == current_tenant_id()` for tenant-owned models.
+- Guard against cross-tenant FK creation; raise 409 conflict.
+
+
+
+Prompt C — Models & migrations
+
+Create SQLAlchemy models for Tenant, User, Project, Account, Expense, Category, AuditLog, Alert with `tenant_id` and relations.
+- Add composite indexes, soft delete field on Expense, and account balance method helpers.
+- Generate Alembic migrations.
+
+
+Prompt D — Auth & RBAC
+
+Build JWT-based auth endpoints (`/api/v1/auth/*`) with roles (Owner/Admin/Analyst/Member).
+- Hash passwords, issue access & refresh tokens.
+- Decorators for role enforcement.
+- Add rate limiting to login endpoint.
+- Write Marshmallow schemas for request/response.
+
+
+Prompt E — Tenants API & CLI
+
+Create `POST /api/v1/tenants` to provision a tenant (name, slug, optional custom_domain).
+- Ensure slug uniqueness.
+- Create owner user as part of provisioning (optional).
+- CLI commands `flask tenants:create`, `flask tenants:list`, `flask tenants:seed`.
+
+
+Prompt F — Projects API
+
+Implement `/api/v1/projects` CRUD:
+- `starting_budget`, `projected_estimate`.
+- Aggregates on `GET /projects/{id}`: total_spend, remaining_budget, monthly_trend (group by month).
+- Validate dates and status (active/completed/archived).
+
+
+Prompt G — Accounts API
+
+Implement `/api/v1/accounts`:
+- Fields: opening_balance, current_balance (derived initially from opening_balance), low_balance_threshold.
+- Endpoint to adjust balance (admin-only).
+- Low-balance computed property.
+
+
+
+Prompt H — Categories API
+
+Implement `/api/v1/categories` CRUD with `name`, `color` (hex), `description`.
+- Validate color format.
+
+
+Prompt I — Expenses API + business rules
+
+Implement `/api/v1/expenses`:
+- Create expense: debit account, support `is_project_related` false (unrelated), nullable `project_id`, optional `category_id`.
+- Support `cross_project_ref_id` within same tenant; validate and store.
+- Editing or deleting expense adjusts account balance accordingly.
+- Filters: project_id, account_id, category_id, date range, vendor, is_project_related; paginated & sortable.
+- Write audit logs on create/update/delete with diff.
+
+
+
+Prompt J — Dashboards API
+
+Create dashboard endpoints:
+
+- `GET /api/v1/dashboards/project/{project_id}` returns:
+  - totals: starting_budget, projected_estimate, total_spend, remaining_budget
+  - per-account balances
+  - category breakdown (sum by category)
+  - monthly trend (sum by month)
+  - forecast vs actual series
+
+- `GET /api/v1/dashboards/tenant` returns:
+  - total_spend, top vendors, low-balance accounts, alert counts
+Format for Chart.js: labels + datasets.
+
+
+Prompt K — Alerts & Celery tasks
+
+Add Celery tasks:
+
+- `check_low_balance_accounts()` runs hourly; creates `Alert` records when `current_balance <= threshold`; send email.
+- `forecast_overspend_for_projects()` daily; calculates burn rate, predicts exceedance; create alerts.
+
+Create endpoints `/api/v1/alerts` list & `PATCH /api/v1/alerts/{id}` mark read.
+
+
+Prompt L — Reports API & exports
+
+Implement Reports:
+
+- `GET /api/v1/reports/project/{id}/summary?from=&to=`
+- `GET /api/v1/reports/project/{id}/category-breakdown?from=&to=`
+- `GET /api/v1/reports/project/{id}/monthly-trend?year=`
+- `GET /api/v1/reports/tenant/cashflow?from=&to=`
+
+Add `GET /api/v1/reports/export.csv` and `GET /api/v1/reports/export.xlsx`.
+Use pandas for CSV/XLSX; stream responses; include headers for filename.
+
+
+Prompt M — Web UI: dark mode gradients + charts
+
+Create Jinja templates:
+
+- `base.html` with dark mode class toggle; gradient header; accessible color variables; sticky sidebar.
+- `landing.html` (hero, features, CTA).
+- `auth/login.html`, `auth/register.html`.
+- `dashboard/project.html` rendering cards and Chart.js charts:
+  - Category donut
+  - Monthly stacked bar
+  - Line chart forecast vs actual
+Fetch data from `/api/v1/dashboards/project/{id}`; render responsive charts; add loading skeletons.
+Ensure WCAG AA contrast; test gradients with text overlays.
+
+
+Prompt N — Search & tags
+
+
+Add expense `tags` (array of strings) with a join table or jsonb column (Postgres).
+Implement full-text search on `vendor` and `note` using tsvector; endpoint filter `q=`.
+
+
+Prompt O — Webhooks & API keys
+
+Implement per-tenant outbound webhooks:
+
+- Configurable endpoints & event filters (expense.created/updated/deleted).
+- Sign payloads with HMAC (per-tenant secret).
+- Retry with backoff.
+
+Add API keys (per-tenant service accounts) with token prefix, scopes, and expiration; endpoints to create/revoke.
+
+
+Prompt P — OpenAPI & Postman
+
+Generate OpenAPI via flask-smorest:
+
+- Annotate all endpoints with request/response schemas, auth, pagination, errors.
+- Serve Swagger UI at `/api/docs`.
+- Script to export Postman collection from OpenAPI JSON.
+
+
+
+
+Prompt Q — CI/CD & Docker
+
+Create Dockerfile and docker-compose for web, db, redis, worker, beat.
+Add GitHub Actions workflow:
+- black/flake8
+- pytest with coverage
+- Alembic migration dry-run
+- Build Docker image (optional)
+
+
+Prompt R — Seeds & demo data
+Write a seed script to create a demo tenant, users, categories, accounts, and generate 6 months of realistic expenses across projects and unrelated expenses for charts and reports.
+
+
+Prompt S — Testing suite
+
+Write pytest tests:
+
+- Tenancy isolation: access across tenants is blocked.
+- RBAC: endpoint permissions per role.
+- Balances: create/edit/delete expense adjusts account balance deltas.
+- Forecast alerts: generated when exceedance predicted.
+- Reports: numeric correctness; CSV/XLSX export validity.
+- Auth: register/login/refresh; rate limiting.
+Aim for 80%+ coverage; run in CI.
+
+
+Example API payloads (to guide Copilot’s schemas)
+
+// POST /api/v1/expenses
+{
+  "amount": 250.75,
+  "currency": "USD",
+  "expense_date": "2025-11-20",
+  "vendor": "Figma Inc.",
+  "note": "Design subscription",
+  "project_id": 123,
+  "is_project_related": true,
+  "account_id": 45,
+  "category_id": 9,
+  "tags": ["subscription", "design"]
+}
+
+
+// GET /api/v1/dashboards/project/{id}
+{
+  "project": {"id": 123, "name": "GenZ Tracker"},
+  "starting_budget": 50000,
+  "projected_estimate": 52000,
+  "total_spend": 18950.25,
+  "remaining_budget": 31049.75,
+  "accounts": [
+    {"id": 45, "name": "Main OpEx", "current_balance": 10450.00, "low_balance_threshold": 1000}
+  ],
+  "category_breakdown": {
+    "labels": ["SaaS", "Travel", "Hardware"],
+    "data": [4200.25, 3500.00, 7250.00]
+  },
+  "monthly_trend": {
+    "labels": ["Jun", "Jul", "Aug", "Sep", "Oct", "Nov"],
+    "datasets": [
+      {"label": "Total", "data": [3200, 2800, 3500, 4200, 3100, 4150]}
+    ]
+  },
+  "forecast_vs_actual": {
+    "labels": ["Jun","Jul","Aug","Sep","Oct","Nov"],
+    "datasets": [
+      {"label": "Actual", "data": [3200,2800,3500,4200,3100,4150]},
+      {"label": "Projected", "data": [3300,3000,3400,4100,3200,4300]}
+    ]
+  }
+}
+
+
+Accessibility & design prompt (ensure quality)
+
+Review UI for accessibility:
+- Enforce WCAG AA contrast on dark backgrounds.
+- Provide focus states and keyboard navigation.
+- Use prefers-color-scheme to default to dark, toggle to light.
+- Test gradients with text overlays; avoid neon on neon.
+Add microcopy on dashboards and tooltips explaining metrics (e.g., burn rate, forecast).
+
+
+Security hardening prompt
+Harden the app:
+- Validate all input; centralize schema validation.
+- Enforce max page sizes; pagination required.
+- Rate limit write endpoints.
+- Log structured events with request_id and tenant_id.
+- Secrets only via env; no secrets in repo.
+- Strict CORS for production.
+- CSRF for HTML forms; JWT for API.
+- Add content security policy headers; disable iframe embedding.
+
+
+Final check prompt (quality gate)
+
+Perform a final review:
+- All endpoints documented in OpenAPI.
+- Tenancy enforced at middleware + query layer.
+- Unit tests cover critical logic; CI green.
+- Seeds provide rich demo charts.
+- Dark-mode gradient UI loads data from API; charts responsive.
+- Alerts generated & visible; emails sent via SMTP mock in dev.
+- CSV/XLSX exports work; include column headers & date formats.
+Provide a concise checklist and fix any gaps.

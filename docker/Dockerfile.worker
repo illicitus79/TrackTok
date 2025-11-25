@@ -1,0 +1,29 @@
+# Celery worker Dockerfile
+FROM python:3.11-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    postgresql-client \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy requirements and install dependencies
+COPY requirements.txt .
+RUN pip config set global.trusted-host "pypi.org files.pythonhosted.org pypi.python.org" && \
+    pip config set global.cert /etc/ssl/certs/ca-certificates.crt || true && \
+    pip install --no-cache-dir -r requirements.txt || \
+    (pip config set global.cert "" && pip install --no-cache-dir -r requirements.txt)
+
+# Create non-root user
+RUN useradd -m -u 1000 tracktok && chown -R tracktok:tracktok /app
+USER tracktok
+
+# Copy application code
+COPY --chown=tracktok:tracktok . .
+
+# Default command (overridden in docker-compose)
+CMD ["celery", "-A", "app.tasks.celery_app", "worker", "--loglevel=info"]
