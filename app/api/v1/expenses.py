@@ -6,7 +6,8 @@ from flask_smorest import Blueprint
 from loguru import logger
 
 from app.core.extensions import db
-from app.models.expense import Expense, Category
+from app.models.expense import Expense
+from app.models.category import Category
 from app.models.audit import AuditLog, AuditAction
 from app.schemas.expense import (
     ExpenseSchema,

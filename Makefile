@@ -14,6 +14,9 @@ help:
 	@echo "  clean         Remove generated files"
 	@echo "  docker-up     Start Docker containers"
 	@echo "  docker-down   Stop Docker containers"
+	@echo "  openapi       Export OpenAPI specification"
+	@echo "  postman       Export Postman collection"
+	@echo "  docs          Export both OpenAPI and Postman"
 
 install:
 	pip install -r requirements.txt
@@ -82,4 +85,10 @@ flower:
 	celery -A app.tasks.celery_app flower --port=5555
 
 openapi:
-	python scripts/export_openapi.py
+	python scripts/export_openapi.py --openapi
+
+postman:
+	python scripts/export_openapi.py --postman
+
+docs:
+	python scripts/export_openapi.py --both

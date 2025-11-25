@@ -1,0 +1,38 @@
+TrackTok Alert: {{ alert.title }}
+
+{{ alert.severity|upper }} ALERT
+
+{{ alert.message }}
+
+{% if alert.metadata %}
+Details:
+{% if alert.metadata.account_name %}
+Account: {{ alert.metadata.account_name }}
+{% endif %}
+{% if alert.metadata.current_balance is defined %}
+Current Balance: ${{ "%.2f"|format(alert.metadata.current_balance) }}
+{% endif %}
+{% if alert.metadata.threshold is defined %}
+Threshold: ${{ "%.2f"|format(alert.metadata.threshold) }}
+{% endif %}
+{% if alert.metadata.project_name %}
+Project: {{ alert.metadata.project_name }}
+{% endif %}
+{% if alert.metadata.budget is defined %}
+Budget: ${{ "%.2f"|format(alert.metadata.budget) }}
+{% endif %}
+{% if alert.metadata.projected_total is defined %}
+Projected Total: ${{ "%.2f"|format(alert.metadata.projected_total) }}
+{% endif %}
+{% if alert.metadata.confidence is defined %}
+Confidence: {{ alert.metadata.confidence }}%
+{% endif %}
+{% endif %}
+
+View Dashboard: {{ dashboard_url }}
+
+---
+This alert was sent because you have notifications enabled for {{ alert.alert_type|replace('_', ' ')|lower }}.
+Manage your notification preferences: {{ preferences_url }}
+
+© 2025 TrackTok. All rights reserved.

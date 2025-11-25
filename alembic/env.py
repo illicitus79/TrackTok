@@ -14,12 +14,15 @@ from app.core.extensions import db
 
 # Import all models to ensure they're registered with SQLAlchemy
 from app.models import (  # noqa: F401
+    Account,
+    Alert,
     AuditLog,
     Budget,
     BudgetAlert,
     Category,
     Expense,
     PasswordResetToken,
+    Project,
     RecurringExpense,
     Tenant,
     TenantDomain,

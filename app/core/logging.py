@@ -17,8 +17,10 @@ def setup_logging(app: Flask) -> None:
 
     if log_format == "json":
         # Structured JSON logging for production
-        def formatter(record: Dict) -> str:
+        def format_record(record: Dict) -> str:
             """Format log record as JSON."""
+            import json
+            
             base = {
                 "timestamp": record["time"].isoformat(),
                 "level": record["level"].name,
@@ -45,13 +47,11 @@ def setup_logging(app: Flask) -> None:
             if record["extra"]:
                 base.update(record["extra"])
 
-            import json
-
-            return json.dumps(base)
+            return json.dumps(base) + "\n"
 
         logger.add(
             sys.stdout,
-            format=formatter,
+            format=format_record,
             level=log_level,
             serialize=False,
         )
@@ -65,15 +65,24 @@ def setup_logging(app: Flask) -> None:
         )
         logger.add(sys.stdout, format=log_format_str, level=log_level, colorize=True)
 
-    # Log to file in production
-    if not app.debug:
+    # Log to file in production (only if not in production, to avoid scope issues)
+    if not app.debug and log_format == "json":
         logger.add(
             "logs/tracktok_{time:YYYY-MM-DD}.log",
             rotation="1 day",
             retention="30 days",
             compression="zip",
             level=log_level,
-            format=formatter if log_format == "json" else log_format_str,
+            format=format_record,
+        )
+    elif not app.debug:
+        logger.add(
+            "logs/tracktok_{time:YYYY-MM-DD}.log",
+            rotation="1 day",
+            retention="30 days",
+            compression="zip",
+            level=log_level,
+            format=log_format_str,
         )
 
     # Intercept standard logging

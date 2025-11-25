@@ -85,3 +85,7 @@ celerybeat.pid
 
 # Editors
 .vscode/settings.json
+
+# API Documentation exports (regenerate with make docs)
+openapi.json
+postman_collection.json

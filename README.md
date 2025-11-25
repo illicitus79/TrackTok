@@ -8,7 +8,9 @@ A production-ready, API-first multi-tenant expense tracking platform built with 
 ## 🚀 Features
 
 - **Multi-Tenancy**: Single-database architecture with subdomain/header-based tenant resolution
-- **RESTful API**: Full-featured `/api/v1/*` endpoints with OpenAPI documentation
+- **RESTful API**: Full-featured `/api/v1/*` endpoints with OpenAPI 3.0 documentation
+- **Interactive API Docs**: Swagger UI and ReDoc for testing and exploring the API
+- **Postman Integration**: Auto-generated Postman collection for easy API testing
 - **Authentication**: JWT-based auth with refresh tokens
 - **Authorization**: Role-based access control (Owner, Admin, Analyst, Member)
 - **Budget Management**: Set budgets with automated alert system
@@ -126,14 +128,48 @@ celery -A app.tasks.celery_app beat --loglevel=info
 
 ## 📝 API Documentation
 
-Interactive API documentation is available at:
-- **Swagger UI**: `http://localhost:5000/api/docs/swagger`
-- **ReDoc**: `http://localhost:5000/api/docs/redoc`
+### Interactive Documentation
 
-Export OpenAPI spec:
+Access comprehensive API documentation:
+- **Swagger UI**: `http://localhost:5000/api/docs/swagger` - Interactive testing interface
+- **ReDoc**: `http://localhost:5000/api/docs/redoc` - Clean, readable documentation
+
+### Export OpenAPI Specification
+
 ```powershell
-python scripts/export_openapi.py
+# Export OpenAPI JSON
+python scripts/export_openapi.py --openapi -o openapi.json
+make openapi
+
+# Export Postman collection
+python scripts/export_openapi.py --postman -o postman_collection.json
+make postman
+
+# Export both
+python scripts/export_openapi.py --both
+make docs
 ```
+
+### Postman Setup
+
+1. Export the collection: `make postman`
+2. Import `postman_collection.json` into Postman
+3. Set collection variables:
+   - `base_url`: `http://localhost:5000`
+   - `jwt_token`: Obtain from login endpoint
+   - `tenant_id`: Your tenant ID
+
+See [API_DOCS.md](./API_DOCS.md) for detailed API documentation.
+
+### API Features
+
+- **OpenAPI 3.0** specification
+- **Bearer token** authentication
+- **Multi-tenant** support (subdomain or header-based)
+- **Rate limiting** with headers
+- **Pagination** metadata
+- **Error schemas** with validation details
+- **Security schemes** documentation
 
 ## 🔐 Authentication
 

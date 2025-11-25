@@ -30,41 +30,12 @@ class PaymentMethod(str, Enum):
     OTHER = "other"
 
 
-class Category(BaseModel, TenantMixin):
-    """Expense categories (tenant-specific)."""
-
-    __tablename__ = "categories"
-
-    name: Mapped[str] = mapped_column(db.String(100), nullable=False)
-    description: Mapped[str] = mapped_column(db.Text, nullable=True)
-    color: Mapped[str] = mapped_column(db.String(7), nullable=True)  # Hex color code
-    icon: Mapped[str] = mapped_column(db.String(50), nullable=True)  # Icon name/emoji
-    
-    # Budget tracking
-    is_budget_enabled: Mapped[bool] = mapped_column(db.Boolean, default=False, nullable=False)
-    monthly_budget: Mapped[Decimal] = mapped_column(Numeric(15, 2), nullable=True)
-    
-    # Parent category for hierarchical categories
-    parent_id: Mapped[str] = mapped_column(
-        db.String(36), db.ForeignKey("categories.id"), nullable=True
-    )
-    
-    # Relationships
-    tenant = relationship("Tenant", back_populates="categories")
-    expenses = relationship("Expense", back_populates="category")
-    subcategories = relationship("Category", backref=db.backref("parent", remote_side="Category.id"))
-
-    __table_args__ = (db.UniqueConstraint("tenant_id", "name", name="uq_tenant_category"),)
-
-    def __repr__(self):
-        return f"<Category {self.name}>"
-
-
 class Expense(BaseModel, TenantMixin, AuditMixin):
     """
     Core expense tracking model.
     
     Immutable audit trail - updates create new audit log entries.
+    Supports project-related and unrelated expenses with cross-project references.
     """
 
     __tablename__ = "expenses"
@@ -75,19 +46,35 @@ class Expense(BaseModel, TenantMixin, AuditMixin):
     )  # Support up to 999,999,999,999.99
     currency: Mapped[str] = mapped_column(db.String(3), nullable=False, default="USD")
     
-    # Description
-    title: Mapped[str] = mapped_column(db.String(255), nullable=False)
-    description: Mapped[str] = mapped_column(db.Text, nullable=True)
+    # Description (vendor + note from spec)
+    vendor: Mapped[str] = mapped_column(db.String(255), nullable=True)
+    note: Mapped[str] = mapped_column(db.Text, nullable=True)
     
-    # Categorization
+    # Categorization (nullable as per spec)
     category_id: Mapped[str] = mapped_column(
-        db.String(36), db.ForeignKey("categories.id"), nullable=False, index=True
+        db.String(36), db.ForeignKey("categories.id"), nullable=True, index=True
+    )
+    
+    # Project relationship (nullable for unrelated expenses)
+    project_id: Mapped[str] = mapped_column(
+        db.String(36), db.ForeignKey("projects.id"), nullable=True, index=True
+    )
+    is_project_related: Mapped[bool] = mapped_column(db.Boolean, nullable=False, default=False)
+    
+    # Account relationship (required - where money comes from)
+    account_id: Mapped[str] = mapped_column(
+        db.String(36), db.ForeignKey("accounts.id"), nullable=False, index=True
+    )
+    
+    # Cross-project reference (optional)
+    cross_project_ref_id: Mapped[str] = mapped_column(
+        db.String(36), db.ForeignKey("expenses.id"), nullable=True
     )
     
     # Date tracking
     expense_date: Mapped[date] = mapped_column(db.Date, nullable=False, index=True)
     
-    # Payment details
+    # Payment details (kept for compatibility)
     payment_method: Mapped[str] = mapped_column(
         db.String(20), nullable=False, default=PaymentMethod.CASH.value
     )
@@ -105,24 +92,32 @@ class Expense(BaseModel, TenantMixin, AuditMixin):
     # Tags for flexible filtering
     tags: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
     
-    # Notes and metadata
-    notes: Mapped[str] = mapped_column(db.Text, nullable=True)
-    metadata: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    # Additional metadata (renamed from 'metadata' to avoid SQLAlchemy reserved word)
+    expense_metadata: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    
+    # Soft delete field (soft_deleted_at as per spec)
+    deleted_at: Mapped[datetime] = mapped_column(db.DateTime, nullable=True)
     
     # Relationships
     tenant = relationship("Tenant", back_populates="expenses")
     category = relationship("Category", back_populates="expenses")
-    user = relationship("User", back_populates="expenses", foreign_keys=[AuditMixin.created_by])
+    project = relationship("Project", back_populates="expenses")
+    account = relationship("Account", back_populates="expenses")
+    creator = relationship("User", foreign_keys="Expense.created_by", backref="created_expenses")
+    updater = relationship("User", foreign_keys="Expense.updated_by", backref="updated_expenses")
+    cross_project_ref = relationship("Expense", remote_side="Expense.id", foreign_keys=[cross_project_ref_id])
 
     __table_args__ = (
         CheckConstraint("amount > 0", name="check_expense_amount_positive"),
         db.Index("idx_tenant_date", "tenant_id", "expense_date"),
         db.Index("idx_tenant_category", "tenant_id", "category_id"),
         db.Index("idx_tenant_status", "tenant_id", "status"),
+        db.Index("idx_tenant_project", "tenant_id", "project_id"),
+        db.Index("idx_tenant_account", "tenant_id", "account_id"),
     )
 
     def __repr__(self):
-        return f"<Expense {self.title} - {self.amount} {self.currency}>"
+        return f"<Expense {self.vendor or 'N/A'} - {self.amount} {self.currency}>"
 
     def approve(self, approved_by: str):
         """Approve expense."""
@@ -135,7 +130,24 @@ class Expense(BaseModel, TenantMixin, AuditMixin):
         self.status = ExpenseStatus.REJECTED.value
         self.updated_by = rejected_by
         if reason:
-            self.notes = f"Rejection reason: {reason}\n{self.notes or ''}"
+            self.note = f"Rejection reason: {reason}\n{self.note or ''}"
+        db.session.commit()
+    
+    def soft_delete(self, deleted_by: str = None):
+        """Soft delete expense and reverse account balance impact."""
+        from app.models.account import Account
+        
+        self.is_deleted = True
+        self.deleted_at = datetime.utcnow()
+        if deleted_by:
+            self.updated_by = deleted_by
+        
+        # Reverse account balance impact (credit back)
+        if self.account_id:
+            account = db.session.query(Account).filter_by(id=self.account_id).first()
+            if account:
+                account.credit(self.amount, commit=False)
+        
         db.session.commit()
 
     def add_tag(self, tag: str):

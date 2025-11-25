@@ -1,0 +1,93 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite3
+*.sql
+postgres-data/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation (not needed in container)
+*.md
+docs/
+*.txt
+!requirements.txt
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Node (if any)
+node_modules/
+package-lock.json
+
+# Alembic bytecode
+alembic/versions/*.pyc
+
+# Static build artifacts
+static/dist/
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# Generated files
+openapi.json
+postman_collection.json
+
+# Uploads (use volumes instead)
+uploads/
+
+# Temporary files
+tmp/
+temp/
+*.tmp

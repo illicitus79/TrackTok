@@ -41,6 +41,9 @@ class Tenant(BaseModel):
     budgets = relationship("Budget", back_populates="tenant", cascade="all, delete-orphan")
     categories = relationship("Category", back_populates="tenant", cascade="all, delete-orphan")
     custom_domains = relationship("TenantDomain", back_populates="tenant", cascade="all, delete-orphan")
+    projects = relationship("Project", back_populates="tenant", cascade="all, delete-orphan")
+    accounts = relationship("Account", back_populates="tenant", cascade="all, delete-orphan")
+    alerts = relationship("Alert", back_populates="tenant", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Tenant {self.name} ({self.subdomain})>"

@@ -72,6 +72,15 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       
+      - name: Run migrations
+        env:
+          DATABASE_URL: postgresql://tracktok:tracktok@localhost:5432/tracktok_test
+          REDIS_URL: redis://localhost:6379/0
+          FLASK_APP: app
+          FLASK_ENV: testing
+        run: |
+          flask db upgrade head
+      
       - name: Run tests with coverage
         env:
           DATABASE_URL: postgresql://tracktok:tracktok@localhost:5432/tracktok_test

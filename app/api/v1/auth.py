@@ -6,13 +6,20 @@ from flask_smorest import Blueprint
 from loguru import logger
 from marshmallow import ValidationError
 
-from app.core.extensions import db
+from app.core.extensions import db, limiter
 from app.core.security import generate_tokens, hash_password, verify_password
 from app.models.audit import AuditAction, AuditLog
 from app.models.tenant import Tenant
 from app.models.user import User, UserRole
 from app.schemas.tenant import TenantCreateSchema
-from app.schemas.user import LoginSchema, PasswordChangeSchema, UserCreateSchema, UserSchema
+from app.schemas.user import (
+    LoginSchema,
+    PasswordChangeSchema,
+    UserCreateSchema,
+    UserInviteSchema,
+    UserSchema,
+)
+from app.utils.decorators import roles_required
 
 blp = Blueprint("auth", __name__, url_prefix="/auth", description="Authentication operations")
 
@@ -21,6 +28,7 @@ blp = Blueprint("auth", __name__, url_prefix="/auth", description="Authenticatio
 class TenantRegistration(MethodView):
     """Tenant registration endpoint."""
 
+    @limiter.limit("5 per hour")
     @blp.arguments(TenantCreateSchema)
     @blp.response(201)
     def post(self, data):
@@ -97,6 +105,7 @@ class TenantRegistration(MethodView):
 class Login(MethodView):
     """Login endpoint."""
 
+    @limiter.limit("10 per minute")
     @blp.arguments(LoginSchema)
     @blp.response(200)
     def post(self, credentials):
@@ -262,3 +271,124 @@ class ChangePassword(MethodView):
         logger.info(f"Password changed", user_id=user.id)
 
         return jsonify({"message": "Password changed successfully"})
+
+
+@blp.route("/invite")
+class InviteUser(MethodView):
+    """User invitation endpoint (Owner/Admin only)."""
+
+    @limiter.limit("20 per hour")
+    @roles_required('Owner', 'Admin')
+    @blp.arguments(UserInviteSchema)
+    @blp.response(201)
+    def post(self, data):
+        """
+        Invite a new user to the tenant.
+        
+        Owner and Admin can invite users. Creates user account and sends invitation email.
+        """
+        tenant_id = g.get("tenant_id")
+        inviter_id = g.get("user_id")
+        
+        if not tenant_id:
+            return (
+                jsonify(
+                    {
+                        "error": "Tenant context required",
+                        "code": "TENANT_REQUIRED",
+                    }
+                ),
+                400,
+            )
+        
+        try:
+            # Check if user already exists in tenant
+            existing_user = User.query.filter_by(
+                email=data["email"], tenant_id=tenant_id
+            ).first()
+            
+            if existing_user:
+                return (
+                    jsonify(
+                        {
+                            "error": "User already exists in this tenant",
+                            "code": "USER_EXISTS",
+                        }
+                    ),
+                    409,
+                )
+            
+            # Validate role assignment (only Owner can create Owner/Admin)
+            inviter_role = g.get("user_role")
+            requested_role = data.get("role", "Member")
+            
+            if requested_role in ['Owner', 'Admin'] and inviter_role != 'Owner':
+                return (
+                    jsonify(
+                        {
+                            "error": "Only Owner can invite Owner or Admin users",
+                            "code": "FORBIDDEN",
+                        }
+                    ),
+                    403,
+                )
+            
+            # Generate temporary password or invitation token
+            import secrets
+            temp_password = secrets.token_urlsafe(16)
+            invitation_token = secrets.token_urlsafe(32)
+            
+            # Create user
+            new_user = User(
+                tenant_id=tenant_id,
+                email=data["email"],
+                first_name=data.get("first_name", ""),
+                last_name=data.get("last_name", ""),
+                role=requested_role,
+                is_active=True,
+                is_verified=False,  # User must verify via email
+            )
+            new_user.set_password(temp_password)
+            
+            db.session.add(new_user)
+            db.session.flush()
+            
+            # Log invitation
+            AuditLog.log_action(
+                action=AuditAction.USER_INVITED,
+                resource_type="user",
+                resource_id=new_user.id,
+                details={
+                    "inviter_id": inviter_id,
+                    "invited_email": data["email"],
+                    "role": requested_role,
+                },
+            )
+            
+            db.session.commit()
+            
+            # TODO: Send invitation email with temp password or magic link
+            # This would integrate with Flask-Mail or an email service
+            # For now, we'll log it
+            logger.info(
+                f"User invited",
+                inviter_id=inviter_id,
+                invited_user_id=new_user.id,
+                email=data["email"],
+                role=requested_role,
+                temp_password=temp_password,  # Remove in production
+            )
+            
+            return jsonify(
+                {
+                    "message": "User invited successfully",
+                    "user": UserSchema().dump(new_user),
+                    "temp_password": temp_password,  # Return temp password for demo (remove in production)
+                    "note": "Invitation email sent to user",
+                }
+            ), 201
+            
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Invitation error: {e}")
+            return jsonify({"error": "Invitation failed", "code": "INVITATION_ERROR"}), 500

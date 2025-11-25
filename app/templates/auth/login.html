@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In - TrackTok{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h1>Welcome back</h1>
+            <p>Sign in to your account to continue</p>
+        </div>
+        
+        <form method="POST" class="auth-form" id="loginForm">
+            {{ form.hidden_tag() }}
+            
+            <div class="form-group">
+                <label for="email" class="form-label">
+                    Email address
+                    <span class="required">*</span>
+                </label>
+                {{ form.email(class="form-input", placeholder="you@example.com", autofocus=True, autocomplete="email") }}
+                {% if form.email.errors %}
+                    <div class="form-error">
+                        {% for error in form.email.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label for="password" class="form-label">
+                    Password
+                    <span class="required">*</span>
+                </label>
+                {{ form.password(class="form-input", placeholder="••••••••", autocomplete="current-password") }}
+                {% if form.password.errors %}
+                    <div class="form-error">
+                        {% for error in form.password.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="form-row">
+                <div class="form-check">
+                    {{ form.remember_me(class="form-checkbox") }}
+                    <label for="remember_me" class="form-check-label">
+                        Remember me
+                    </label>
+                </div>
+                <a href="{{ url_for('web.forgot_password') }}" class="form-link">
+                    Forgot password?
+                </a>
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-block">
+                Sign In
+            </button>
+        </form>
+        
+        <div class="auth-footer">
+            <p>
+                Don't have an account?
+                <a href="{{ url_for('web.register') }}" class="gradient-text">Create tenant</a>
+            </p>
+        </div>
+    </div>
+    
+    <!-- Decorative gradient -->
+    <div class="auth-gradient gradient-bg-indigo"></div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Auto-focus first error field
+document.addEventListener('DOMContentLoaded', function() {
+    const firstError = document.querySelector('.form-error');
+    if (firstError) {
+        const input = firstError.previousElementSibling;
+        if (input && input.tagName === 'INPUT') {
+            input.focus();
+        }
+    }
+});
+</script>
+{% endblock %}

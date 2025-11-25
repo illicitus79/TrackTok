@@ -57,8 +57,13 @@ class User(BaseModel, TenantMixin):
     
     # Relationships
     tenant = relationship("Tenant", back_populates="users")
-    expenses = relationship("Expense", back_populates="user", foreign_keys="Expense.created_by")
     budgets = relationship("Budget", back_populates="owner", foreign_keys="Budget.owner_id")
+    preferences_model = relationship(
+        "UserPreferences", 
+        back_populates="user", 
+        uselist=False, 
+        cascade="all, delete-orphan"
+    )
 
     # Unique constraint: email must be unique within tenant
     __table_args__ = (db.UniqueConstraint("tenant_id", "email", name="uq_tenant_email"),)
@@ -116,6 +121,26 @@ class User(BaseModel, TenantMixin):
     def full_name(self) -> str:
         """Get user's full name."""
         return f"{self.first_name} {self.last_name}"
+
+    # Flask-Login integration methods
+    @property
+    def is_authenticated(self) -> bool:
+        """Return True if user is authenticated."""
+        return True
+
+    @property
+    def is_active_user(self) -> bool:
+        """Return True if user account is active."""
+        return self.is_active
+
+    @property
+    def is_anonymous(self) -> bool:
+        """Return False as this is not an anonymous user."""
+        return False
+
+    def get_id(self) -> str:
+        """Return user ID as string for Flask-Login."""
+        return str(self.id)
 
 
 class PasswordResetToken(BaseModel):

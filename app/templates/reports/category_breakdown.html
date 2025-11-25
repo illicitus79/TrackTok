@@ -1,0 +1,313 @@
+{% extends "base.html" %}
+
+{% block title %}Category Breakdown - {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="report-container">
+    <div class="report-header">
+        <div class="header-content">
+            <h1 class="gradient-text">Category Breakdown</h1>
+            <p class="subtitle" id="projectName">Loading...</p>
+        </div>
+        <div class="header-actions">
+            <button onclick="window.print()" class="btn-secondary">
+                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                </svg>
+                Print
+            </button>
+            <button onclick="exportCSV()" class="btn-primary">
+                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                Export
+            </button>
+        </div>
+    </div>
+
+    <!-- Total Spend -->
+    <div class="stat-card-large">
+        <div class="stat-label">Total Spend</div>
+        <div class="stat-value-large gradient-text" id="totalSpend">$0.00</div>
+    </div>
+
+    <div class="grid-2col">
+        <!-- Donut Chart -->
+        <div class="chart-card">
+            <div class="card-header">
+                <h2>Spending Distribution</h2>
+            </div>
+            <div class="chart-container-donut">
+                <canvas id="categoryDonutChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Category Table -->
+        <div class="table-card">
+            <div class="card-header">
+                <h2>Category Details</h2>
+                <div class="sort-controls">
+                    <label>Sort by:</label>
+                    <select id="sortBy" onchange="sortTable()">
+                        <option value="total">Amount</option>
+                        <option value="percentage">Percentage</option>
+                        <option value="count">Count</option>
+                        <option value="name">Name</option>
+                    </select>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th class="text-right">Amount</th>
+                            <th class="text-right">Percentage</th>
+                            <th class="text-right">Transactions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="categoryTableBody">
+                        <tr>
+                            <td colspan="4" class="text-center">Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const projectId = '{{ project_id }}';
+let categoryChart = null;
+let reportData = null;
+
+async function loadReport() {
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const url = `/api/v1/reports/project/${projectId}/category-breakdown?${params.toString()}`;
+        
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+            }
+        });
+        
+        if (!response.ok) throw new Error('Failed to load report');
+        
+        reportData = await response.json();
+        renderReport(reportData);
+    } catch (error) {
+        console.error('Error loading report:', error);
+        alert('Failed to load report data');
+    }
+}
+
+function renderReport(data) {
+    // Update header
+    document.getElementById('projectName').textContent = data.project.name;
+    document.getElementById('totalSpend').textContent = window.TrackTok.formatCurrency(data.total_spend);
+    
+    // Render chart
+    renderDonutChart(data.chart);
+    
+    // Render table
+    renderTable(data.breakdown);
+}
+
+function renderDonutChart(chartData) {
+    const ctx = document.getElementById('categoryDonutChart').getContext('2d');
+    
+    if (categoryChart) {
+        categoryChart.destroy();
+    }
+    
+    categoryChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: chartData.labels,
+            datasets: [{
+                data: chartData.data,
+                backgroundColor: chartData.colors,
+                borderWidth: 2,
+                borderColor: '#121826',
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        padding: 15,
+                        font: {
+                            size: 12
+                        },
+                        generateLabels: (chart) => {
+                            const data = chart.data;
+                            return data.labels.map((label, i) => ({
+                                text: `${label}: ${chartData.percentages[i].toFixed(1)}%`,
+                                fillStyle: data.datasets[0].backgroundColor[i],
+                                hidden: false,
+                                index: i,
+                            }));
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: (context) => {
+                            const value = context.parsed;
+                            const percentage = chartData.percentages[context.dataIndex];
+                            return [
+                                `${context.label}`,
+                                `Amount: ${window.TrackTok.formatCurrency(value)}`,
+                                `Percentage: ${percentage.toFixed(1)}%`
+                            ];
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function renderTable(breakdown) {
+    const tbody = document.getElementById('categoryTableBody');
+    tbody.innerHTML = '';
+    
+    breakdown.forEach(item => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>
+                <div class="category-cell">
+                    <span class="category-color" style="background: ${item.color};"></span>
+                    ${item.category_name}
+                </div>
+            </td>
+            <td class="text-right font-mono">${window.TrackTok.formatCurrency(item.total)}</td>
+            <td class="text-right">
+                <div class="percentage-bar">
+                    <div class="percentage-fill" style="width: ${item.percentage}%; background: ${item.color};"></div>
+                    <span class="percentage-text">${item.percentage.toFixed(1)}%</span>
+                </div>
+            </td>
+            <td class="text-right">${window.TrackTok.formatNumber(item.count)}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function sortTable() {
+    const sortBy = document.getElementById('sortBy').value;
+    
+    reportData.breakdown.sort((a, b) => {
+        switch (sortBy) {
+            case 'total':
+                return b.total - a.total;
+            case 'percentage':
+                return b.percentage - a.percentage;
+            case 'count':
+                return b.count - a.count;
+            case 'name':
+                return a.category_name.localeCompare(b.category_name);
+            default:
+                return 0;
+        }
+    });
+    
+    renderTable(reportData.breakdown);
+}
+
+function exportCSV() {
+    const params = new URLSearchParams(window.location.search);
+    params.set('project_id', projectId);
+    window.location.href = `/api/v1/reports/export/csv?${params.toString()}`;
+}
+
+// Load report on page load
+document.addEventListener('DOMContentLoaded', loadReport);
+</script>
+
+<style>
+.grid-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.chart-container-donut {
+    height: 400px;
+    padding: 2rem;
+}
+
+.category-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.category-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.percentage-bar {
+    position: relative;
+    height: 24px;
+    background: var(--panel);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.percentage-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    opacity: 0.3;
+    transition: width 0.3s ease;
+}
+
+.percentage-text {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.sort-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.sort-controls select {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text);
+}
+
+@media (max-width: 1024px) {
+    .grid-2col {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media print {
+    .header-actions {
+        display: none;
+    }
+}
+</style>
+{% endblock %}

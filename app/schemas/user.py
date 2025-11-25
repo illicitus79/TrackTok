@@ -105,3 +105,15 @@ class PasswordResetSchema(Schema):
         """Validate new password strength."""
         if len(value) < 8:
             raise ValidationError("Password must be at least 8 characters long")
+
+
+class UserInviteSchema(Schema):
+    """Schema for inviting a new user (Owner/Admin only)."""
+
+    email = fields.Email(required=True)
+    first_name = fields.Str(validate=lambda x: 1 <= len(x) <= 100)
+    last_name = fields.Str(validate=lambda x: 1 <= len(x) <= 100)
+    role = fields.Str(
+        missing="Member",
+        validate=lambda x: x in ["Owner", "Admin", "Analyst", "Member"],
+    )

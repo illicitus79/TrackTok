@@ -28,9 +28,17 @@ celery.conf.update(
 
 # Periodic task schedule
 celery.conf.beat_schedule = {
-    "check-budget-alerts-daily": {
-        "task": "app.tasks.alerts.check_budget_alerts",
-        "schedule": crontab(hour=9, minute=0),  # 9 AM daily
+    "check-low-balance-hourly": {
+        "task": "app.tasks.alerts.check_low_balance_accounts",
+        "schedule": crontab(minute=0),  # Every hour
+    },
+    "check-forecast-daily": {
+        "task": "app.tasks.alerts.update_forecast_and_generate_alerts",
+        "schedule": crontab(hour=8, minute=0),  # 8 AM daily
+    },
+    "send-daily-summary": {
+        "task": "app.tasks.alerts.send_daily_summary",
+        "schedule": crontab(hour=18, minute=0),  # 6 PM daily
     },
     "generate-monthly-reports": {
         "task": "app.tasks.reports.generate_monthly_reports",

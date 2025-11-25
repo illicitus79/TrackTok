@@ -63,6 +63,62 @@ def receive_before_flush(session, flush_context, instances):
             instance.tenant_id = tenant_id
 
 
+@event.listens_for(Session, "before_flush")
+def validate_tenant_fk_consistency(session, flush_context, instances):
+    """
+    Prevent cross-tenant FK mismatches.
+    
+    Validates that all foreign key relationships maintain tenant consistency.
+    Raises error if trying to link entities from different tenants.
+    """
+    from sqlalchemy.orm import object_mapper
+    from sqlalchemy.orm.properties import RelationshipProperty
+    
+    current_tenant_id = get_current_tenant_id()
+    
+    if not current_tenant_id:
+        return
+    
+    # Check new and updated instances
+    for instance in session.new | session.dirty:
+        if not hasattr(instance, "tenant_id"):
+            continue
+        
+        instance_tenant = instance.tenant_id
+        if not instance_tenant:
+            continue
+        
+        # Get all relationships for this model
+        mapper = object_mapper(instance)
+        for prop in mapper.iterate_properties:
+            if not isinstance(prop, RelationshipProperty):
+                continue
+            
+            # Get related object(s)
+            related = getattr(instance, prop.key)
+            if related is None:
+                continue
+            
+            # Handle collections
+            if isinstance(related, list):
+                related_objects = related
+            else:
+                related_objects = [related]
+            
+            # Validate each related object
+            for related_obj in related_objects:
+                if not hasattr(related_obj, "tenant_id"):
+                    continue
+                
+                related_tenant = related_obj.tenant_id
+                if related_tenant and related_tenant != instance_tenant:
+                    raise ValueError(
+                        f"Cross-tenant FK violation: {instance.__class__.__name__} "
+                        f"(tenant={instance_tenant}) cannot reference "
+                        f"{related_obj.__class__.__name__} (tenant={related_tenant})"
+                    )
+
+
 def enforce_tenant_isolation(model_class, tenant_id: str):
     """
     Decorator to enforce tenant isolation on model queries.
