@@ -1,50 +1,120 @@
-{% extends "base.html" %}
-{% block title %}Adjust Balance - {{ account.name }} - TrackTok{% endblock %}
-
-{% block content %}
-<div class="container" style="max-width: 600px; padding: 2rem; margin: 0 auto;">
+{% extends "base.html" %} {% block title %}Adjust Balance - {{ account.name }} -
+TrackTok{% endblock %} {% block content %}
+<div class="container" style="max-width: 600px; padding: 2rem; margin: 0 auto">
   <!-- Header -->
-  <div style="margin-bottom: 2rem;">
-    <div style="margin-bottom: 0.5rem;">
-      <a href="{{ url_for('web.accounts') }}" style="color: #6366f1; text-decoration: none; font-size: 0.875rem;">
+  <div style="margin-bottom: 2rem">
+    <div style="margin-bottom: 0.5rem">
+      <a
+        href="{{ url_for('web.accounts') }}"
+        style="color: #6366f1; text-decoration: none; font-size: 0.875rem"
+      >
         ← Back to Accounts
       </a>
     </div>
-    <h1 style="margin: 0; font-size: 2rem; color: white;">Adjust Balance</h1>
-    <p style="margin: 0.5rem 0 0; color: #9ca3af;">Add or withdraw funds from {{ account.name }}</p>
+    <h1 style="margin: 0; font-size: 2rem; color: white">Adjust Balance</h1>
+    <p style="margin: 0.5rem 0 0; color: #9ca3af">
+      Add or withdraw funds from {{ account.name }}
+    </p>
   </div>
 
   <!-- Current Balance Card -->
-  <div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem;">
-    <div style="font-size: 0.875rem; color: rgba(255,255,255,0.8); margin-bottom: 0.5rem;">Current Balance</div>
-    <div style="font-size: 2.5rem; font-weight: 700; color: white;">
+  <div
+    style="
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    "
+  >
+    <div
+      style="
+        font-size: 0.875rem;
+        color: rgba(255, 255, 255, 0.8);
+        margin-bottom: 0.5rem;
+      "
+    >
+      Current Balance
+    </div>
+    <div style="font-size: 2.5rem; font-weight: 700; color: white">
       {{ account.currency }} ${{ "%.2f"|format(account.current_balance) }}
     </div>
   </div>
 
   <!-- Form Card -->
-  <div style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); border-radius: 12px; padding: 2rem; border: 1px solid #334155;">
-    <form method="POST" style="display: grid; gap: 1.5rem;">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div
+    style="
+      background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+      border-radius: 12px;
+      padding: 2rem;
+      border: 1px solid #334155;
+    "
+  >
+    <form method="POST" style="display: grid; gap: 1.5rem">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
       <!-- Adjustment Type -->
       <div>
-        <label style="display: block; margin-bottom: 0.5rem; color: white; font-weight: 600;">
+        <label
+          style="
+            display: block;
+            margin-bottom: 0.5rem;
+            color: white;
+            font-weight: 600;
+          "
+        >
           Action *
         </label>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-          <label style="display: flex; align-items: center; padding: 1rem; background: rgba(0,0,0,0.2); border: 2px solid #475569; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
-            <input type="radio" name="adjustment_type" value="add" required style="margin-right: 0.75rem; width: 1.25rem; height: 1.25rem;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem">
+          <label
+            style="
+              display: flex;
+              align-items: center;
+              padding: 1rem;
+              background: rgba(0, 0, 0, 0.2);
+              border: 2px solid #475569;
+              border-radius: 8px;
+              cursor: pointer;
+              transition: all 0.2s;
+            "
+          >
+            <input
+              type="radio"
+              name="adjustment_type"
+              value="add"
+              required
+              style="margin-right: 0.75rem; width: 1.25rem; height: 1.25rem"
+            />
             <div>
-              <div style="color: white; font-weight: 600;">Add Funds</div>
-              <div style="color: #9ca3af; font-size: 0.8125rem;">Deposit money</div>
+              <div style="color: white; font-weight: 600">Add Funds</div>
+              <div style="color: #9ca3af; font-size: 0.8125rem">
+                Deposit money
+              </div>
             </div>
           </label>
-          <label style="display: flex; align-items: center; padding: 1rem; background: rgba(0,0,0,0.2); border: 2px solid #475569; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
-            <input type="radio" name="adjustment_type" value="withdraw" required style="margin-right: 0.75rem; width: 1.25rem; height: 1.25rem;">
+          <label
+            style="
+              display: flex;
+              align-items: center;
+              padding: 1rem;
+              background: rgba(0, 0, 0, 0.2);
+              border: 2px solid #475569;
+              border-radius: 8px;
+              cursor: pointer;
+              transition: all 0.2s;
+            "
+          >
+            <input
+              type="radio"
+              name="adjustment_type"
+              value="withdraw"
+              required
+              style="margin-right: 0.75rem; width: 1.25rem; height: 1.25rem"
+            />
             <div>
-              <div style="color: white; font-weight: 600;">Withdraw</div>
-              <div style="color: #9ca3af; font-size: 0.8125rem;">Remove money</div>
+              <div style="color: white; font-weight: 600">Withdraw</div>
+              <div style="color: #9ca3af; font-size: 0.8125rem">
+                Remove money
+              </div>
             </div>
           </label>
         </div>
@@ -52,39 +122,116 @@
 
       <!-- Amount -->
       <div>
-        <label style="display: block; margin-bottom: 0.5rem; color: white; font-weight: 600;">
+        <label
+          style="
+            display: block;
+            margin-bottom: 0.5rem;
+            color: white;
+            font-weight: 600;
+          "
+        >
           Amount *
         </label>
-        <div style="position: relative;">
-          <span style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #9ca3af; font-size: 1.25rem;">$</span>
-          <input type="number" name="amount" step="0.01" min="0.01" required
-                 style="width: 100%; padding: 0.75rem 1rem 0.75rem 2.5rem; background: rgba(0,0,0,0.3); border: 1px solid #475569; border-radius: 8px; color: white; font-size: 1.25rem; font-weight: 600;"
-                 placeholder="0.00">
+        <div style="position: relative">
+          <span
+            style="
+              position: absolute;
+              left: 1rem;
+              top: 50%;
+              transform: translateY(-50%);
+              color: #9ca3af;
+              font-size: 1.25rem;
+            "
+            >$</span
+          >
+          <input
+            type="number"
+            name="amount"
+            step="0.01"
+            min="0.01"
+            required
+            style="
+              width: 100%;
+              padding: 0.75rem 1rem 0.75rem 2.5rem;
+              background: rgba(0, 0, 0, 0.3);
+              border: 1px solid #475569;
+              border-radius: 8px;
+              color: white;
+              font-size: 1.25rem;
+              font-weight: 600;
+            "
+            placeholder="0.00"
+          />
         </div>
       </div>
 
       <!-- Note -->
       <div>
-        <label style="display: block; margin-bottom: 0.5rem; color: white; font-weight: 600;">
+        <label
+          style="
+            display: block;
+            margin-bottom: 0.5rem;
+            color: white;
+            font-weight: 600;
+          "
+        >
           Note
         </label>
-        <textarea name="note" rows="2"
-                  style="width: 100%; padding: 0.75rem; background: rgba(0,0,0,0.3); border: 1px solid #475569; border-radius: 8px; color: white; font-size: 1rem;"
-                  placeholder="Optional: Reason for adjustment"></textarea>
+        <textarea
+          name="note"
+          rows="2"
+          style="
+            width: 100%;
+            padding: 0.75rem;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #475569;
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+          "
+          placeholder="Optional: Reason for adjustment"
+        ></textarea>
       </div>
 
       <!-- Preview -->
-      <div id="preview" style="display: none; padding: 1rem; background: rgba(99, 102, 241, 0.1); border: 1px solid #6366f1; border-radius: 8px;">
-        <div style="color: #a5b4fc; font-size: 0.875rem; margin-bottom: 0.5rem;">New Balance Preview</div>
-        <div id="newBalance" style="color: white; font-size: 1.5rem; font-weight: 600;">$0.00</div>
+      <div
+        id="preview"
+        style="
+          display: none;
+          padding: 1rem;
+          background: rgba(99, 102, 241, 0.1);
+          border: 1px solid #6366f1;
+          border-radius: 8px;
+        "
+      >
+        <div style="color: #a5b4fc; font-size: 0.875rem; margin-bottom: 0.5rem">
+          New Balance Preview
+        </div>
+        <div
+          id="newBalance"
+          style="color: white; font-size: 1.5rem; font-weight: 600"
+        >
+          $0.00
+        </div>
       </div>
 
       <!-- Actions -->
-      <div style="display: flex; gap: 1rem; padding-top: 1rem; border-top: 1px solid #475569;">
-        <button type="submit" class="btn btn-primary" style="flex: 1;">
+      <div
+        style="
+          display: flex;
+          gap: 1rem;
+          padding-top: 1rem;
+          border-top: 1px solid #475569;
+        "
+      >
+        <button type="submit" class="btn btn-primary" style="flex: 1">
           Confirm Adjustment
         </button>
-        <a href="{{ url_for('web.accounts') }}" class="btn btn-secondary" style="flex: 1; text-align: center;">
+        <a
+          href="{{ url_for('web.accounts') }}"
+          class="btn btn-secondary"
+          style="flex: 1; text-align: center"
+        >
           Cancel
         </a>
       </div>
@@ -93,78 +240,78 @@
 </div>
 
 <style>
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 0.9375rem;
-  text-decoration: none;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s;
-}
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
 
-.btn-primary {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-  color: white;
-}
+  .btn-primary {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+  }
 
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
-}
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
+  }
 
-.btn-secondary {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
+  .btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
 
-.btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.15);
-}
+  .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+  }
 
-input[type="radio"]:checked + div {
-  color: #6366f1;
-}
+  input[type="radio"]:checked + div {
+    color: #6366f1;
+  }
 
-label:has(input[type="radio"]:checked) {
-  background: rgba(99, 102, 241, 0.1) !important;
-  border-color: #6366f1 !important;
-}
+  label:has(input[type="radio"]:checked) {
+    background: rgba(99, 102, 241, 0.1) !important;
+    border-color: #6366f1 !important;
+  }
 </style>
 
 <script>
-const currentBalance = {{ account.current_balance }};
-const amountInput = document.querySelector('input[name="amount"]');
-const typeInputs = document.querySelectorAll('input[name="adjustment_type"]');
-const preview = document.getElementById('preview');
-const newBalanceEl = document.getElementById('newBalance');
+  const currentBalance = {{ account.current_balance }};
+  const amountInput = document.querySelector('input[name="amount"]');
+  const typeInputs = document.querySelectorAll('input[name="adjustment_type"]');
+  const preview = document.getElementById('preview');
+  const newBalanceEl = document.getElementById('newBalance');
 
-function updatePreview() {
-  const amount = parseFloat(amountInput.value) || 0;
-  const type = document.querySelector('input[name="adjustment_type"]:checked')?.value;
-  
-  if (amount > 0 && type) {
-    let newBalance = currentBalance;
-    if (type === 'add') {
-      newBalance += amount;
+  function updatePreview() {
+    const amount = parseFloat(amountInput.value) || 0;
+    const type = document.querySelector('input[name="adjustment_type"]:checked')?.value;
+
+    if (amount > 0 && type) {
+      let newBalance = currentBalance;
+      if (type === 'add') {
+        newBalance += amount;
+      } else {
+        newBalance -= amount;
+      }
+
+      preview.style.display = 'block';
+      newBalanceEl.textContent = '$' + newBalance.toFixed(2);
+      newBalanceEl.style.color = newBalance < 0 ? '#ef4444' : '#10b981';
     } else {
-      newBalance -= amount;
+      preview.style.display = 'none';
     }
-    
-    preview.style.display = 'block';
-    newBalanceEl.textContent = '$' + newBalance.toFixed(2);
-    newBalanceEl.style.color = newBalance < 0 ? '#ef4444' : '#10b981';
-  } else {
-    preview.style.display = 'none';
   }
-}
 
-amountInput.addEventListener('input', updatePreview);
-typeInputs.forEach(input => input.addEventListener('change', updatePreview));
+  amountInput.addEventListener('input', updatePreview);
+  typeInputs.forEach(input => input.addEventListener('change', updatePreview));
 </script>
 {% endblock %}

@@ -303,13 +303,76 @@ def forgot_password():
 def expenses():
     """Expenses list page."""
     from app.models.expense import Expense
+    from app.models.project import Project
+    from app.models.account import Account
+    from app.models.category import Category
 
-    expenses = Expense.query.filter_by(
-        tenant_id=current_user.tenant_id,
+    tenant_id = current_user.tenant_id
+
+    # Base query
+    query = Expense.query.filter_by(
+        tenant_id=tenant_id,
         is_deleted=False,
-    ).order_by(Expense.expense_date.desc()).limit(50).all()
+    )
 
-    return render_template("expenses/list.html", expenses=expenses)
+    # Filters
+    project_id = request.args.get("project_id") or None
+    category_id = request.args.get("category_id") or None
+    account_id = request.args.get("account_id") or None
+    min_amount = request.args.get("min_amount") or None
+    max_amount = request.args.get("max_amount") or None
+    start_date = request.args.get("start_date") or None
+    end_date = request.args.get("end_date") or None
+
+    if project_id:
+        query = query.filter(Expense.project_id == project_id)
+    if category_id:
+        query = query.filter(Expense.category_id == category_id)
+    if account_id:
+        query = query.filter(Expense.account_id == account_id)
+    if min_amount:
+        try:
+            query = query.filter(Expense.amount >= Decimal(min_amount))
+        except Exception:
+            flash("Invalid minimum amount", "error")
+    if max_amount:
+        try:
+            query = query.filter(Expense.amount <= Decimal(max_amount))
+        except Exception:
+            flash("Invalid maximum amount", "error")
+    if start_date:
+        try:
+            query = query.filter(Expense.expense_date >= datetime.strptime(start_date, "%Y-%m-%d").date())
+        except Exception:
+            flash("Invalid start date", "error")
+    if end_date:
+        try:
+            query = query.filter(Expense.expense_date <= datetime.strptime(end_date, "%Y-%m-%d").date())
+        except Exception:
+            flash("Invalid end date", "error")
+
+    expenses = query.order_by(Expense.expense_date.desc()).limit(200).all()
+
+    projects = Project.query.filter_by(tenant_id=tenant_id, is_deleted=False).order_by(Project.name).all()
+    categories = Category.query.filter_by(tenant_id=tenant_id, is_deleted=False).order_by(Category.name).all()
+    accounts = Account.query.filter_by(tenant_id=tenant_id, is_deleted=False).order_by(Account.name).all()
+
+    return render_template(
+        "expenses/list.html",
+        expenses=expenses,
+        projects=projects,
+        categories=categories,
+        accounts=accounts,
+        filters={
+            "project_id": project_id,
+            "category_id": category_id,
+            "account_id": account_id,
+            "min_amount": min_amount or "",
+            "max_amount": max_amount or "",
+            "start_date": start_date or "",
+            "end_date": end_date or "",
+        },
+    )
 
 
 @bp.route("/expenses/new", methods=["GET", "POST"])

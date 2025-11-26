@@ -104,7 +104,7 @@ class DashboardApp {
       console.error("No data available for charts");
       return;
     }
-    
+
     console.log("Rendering charts with data:", this.data);
     this.renderCategoryChart();
     this.renderMonthlyChart();
@@ -119,10 +119,14 @@ class DashboardApp {
       console.error("Category chart canvas not found");
       return;
     }
-    
-    if (!this.data.category_breakdown || this.data.category_breakdown.labels.length === 0) {
+
+    if (
+      !this.data.category_breakdown ||
+      this.data.category_breakdown.labels.length === 0
+    ) {
       console.log("No category breakdown data");
-      ctx.parentElement.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #9ca3af;">No category data available</div>';
+      ctx.parentElement.innerHTML =
+        '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #9ca3af;">No category data available</div>';
       return;
     }
 
@@ -185,10 +189,14 @@ class DashboardApp {
       console.error("Monthly chart canvas not found");
       return;
     }
-    
-    if (!this.data.monthly_trend || this.data.monthly_trend.labels.length === 0) {
+
+    if (
+      !this.data.monthly_trend ||
+      this.data.monthly_trend.labels.length === 0
+    ) {
       console.log("No monthly trend data");
-      ctx.parentElement.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #9ca3af;">No monthly data available</div>';
+      ctx.parentElement.innerHTML =
+        '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #9ca3af;">No monthly data available</div>';
       return;
     }
 
@@ -254,7 +262,9 @@ class DashboardApp {
             padding: 12,
             callbacks: {
               label: function (context) {
-                return `${context.dataset.label}: $${context.parsed.y.toFixed(2)}`;
+                return `${context.dataset.label}: $${context.parsed.y.toFixed(
+                  2
+                )}`;
               },
             },
           },
@@ -270,10 +280,14 @@ class DashboardApp {
       console.error("Forecast chart canvas not found");
       return;
     }
-    
-    if (!this.data.forecast_vs_actual || this.data.forecast_vs_actual.labels.length === 0) {
+
+    if (
+      !this.data.forecast_vs_actual ||
+      this.data.forecast_vs_actual.labels.length === 0
+    ) {
       console.log("No forecast data");
-      ctx.parentElement.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #9ca3af;">No forecast data available</div>';
+      ctx.parentElement.innerHTML =
+        '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #9ca3af;">No forecast data available</div>';
       return;
     }
 
@@ -364,7 +378,9 @@ class DashboardApp {
             padding: 12,
             callbacks: {
               label: function (context) {
-                return `${context.dataset.label}: $${context.parsed.y.toFixed(2)}`;
+                return `${context.dataset.label}: $${context.parsed.y.toFixed(
+                  2
+                )}`;
               },
             },
           },
