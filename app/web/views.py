@@ -351,7 +351,19 @@ def expenses():
         except Exception:
             flash("Invalid end date", "error")
 
-    expenses = query.order_by(Expense.expense_date.desc()).limit(200).all()
+    # Pagination
+    try:
+        page = int(request.args.get("page", 1))
+    except Exception:
+        page = 1
+    try:
+        per_page = int(request.args.get("per_page", 25))
+    except Exception:
+        per_page = 25
+    per_page = max(1, min(per_page, 100))
+
+    pagination = query.order_by(Expense.expense_date.desc()).paginate(page=page, per_page=per_page, error_out=False)
+    expenses = pagination.items
 
     projects = Project.query.filter_by(tenant_id=tenant_id, is_deleted=False).order_by(Project.name).all()
     categories = Category.query.filter_by(tenant_id=tenant_id, is_deleted=False).order_by(Category.name).all()
@@ -363,6 +375,7 @@ def expenses():
         projects=projects,
         categories=categories,
         accounts=accounts,
+        pagination=pagination,
         filters={
             "project_id": project_id,
             "category_id": category_id,
@@ -371,6 +384,7 @@ def expenses():
             "max_amount": max_amount or "",
             "start_date": start_date or "",
             "end_date": end_date or "",
+            "per_page": per_page,
         },
     )
 

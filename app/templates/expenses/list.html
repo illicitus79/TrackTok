@@ -9,8 +9,71 @@
       <h1 style="margin: 0; font-size: 2rem;">Expenses</h1>
       <p style="color: var(--text-muted); margin: 0.25rem 0 0;">Latest expenses for your tenant.</p>
     </div>
-    <a href="{{ url_for('web.dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
+    <div style="display: flex; gap: 0.75rem;">
+      <a href="{{ url_for('web.expense_new') }}" class="btn btn-primary">Add Expense</a>
+      <a href="{{ url_for('web.dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
+    </div>
   </div>
+
+  <form method="GET" class="card" style="margin-bottom: 1rem;">
+    <div class="card-body" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem;">
+      <div>
+        <label class="form-label" for="project_id">Project</label>
+        <select class="form-input" name="project_id" id="project_id">
+          <option value="">All projects</option>
+          {% for project in projects %}
+          <option value="{{ project.id }}" {% if filters.project_id == project.id %}selected{% endif %}>{{ project.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="form-label" for="category_id">Category</label>
+        <select class="form-input" name="category_id" id="category_id">
+          <option value="">All categories</option>
+          {% for category in categories %}
+          <option value="{{ category.id }}" {% if filters.category_id == category.id %}selected{% endif %}>{{ category.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="form-label" for="account_id">Source Account</label>
+        <select class="form-input" name="account_id" id="account_id">
+          <option value="">All accounts</option>
+          {% for account in accounts %}
+          <option value="{{ account.id }}" {% if filters.account_id == account.id %}selected{% endif %}>{{ account.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="form-label" for="min_amount">Min Amount</label>
+        <input class="form-input" type="number" step="0.01" name="min_amount" id="min_amount" value="{{ filters.min_amount }}">
+      </div>
+      <div>
+        <label class="form-label" for="max_amount">Max Amount</label>
+        <input class="form-input" type="number" step="0.01" name="max_amount" id="max_amount" value="{{ filters.max_amount }}">
+      </div>
+      <div>
+        <label class="form-label" for="start_date">Start Date</label>
+        <input class="form-input" type="date" name="start_date" id="start_date" value="{{ filters.start_date }}">
+      </div>
+      <div>
+        <label class="form-label" for="end_date">End Date</label>
+        <input class="form-input" type="date" name="end_date" id="end_date" value="{{ filters.end_date }}">
+      </div>
+      <div>
+        <label class="form-label" for="per_page">Per Page</label>
+        <select class="form-input" name="per_page" id="per_page">
+          {% for size in [10,25,50,100] %}
+          <option value="{{ size }}" {% if filters.per_page|int == size %}selected{% endif %}>{{ size }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="card-footer" style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+      <a class="btn btn-secondary" href="{{ url_for('web.expenses') }}">Reset</a>
+      <button type="submit" class="btn btn-primary">Apply Filters</button>
+    </div>
+  </form>
 
   {% if expenses %}
   <div class="card">
@@ -19,8 +82,10 @@
         <thead>
           <tr style="text-align: left; border-bottom: 1px solid var(--border);">
             <th style="padding: 0.75rem 0.5rem;">Vendor / Note</th>
+            <th style="padding: 0.75rem 0.5rem;">Project</th>
             <th style="padding: 0.75rem 0.5rem;">Date</th>
             <th style="padding: 0.75rem 0.5rem;">Category</th>
+            <th style="padding: 0.75rem 0.5rem;">Source Account</th>
             <th style="padding: 0.75rem 0.5rem;">Amount</th>
           </tr>
         </thead>
@@ -28,8 +93,10 @@
           {% for expense in expenses %}
           <tr style="border-bottom: 1px solid var(--border);">
             <td style="padding: 0.75rem 0.5rem; font-weight: 500;">{{ expense.vendor or expense.note or 'Expense' }}</td>
+            <td style="padding: 0.75rem 0.5rem;">{{ expense.project.name if expense.project else '-' }}</td>
             <td style="padding: 0.75rem 0.5rem;">{{ expense.expense_date.strftime('%b %d, %Y') }}</td>
             <td style="padding: 0.75rem 0.5rem;">{{ expense.category.name if expense.category else 'Uncategorized' }}</td>
+            <td style="padding: 0.75rem 0.5rem;">{{ expense.account.name if expense.account else '-' }}</td>
             <td style="padding: 0.75rem 0.5rem;">${{ "%.2f"|format(expense.amount|float) }}</td>
           </tr>
           {% endfor %}
@@ -37,6 +104,31 @@
       </table>
     </div>
   </div>
+  {% if pagination.pages > 1 %}
+  {% set params = request.args.to_dict() %}
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+    <div style="color: var(--text-muted); font-size: 0.9rem;">
+      Page {{ pagination.page }} of {{ pagination.pages }} &middot; {{ pagination.total }} expenses
+    </div>
+    <div style="display: flex; gap: 0.5rem;">
+      {% if pagination.has_prev %}
+        {% set prev_params = params.copy() %}
+        {% set _ = prev_params.update({'page': pagination.prev_num}) %}
+        <a class="btn btn-secondary" href="{{ url_for('web.expenses', **prev_params) }}">Prev</a>
+      {% else %}
+        <button class="btn btn-secondary" disabled>Prev</button>
+      {% endif %}
+
+      {% if pagination.has_next %}
+        {% set next_params = params.copy() %}
+        {% set _ = next_params.update({'page': pagination.next_num}) %}
+        <a class="btn btn-secondary" href="{{ url_for('web.expenses', **next_params) }}">Next</a>
+      {% else %}
+        <button class="btn btn-secondary" disabled>Next</button>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
   {% else %}
   <div class="card">
     <div class="card-body" style="text-align: center;">

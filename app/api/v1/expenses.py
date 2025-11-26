@@ -37,6 +37,10 @@ class ExpenseList(MethodView):
         query = Expense.query.filter_by(tenant_id=tenant_id, is_deleted=False)
 
         # Apply filters
+        if filter_args.get("project_id"):
+            query = query.filter_by(project_id=filter_args["project_id"])
+        if filter_args.get("account_id"):
+            query = query.filter_by(account_id=filter_args["account_id"])
         if filter_args.get("category_id"):
             query = query.filter_by(category_id=filter_args["category_id"])
         if filter_args.get("status"):

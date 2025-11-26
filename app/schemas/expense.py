@@ -103,6 +103,8 @@ class ExpenseUpdateSchema(Schema):
 class ExpenseFilterSchema(Schema):
     """Schema for expense filtering query parameters."""
 
+    project_id = fields.Str()
+    account_id = fields.Str()
     category_id = fields.Str()
     status = fields.Str(validate=lambda x: x in ["draft", "submitted", "approved", "rejected"])
     min_amount = fields.Decimal(as_string=True, places=2)
