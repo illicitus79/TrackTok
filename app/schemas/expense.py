@@ -2,6 +2,8 @@
 from datetime import date
 
 from marshmallow import Schema, ValidationError, fields, validates
+from app.core.extensions import db
+from app.models.user import User
 
 
 class CategorySchema(Schema):
@@ -46,6 +48,10 @@ class ExpenseSchema(Schema):
     created_by = fields.Str(dump_only=True)
     created_at = fields.DateTime(dump_only=True)
     updated_at = fields.DateTime(dump_only=True)
+    edited = fields.Method("get_edited", dump_only=True)
+    last_amount = fields.Method("get_last_amount", dump_only=True)
+    last_updated_by = fields.Method("get_last_updated_by", dump_only=True)
+    last_updated_at = fields.Method("get_last_updated_at", dump_only=True)
 
     @validates("amount")
     def validate_amount(self, value):
@@ -58,6 +64,28 @@ class ExpenseSchema(Schema):
         """Validate expense date is not in the future."""
         if value > date.today():
             raise ValidationError("Expense date cannot be in the future")
+
+    def _meta(self, obj):
+        return getattr(obj, "expense_metadata", {}) or {}
+
+    def get_edited(self, obj):
+        return bool(self._meta(obj).get("edited"))
+
+    def get_last_amount(self, obj):
+        val = self._meta(obj).get("last_amount")
+        return str(val) if val is not None else None
+
+    def get_last_updated_by(self, obj):
+        user_id = self._meta(obj).get("last_updated_by")
+        if not user_id:
+            return None
+        user = db.session.get(User, user_id)
+        if not user:
+            return user_id
+        return f"{user.first_name or ''} {user.last_name or ''}".strip() or user.email or user_id
+
+    def get_last_updated_at(self, obj):
+        return self._meta(obj).get("last_updated_at")
 
 
 class ExpenseCreateSchema(Schema):

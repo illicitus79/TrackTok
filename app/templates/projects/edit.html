@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Project - TrackTok{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 2rem 0; max-width: 840px;">
+  <h1 style="margin: 0 0 1rem 0; font-size: 2rem;">Edit Project</h1>
+  <div class="card">
+    <div class="card-body">
+      <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label" for="name">Project Name <span class="required">*</span></label>
+            <input class="form-input" type="text" id="name" name="name" required value="{{ project.name }}" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="currency">Currency</label>
+            <select class="form-input" id="currency" name="currency" disabled>
+              {% for code, label in currency_options %}
+              <option value="{{ code }}" {% if project.currency == code %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+            <div class="form-hint">Currency is fixed after creation to keep linked accounts consistent.</div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="description">Description</label>
+          <textarea class="form-input" id="description" name="description" rows="2">{{ project.description or '' }}</textarea>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label" for="starting_budget">Starting Budget</label>
+            <input class="form-input" type="number" step="0.01" id="starting_budget" name="starting_budget" value="{{ project.starting_budget }}" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="projected_estimate">Projected Estimate</label>
+            <input class="form-input" type="number" step="0.01" id="projected_estimate" name="projected_estimate" value="{{ project.projected_estimate }}" />
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label" for="start_date">Start Date</label>
+            <input class="form-input" type="date" id="start_date" name="start_date" value="{{ project.start_date.isoformat() if project.start_date else '' }}" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="end_date">End Date</label>
+            <input class="form-input" type="date" id="end_date" name="end_date" value="{{ project.end_date.isoformat() if project.end_date else '' }}" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="status">Status</label>
+            <select class="form-input" id="status" name="status">
+              {% for s in ["active", "completed", "on_hold", "archived"] %}
+              <option value="{{ s }}" {% if project.status == s %}selected{% endif %}>{{ s|capitalize }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Allowed Accounts for Expenses</label>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.5rem;">
+            {% for account in accounts %}
+            <label style="display: flex; gap: 0.5rem; align-items: center; padding: 0.5rem; border: 1px solid var(--border); border-radius: 8px;">
+              <input type="checkbox" name="account_ids" value="{{ account.id }}" {% if account.id in allowed_account_ids %}checked{% endif %} />
+              <span>{{ account.name }} ({{ account.account_type }})</span>
+            </label>
+            {% endfor %}
+          </div>
+          <div class="form-hint">Only these accounts will be shown when logging expenses for this project.</div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1rem;">
+          <a class="btn btn-secondary" href="{{ url_for('web.projects') }}">Cancel</a>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

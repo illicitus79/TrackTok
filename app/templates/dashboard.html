@@ -56,7 +56,7 @@ block content %}
               Total Expenses (Month)
             </div>
             <div style="font-size: 1.5rem; font-weight: 700">
-              ${{ "%.2f"|format(monthly_expenses|float) }}
+              {{ format_money(monthly_expenses|float) }}
             </div>
           </div>
         </div>
@@ -163,7 +163,7 @@ block content %}
               <div>
                 <div style="font-weight: 600">{{ project.name }}</div>
                 <div style="font-size: 0.875rem; color: var(--text-muted)">
-                  Budget: ${{ "%.2f"|format(project.starting_budget|float) }}
+                  Budget: {{ format_money(project.starting_budget|float) }}
                 </div>
               </div>
               <span class="badge badge-success">{{ project.status }}</span>
@@ -241,7 +241,7 @@ block content %}
               </div>
             </div>
             <div style="font-weight: 600; white-space: nowrap">
-              ${{ "%.2f"|format(expense.amount|float) }}
+              {{ format_money(expense.amount|float) }}
             </div>
           </div>
           {% endfor %}

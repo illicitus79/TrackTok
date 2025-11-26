@@ -29,15 +29,38 @@ class TenantRegistration(MethodView):
     """Tenant registration endpoint."""
 
     @limiter.limit("5 per hour")
-    @blp.arguments(TenantCreateSchema)
     @blp.response(201)
-    def post(self, data):
+    def post(self):
         """
         Register a new tenant with owner account.
         
         Creates a new tenant organization and owner user.
         """
         try:
+            # Accept JSON or form-encoded payloads
+            incoming = request.get_json(silent=True) or request.form.to_dict()
+            if not incoming:
+                return jsonify({"error": "Missing payload"}), 400
+
+            # Map form field names from the web form to API schema fields
+            mapped = {}
+            mapped["name"] = incoming.get("tenant_name", "")
+            mapped["subdomain"] = incoming.get("tenant_slug", "").lower()
+            mapped["owner_email"] = incoming.get("email", "")
+            mapped["owner_password"] = incoming.get("password", "")
+            
+            # Provide defaults for owner first/last name if missing
+            owner_first = incoming.get("owner_first_name") or ""
+            owner_last = incoming.get("owner_last_name") or ""
+            if not owner_first and mapped.get("owner_email"):
+                owner_first = mapped["owner_email"].split("@")[0]
+            if not owner_last:
+                owner_last = "Owner"
+            mapped["owner_first_name"] = owner_first
+            mapped["owner_last_name"] = owner_last
+
+            data = TenantCreateSchema().load(mapped)
+
             # Check if subdomain already exists
             existing_tenant = Tenant.query.filter_by(subdomain=data["subdomain"]).first()
             if existing_tenant:

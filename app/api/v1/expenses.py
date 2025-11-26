@@ -4,11 +4,13 @@ from flask.views import MethodView
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_smorest import Blueprint
 from loguru import logger
+from datetime import datetime
 
 from app.core.extensions import db
 from app.models.expense import Expense
 from app.models.category import Category
 from app.models.audit import AuditLog, AuditAction
+from app.models.user import User
 from app.schemas.expense import (
     ExpenseSchema,
     ExpenseCreateSchema,
@@ -145,8 +147,29 @@ class ExpenseDetail(MethodView):
 
         old_values = ExpenseSchema().dump(expense)
 
+        changed = False
         for key, value in data.items():
-            setattr(expense, key, value)
+            if getattr(expense, key) != value:
+                setattr(expense, key, value)
+                changed = True
+
+        if changed:
+            meta = expense.expense_metadata or {}
+            user = db.session.get(User, user_id)
+            display_name = None
+            if user:
+                display_name = f"{user.first_name or ''} {user.last_name or ''}".strip() or user.email
+            meta.update(
+                {
+                    "edited": True,
+                    "last_amount": float(old_values.get("amount")) if old_values.get("amount") is not None else None,
+                    "last_account_id": old_values.get("account_id"),
+                    "last_updated_by": user_id,
+                    "last_updated_by_name": display_name or user_id,
+                    "last_updated_at": datetime.utcnow().isoformat(),
+                }
+            )
+            expense.expense_metadata = meta
 
         expense.updated_by = user_id
         db.session.commit()

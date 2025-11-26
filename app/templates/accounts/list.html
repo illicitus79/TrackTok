@@ -99,7 +99,7 @@ block content %}
           <div
             style="font-size: 2rem; font-weight: 700; {% if account.current_balance < 0 %}color: #ef4444;{% elif account.is_low_balance %}color: #f59e0b;{% else %}color: #10b981;{% endif %}"
           >
-            {{ account.currency }} ${{ "%.2f"|format(account.current_balance) }}
+            {{ format_money(account.current_balance) }}
           </div>
         </div>
       </div>
@@ -123,7 +123,7 @@ block content %}
             Opening Balance
           </div>
           <div style="font-size: 1.125rem; color: white">
-            ${{ "%.2f"|format(account.opening_balance) }}
+            {{ format_money(account.opening_balance) }}
           </div>
         </div>
         <div>
@@ -135,8 +135,7 @@ block content %}
           <div
             style="font-size: 1.125rem; {% if account.balance_change > 0 %}color: #10b981;{% elif account.balance_change < 0 %}color: #ef4444;{% else %}color: white;{% endif %}"
           >
-            {% if account.balance_change > 0 %}+{% endif %}${{
-            "%.2f"|format(account.balance_change) }}
+            {% if account.balance_change > 0 %}+{% endif %}{{ format_money(account.balance_change) }}
             <span style="font-size: 0.875rem; color: #9ca3af"
               >({{ "%.1f"|format(account.balance_change_percentage) }}%)</span
             >
@@ -149,7 +148,7 @@ block content %}
             Total Expenses
           </div>
           <div style="font-size: 1.125rem; color: white">
-            ${{ "%.2f"|format(expense_totals.get(account.id|string, 0)) }}
+            {{ format_money(expense_totals.get(account.id|string, 0)) }}
           </div>
         </div>
         {% if account.low_balance_threshold %}
@@ -160,7 +159,7 @@ block content %}
             Low Balance Alert
           </div>
           <div style="font-size: 1.125rem; color: #f59e0b">
-            ${{ "%.2f"|format(account.low_balance_threshold) }}
+            {{ format_money(account.low_balance_threshold) }}
           </div>
         </div>
         {% endif %}
@@ -178,7 +177,9 @@ block content %}
         <button
           class="btn btn-secondary"
           style="flex: 1"
-          onclick="alert('View transactions for {{ account.name }}')"
+          data-account-id="{{ account.id }}"
+          data-account-name="{{ account.name }}"
+          onclick="openTransactionsModal(this)"
         >
           View Transactions
         </button>
@@ -274,4 +275,170 @@ block content %}
     background: rgba(255, 255, 255, 0.15);
   }
 </style>
+
+<!-- Transactions Modal -->
+<div
+  id="txModal"
+  style="
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(2px);
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+  "
+>
+  <div
+    style="
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      width: min(720px, 90vw);
+      max-height: 80vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-lg);
+    "
+  >
+    <div
+      style="
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      "
+    >
+      <div>
+        <h3 id="txModalTitle" style="margin: 0; color: var(--text)">Transactions</h3>
+        <div style="color: var(--text-muted); font-size: 0.85rem">
+          Filter: show top-ups (green) or expenses (red)
+        </div>
+      </div>
+      <button id="txModalClose" class="btn btn-secondary">Close</button>
+    </div>
+    <div
+      style="
+        padding: 0.75rem 1.25rem;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        gap: 0.5rem;
+      "
+    >
+      <button class="btn btn-primary" data-tx-filter="both">All</button>
+      <button class="btn btn-secondary" data-tx-filter="topups">Top-ups</button>
+      <button class="btn btn-secondary" data-tx-filter="expenses">Expenses</button>
+    </div>
+    <div
+      id="txModalBody"
+      style="
+        padding: 1rem 1.25rem;
+        overflow-y: auto;
+        flex: 1;
+        background: rgba(0, 0, 0, 0.2);
+      "
+    ></div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  const txModal = {
+    overlay: null,
+    body: null,
+    title: null,
+    filter: "both",
+    accountId: null,
+    init() {
+      this.overlay = document.getElementById("txModal");
+      this.body = document.getElementById("txModalBody");
+      this.title = document.getElementById("txModalTitle");
+      const closeBtn = document.getElementById("txModalClose");
+      if (closeBtn) closeBtn.addEventListener("click", () => this.close());
+      const filterButtons = document.querySelectorAll("[data-tx-filter]");
+      filterButtons.forEach((btn) =>
+        btn.addEventListener("click", () => {
+          this.filter = btn.dataset.txFilter;
+          filterButtons.forEach((b) => b.classList.remove("btn-primary"));
+          btn.classList.add("btn-primary");
+          this.load();
+        })
+      );
+    },
+    open(accountId, accountName) {
+      this.accountId = accountId;
+      this.filter = "both";
+      this.title.textContent = `Transactions for ${accountName}`;
+      document.querySelectorAll("[data-tx-filter]").forEach((b) => {
+        b.classList.toggle("btn-primary", b.dataset.txFilter === "both");
+        b.classList.toggle("btn-secondary", b.dataset.txFilter !== "both");
+      });
+      this.overlay.style.display = "flex";
+      this.load();
+    },
+    close() {
+      if (this.overlay) this.overlay.style.display = "none";
+    },
+    async load() {
+      if (!this.accountId) return;
+      this.body.innerHTML = "<p style='color: var(--text-muted)'>Loading...</p>";
+      try {
+        const res = await fetch(
+          `/accounts/${this.accountId}/transactions?kind=${this.filter}`,
+          { credentials: "include" }
+        );
+        if (!res.ok) {
+          this.body.innerHTML =
+            "<p style='color: #ef4444'>Failed to load transactions.</p>";
+          return;
+        }
+        const data = await res.json();
+        if (!data.transactions || data.transactions.length === 0) {
+          this.body.innerHTML =
+            "<p style='color: var(--text-muted)'>No transactions found for this account.</p>";
+          return;
+        }
+        this.body.innerHTML = data.transactions
+          .map((tx) => {
+            const isTopup = tx.type === "topup";
+            const color = isTopup ? "#10b981" : "#ef4444";
+            const sign = isTopup ? "+" : "-";
+            return `
+              <div style="display:flex; justify-content: space-between; align-items: center; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px; background: var(--panel); margin-bottom: 0.5rem;">
+                <div>
+                  <div style="font-weight: 600; color: var(--text);">${tx.label}</div>
+                  <div style="color: var(--text-muted); font-size: 0.85rem;">
+                    ${tx.date || ""} ${tx.category ? "&middot; " + tx.category : ""}
+                  </div>
+                </div>
+                <span style="font-weight: 700; color: ${color};">${sign}$${Number(tx.amount).toFixed(2)}</span>
+              </div>
+            `;
+          })
+          .join("");
+      } catch (e) {
+        this.body.innerHTML =
+          "<p style='color: #ef4444'>Error loading transactions.</p>";
+      }
+    },
+  };
+
+  function openTransactionsModal(btn) {
+    const accountId = btn.dataset.accountId;
+    const accountName = btn.dataset.accountName;
+    if (!txModal.overlay) {
+      txModal.init();
+    }
+    txModal.open(accountId, accountName);
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    txModal.init();
+  });
+</script>
 {% endblock %}

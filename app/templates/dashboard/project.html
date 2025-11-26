@@ -99,13 +99,13 @@ endblock %} {% block content %}
         </svg>
       </div>
       <div class="stat-value" data-stat="starting_budget">
-        ${{ "%.2f"|format(dashboard_data.starting_budget) }}
+        {{ format_money(dashboard_data.starting_budget) }}
       </div>
       <div class="stat-footer">
         <span class="stat-change positive"
           >Projected:
           <span data-stat="projected_estimate"
-            >${{ "%.2f"|format(dashboard_data.projected_estimate) }}</span
+            >{{ format_money(dashboard_data.projected_estimate) }}</span
           ></span
         >
       </div>
@@ -127,7 +127,7 @@ endblock %} {% block content %}
         </svg>
       </div>
       <div class="stat-value" data-stat="total_spend">
-        ${{ "%.2f"|format(dashboard_data.total_spend) }}
+        {{ format_money(dashboard_data.total_spend) }}
       </div>
       <div class="stat-footer">
         <div class="progress-bar">
@@ -164,7 +164,7 @@ endblock %} {% block content %}
         </svg>
       </div>
       <div class="stat-value" data-stat="remaining_budget">
-        ${{ "%.2f"|format(dashboard_data.remaining_budget) }}
+        {{ format_money(dashboard_data.remaining_budget) }}
       </div>
       <div class="stat-footer">
         <span class="stat-hint"
@@ -194,7 +194,7 @@ endblock %} {% block content %}
         </svg>
       </div>
       <div class="stat-value" data-stat="burn_rate">
-        ${{ "%.2f"|format(dashboard_data.burn_rate) }}<span class="stat-unit"
+        {{ format_money(dashboard_data.burn_rate) }}<span class="stat-unit"
           >/day</span
         >
       </div>
@@ -258,7 +258,7 @@ endblock %} {% block content %}
             <div class="forecast-stat">
               <span class="label">Projected Total:</span>
               <span class="value" data-stat="projected_total"
-                >${{ "%.2f"|format(dashboard_data.forecast.projected_total)
+                >{{ format_money(dashboard_data.forecast.projected_total)
                 }}</span
               >
             </div>
@@ -271,7 +271,7 @@ endblock %} {% block content %}
             <div class="forecast-stat">
               <span class="label">Variance:</span>
               <span class="value" data-stat="variance"
-                >${{ "%.2f"|format(dashboard_data.forecast.variance) }}</span
+                >{{ format_money(dashboard_data.forecast.variance) }}</span
               >
             </div>
           </div>

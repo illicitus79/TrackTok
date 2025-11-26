@@ -2,7 +2,7 @@
 from datetime import datetime, date
 from decimal import Decimal
 
-from flask import render_template, redirect, url_for, request, flash, session, current_app
+from flask import render_template, redirect, url_for, request, flash, session, current_app, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token, set_access_cookies
 from flask_login import logout_user, login_user, login_required, current_user
 
@@ -10,6 +10,70 @@ from app.web import bp
 from app.web.forms import LoginForm, RegistrationForm
 from app.models.user import User
 from app.core.extensions import db
+
+
+def get_currency_options():
+    """
+    Fetch currency codes dynamically, cached in Redis, with a static fallback that includes THB.
+    """
+    cache_key = "currencies:list:v1"
+    static_fallback = [
+        ("USD", "USD - US Dollar"),
+        ("EUR", "EUR - Euro"),
+        ("GBP", "GBP - British Pound"),
+        ("JPY", "JPY - Japanese Yen"),
+        ("AUD", "AUD - Australian Dollar"),
+        ("CAD", "CAD - Canadian Dollar"),
+        ("CHF", "CHF - Swiss Franc"),
+        ("INR", "INR - Indian Rupee"),
+        ("CNY", "CNY - Chinese Yuan"),
+        ("SGD", "SGD - Singapore Dollar"),
+        ("THB", "THB - Thai Baht"),
+    ]
+
+    try:
+        if hasattr(current_app, "redis"):
+            cached = current_app.redis.get(cache_key)
+            if cached:
+                return [tuple(item.split("::", 1)) for item in cached.split("|||")]
+
+        import json
+        from urllib.request import urlopen
+
+        with urlopen("https://openexchangerates.org/api/currencies.json", timeout=5) as resp:
+            data = json.load(resp)
+            options = sorted([(code, f"{code} - {name}") for code, name in data.items()])
+            if hasattr(current_app, "redis"):
+                serialized = "|||".join([f"{c}::{n}" for c, n in options])
+                current_app.redis.setex(cache_key, 86400, serialized)
+            return options
+    except Exception as e:
+        current_app.logger.warning(f"Falling back to static currency list: {e}")
+
+    return static_fallback
+
+
+# Simple timezone options (IANA)
+TIMEZONE_OPTIONS = [
+    "UTC",
+    "America/New_York",
+    "America/Los_Angeles",
+    "Europe/London",
+    "Europe/Paris",
+    "Asia/Bangkok",
+    "Asia/Singapore",
+    "Asia/Kolkata",
+    "Australia/Sydney",
+]
+
+
+def get_tenant_preferences():
+    """Return tenant currency/timezone with defaults."""
+    tenant = getattr(current_user, "tenant", None)
+    settings = tenant.settings if tenant else {}
+    currency = settings.get("currency", "USD")
+    timezone = settings.get("timezone", "UTC")
+    return currency, timezone
 
 
 @bp.route("/")
@@ -118,10 +182,49 @@ def register():
     form = RegistrationForm()
     
     if form.validate_on_submit():
-        # Form submitted - redirect to API endpoint or handle registration
-        # For now, just show a message
-        flash("Please use the API endpoint /api/v1/auth/register for tenant registration", "info")
-        return redirect(url_for("web.register"))
+        from app.models.tenant import Tenant
+        from app.models.user import User, UserRole
+        
+        try:
+            # Check if subdomain already exists
+            existing_tenant = Tenant.query.filter_by(subdomain=form.tenant_slug.data.lower()).first()
+            if existing_tenant:
+                flash("Subdomain already taken. Please choose another.", "error")
+                return render_template("auth/register.html", form=form)
+            
+            # Create tenant
+            tenant = Tenant(
+                name=form.tenant_name.data,
+                subdomain=form.tenant_slug.data.lower()
+            )
+            db.session.add(tenant)
+            db.session.flush()  # Get tenant ID
+            
+            # Create owner user
+            owner = User(
+                tenant_id=tenant.id,
+                email=form.email.data,
+                first_name=form.email.data.split("@")[0],
+                last_name="Owner",
+                role=UserRole.OWNER.value,
+                is_verified=True,
+                is_active=True,
+            )
+            owner.set_password(form.password.data)
+            db.session.add(owner)
+            db.session.commit()
+            
+            # Log the user in
+            login_user(owner)
+            
+            flash(f"Welcome! Your tenant '{tenant.name}' has been created successfully.", "success")
+            return redirect(url_for("web.dashboard"))
+            
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Registration error: {e}")
+            flash("Registration failed. Please try again.", "error")
+            return render_template("auth/register.html", form=form)
     
     return render_template("auth/register.html", form=form)
 
@@ -141,11 +244,33 @@ def profile():
     return render_template("profile.html")
 
 
-@bp.route("/settings")
+@bp.route("/settings", methods=["GET", "POST"])
 @login_required
 def settings():
     """User settings page."""
-    return render_template("settings.html")
+    tenant = current_user.tenant
+    currency, timezone = get_tenant_preferences()
+
+    if request.method == "POST":
+        try:
+            new_currency = request.form.get("currency") or currency
+            new_timezone = request.form.get("timezone") or timezone
+            tenant.settings = tenant.settings or {}
+            tenant.settings.update({"currency": new_currency, "timezone": new_timezone})
+            db.session.commit()
+            flash("Settings updated.", "success")
+            return redirect(url_for("web.settings"))
+        except Exception as exc:
+            db.session.rollback()
+            flash(f"Could not update settings: {exc}", "error")
+
+    return render_template(
+        "settings.html",
+        currency=currency,
+        timezone=timezone,
+        currency_options=get_currency_options(),
+        timezone_options=TIMEZONE_OPTIONS,
+    )
 
 
 @bp.route("/projects")
@@ -160,6 +285,151 @@ def projects():
     ).order_by(Project.created_at.desc()).all()
 
     return render_template("projects/list.html", projects=projects)
+
+
+@bp.route("/projects/new", methods=["GET", "POST"])
+@login_required
+def project_new():
+    """Create a new project and link allowed accounts."""
+    from app.models.project import Project
+    from app.models.account import Account
+
+    tenant_id = current_user.tenant_id
+    accounts = Account.query.filter_by(tenant_id=tenant_id, is_deleted=False).order_by(Account.name).all()
+
+    if request.method == "POST":
+        try:
+            name = request.form.get("name", "").strip()
+            if not name:
+                raise ValueError("Project name is required.")
+
+            starting_budget = Decimal(request.form.get("starting_budget", "0") or "0")
+            projected_estimate = Decimal(request.form.get("projected_estimate", starting_budget))
+            start_date = request.form.get("start_date")
+            end_date = request.form.get("end_date")
+
+            project = Project(
+                tenant_id=tenant_id,
+                name=name,
+                description=request.form.get("description") or None,
+                starting_budget=starting_budget,
+                projected_estimate=projected_estimate,
+                currency=tenant_currency,
+                start_date=datetime.strptime(start_date, "%Y-%m-%d").date() if start_date else None,
+                end_date=datetime.strptime(end_date, "%Y-%m-%d").date() if end_date else None,
+                status=request.form.get("status", "active"),
+                created_by=current_user.id,
+            )
+            db.session.add(project)
+            db.session.commit()
+
+            # Persist allowed accounts for this project in Redis (no schema change)
+            allowed_accounts = request.form.getlist("account_ids")
+            if allowed_accounts:
+                # Enforce currency consistency
+                acct_rows = Account.query.filter(Account.id.in_(allowed_accounts), Account.tenant_id == tenant_id).all()
+                for acct in acct_rows:
+                    if acct.currency != project.currency:
+                        raise ValueError("All linked accounts must use the project currency.")
+            if allowed_accounts:
+                current_app.redis.set(
+                    f"project:{project.id}:accounts",
+                    ",".join(allowed_accounts)
+                )
+
+            flash("Project created successfully.", "success")
+            return redirect(url_for("web.projects"))
+        except Exception as exc:
+            db.session.rollback()
+            flash(f"Could not create project: {exc}", "error")
+
+    return render_template(
+        "projects/new.html",
+        accounts=accounts,
+        today=date.today().isoformat(),
+        tenant_currency=tenant_currency,
+    )
+
+
+@bp.route("/projects/<project_id>/edit", methods=["GET", "POST"])
+@login_required
+def project_edit(project_id):
+    """Edit a project and update allowed accounts."""
+    from app.models.project import Project
+    from app.models.account import Account
+
+    tenant_id = current_user.tenant_id
+    tenant_currency, _ = get_tenant_preferences()
+    project = Project.query.filter_by(id=project_id, tenant_id=tenant_id, is_deleted=False).first()
+    if not project:
+        flash("Project not found.", "error")
+        return redirect(url_for("web.projects"))
+
+    accounts = Account.query.filter_by(tenant_id=tenant_id, is_deleted=False).order_by(Account.name).all()
+    allowed_str = current_app.redis.get(f"project:{project.id}:accounts")
+    allowed_account_ids = set(allowed_str.split(",")) if allowed_str else set()
+
+    if request.method == "POST":
+        try:
+            project.name = request.form.get("name", project.name)
+            project.description = request.form.get("description") or None
+            project.starting_budget = Decimal(request.form.get("starting_budget", project.starting_budget))
+            project.projected_estimate = Decimal(request.form.get("projected_estimate", project.projected_estimate))
+            project.currency = tenant_currency
+            start_date = request.form.get("start_date")
+            end_date = request.form.get("end_date")
+            project.start_date = datetime.strptime(start_date, "%Y-%m-%d").date() if start_date else None
+            project.end_date = datetime.strptime(end_date, "%Y-%m-%d").date() if end_date else None
+            project.status = request.form.get("status", project.status)
+
+            new_allowed = request.form.getlist("account_ids")
+            if new_allowed:
+                acct_rows = Account.query.filter(Account.id.in_(new_allowed), Account.tenant_id == tenant_id).all()
+                for acct in acct_rows:
+                    if acct.currency != project.currency:
+                        raise ValueError("All linked accounts must use the project currency.")
+            current_app.redis.set(f"project:{project.id}:accounts", ",".join(new_allowed) if new_allowed else "")
+
+            db.session.commit()
+            flash("Project updated successfully.", "success")
+            return redirect(url_for("web.projects"))
+        except Exception as exc:
+            db.session.rollback()
+            flash(f"Could not update project: {exc}", "error")
+
+    return render_template(
+        "projects/edit.html",
+        project=project,
+        accounts=accounts,
+        allowed_account_ids=allowed_account_ids,
+        currency_options=get_currency_options(),
+        tenant_currency=tenant_currency,
+    )
+
+
+@bp.route("/projects/<project_id>/allowed-accounts")
+@login_required
+def project_allowed_accounts(project_id):
+    """Return allowed accounts for a project."""
+    from app.models.account import Account
+
+    tenant_id = current_user.tenant_id
+    allowed_str = current_app.redis.get(f"project:{project_id}:accounts")
+    allowed_ids = []
+    if allowed_str:
+        allowed_ids = [aid for aid in allowed_str.split(",") if aid]
+
+    query = Account.query.filter_by(tenant_id=tenant_id, is_deleted=False)
+    if allowed_ids:
+        query = query.filter(Account.id.in_(allowed_ids))
+
+    accounts = query.order_by(Account.name).all()
+    return jsonify(
+        [
+            {"id": account.id, "name": account.name, "account_type": account.account_type}
+            for account in accounts
+        ]
+    )
 
 
 @bp.route("/projects/<project_id>")
@@ -396,10 +666,25 @@ def expense_new():
     from app.models.expense import Expense
     from app.models.account import Account
     from app.models.category import Category
+    from app.models.project import Project
 
     tenant_id = current_user.tenant_id
-    accounts = Account.query.filter_by(tenant_id=tenant_id, is_deleted=False).all()
+    tenant_currency, _ = get_tenant_preferences()
+    accounts_query = Account.query.filter_by(tenant_id=tenant_id, is_deleted=False)
     categories = Category.query.filter_by(tenant_id=tenant_id, is_deleted=False).all()
+    projects = Project.query.filter_by(tenant_id=tenant_id, is_deleted=False).order_by(Project.name).all()
+    initial_project_id = request.args.get("project_id") or None
+
+    # If the expense is tied to a project, restrict accounts based on allowed list from Redis
+    allowed_account_ids = None
+    if initial_project_id:
+        allowed_str = current_app.redis.get(f"project:{initial_project_id}:accounts")
+        if allowed_str:
+            allowed_account_ids = [aid for aid in allowed_str.split(",") if aid]
+            if allowed_account_ids:
+                accounts_query = accounts_query.filter(Account.id.in_(allowed_account_ids))
+
+    accounts = accounts_query.order_by(Account.name).all()
 
     if request.method == "POST":
         try:
@@ -416,6 +701,8 @@ def expense_new():
             if not account_id:
                 raise ValueError("Account is required.")
 
+            project_id = request.form.get("project_id") or None
+
             expense = Expense(
                 tenant_id=tenant_id,
                 amount=amount,
@@ -423,8 +710,8 @@ def expense_new():
                 vendor=request.form.get("vendor") or None,
                 note=request.form.get("note") or None,
                 category_id=request.form.get("category_id") or None,
-                project_id=request.args.get("project_id") or None,
-                is_project_related=bool(request.args.get("project_id")),
+                project_id=project_id,
+                is_project_related=bool(project_id),
                 account_id=account_id,
                 expense_date=expense_date_val,
                 payment_method=request.form.get("payment_method", "cash"),
@@ -443,7 +730,103 @@ def expense_new():
         "expenses/new.html",
         accounts=accounts,
         categories=categories,
+        projects=projects,
         today=date.today().isoformat(),
+        initial_project_id=initial_project_id,
+        account_meta=[{"id": a.id, "currency": a.currency, "name": a.name, "type": a.account_type} for a in accounts],
+        tenant_currency=tenant_currency,
+    )
+
+
+@bp.route("/expenses/<expense_id>/edit", methods=["GET", "POST"])
+@login_required
+def expense_edit(expense_id):
+    """Edit an expense with metadata indicator."""
+    from app.models.expense import Expense
+    from app.models.account import Account
+    from app.models.category import Category
+    from app.models.project import Project
+    from app.models.user import User
+
+    tenant_id = current_user.tenant_id
+    tenant_currency, _ = get_tenant_preferences()
+    expense = Expense.query.filter_by(id=expense_id, tenant_id=tenant_id, is_deleted=False).first()
+    if not expense:
+        flash("Expense not found.", "error")
+        return redirect(url_for("web.expenses"))
+
+    projects = Project.query.filter_by(tenant_id=tenant_id, is_deleted=False).order_by(Project.name).all()
+    categories = Category.query.filter_by(tenant_id=tenant_id, is_deleted=False).all()
+
+    # Determine allowed accounts based on selected project
+    selected_project_id = expense.project_id
+    accounts_query = Account.query.filter_by(tenant_id=tenant_id, is_deleted=False)
+    if selected_project_id:
+        allowed_str = current_app.redis.get(f"project:{selected_project_id}:accounts")
+        if allowed_str:
+            allowed_ids = [aid for aid in allowed_str.split(",") if aid]
+            if allowed_ids:
+                accounts_query = accounts_query.filter(Account.id.in_(allowed_ids))
+    accounts = accounts_query.order_by(Account.name).all()
+
+    if request.method == "POST":
+        try:
+            old_amount = float(expense.amount)
+            old_account_id = expense.account_id
+
+            project_id = request.form.get("project_id") or None
+            # Refresh allowed accounts when project changed
+            accounts_query = Account.query.filter_by(tenant_id=tenant_id, is_deleted=False)
+            if project_id:
+                allowed_str = current_app.redis.get(f"project:{project_id}:accounts")
+                if allowed_str:
+                    allowed_ids = [aid for aid in allowed_str.split(",") if aid]
+                    if allowed_ids:
+                        accounts_query = accounts_query.filter(Account.id.in_(allowed_ids))
+            accounts = accounts_query.order_by(Account.name).all()
+
+            expense.vendor = request.form.get("vendor") or None
+            expense.note = request.form.get("note") or None
+            expense.amount = Decimal(request.form.get("amount", expense.amount))
+            expense.currency = request.form.get("currency", expense.currency)
+            expense.expense_date = datetime.strptime(request.form["expense_date"], "%Y-%m-%d").date()
+            expense.category_id = request.form.get("category_id") or None
+            expense.project_id = project_id
+            expense.is_project_related = bool(project_id)
+            expense.account_id = request.form.get("account_id") or None
+            expense.payment_method = request.form.get("payment_method", expense.payment_method)
+
+            # Mark edited metadata
+            meta = expense.expense_metadata or {}
+            display_name = f"{current_user.first_name or ''} {current_user.last_name or ''}".strip() or current_user.email
+            meta.update(
+                {
+                    "edited": True,
+                    "last_amount": old_amount,
+                    "last_account_id": old_account_id,
+                    "last_updated_by": current_user.id,
+                    "last_updated_by_name": display_name,
+                    "last_updated_at": datetime.utcnow().isoformat(),
+                }
+            )
+            expense.expense_metadata = meta
+            expense.updated_by = current_user.id
+
+            db.session.commit()
+            flash("Expense updated successfully.", "success")
+            return redirect(url_for("web.expenses"))
+        except Exception as exc:
+            db.session.rollback()
+            flash(f"Could not update expense: {exc}", "error")
+
+    return render_template(
+        "expenses/edit.html",
+        expense=expense,
+        accounts=accounts,
+        categories=categories,
+        projects=projects,
+        account_meta=[{"id": a.id, "currency": a.currency, "name": a.name, "type": a.account_type} for a in accounts],
+        tenant_currency=tenant_currency,
     )
 
 
@@ -469,6 +852,7 @@ def budget_new():
     from app.models.category import Category
 
     tenant_id = current_user.tenant_id
+    tenant_currency, _ = get_tenant_preferences()
     categories = Category.query.filter_by(tenant_id=tenant_id, is_deleted=False).all()
 
     if request.method == "POST":
@@ -485,7 +869,7 @@ def budget_new():
                 name=request.form.get("name", "Untitled budget"),
                 description=request.form.get("description") or None,
                 amount=amount,
-                currency=request.form.get("currency", "USD"),
+                currency=tenant_currency,
                 period=request.form.get("period", "monthly"),
                 start_date=start_date,
                 end_date=end_date,
@@ -502,7 +886,7 @@ def budget_new():
             db.session.rollback()
             flash(f"Could not create budget: {exc}", "error")
 
-    return render_template("budgets/form.html", categories=categories, mode="create", today=date.today().isoformat())
+    return render_template("budgets/form.html", categories=categories, mode="create", today=date.today().isoformat(), tenant_currency=tenant_currency)
 
 
 @bp.route("/budgets/<budget_id>/edit", methods=["GET", "POST"])
@@ -519,13 +903,14 @@ def budget_edit(budget_id):
         return redirect(url_for("web.budgets"))
 
     categories = Category.query.filter_by(tenant_id=tenant_id, is_deleted=False).all()
+    tenant_currency, _ = get_tenant_preferences()
 
     if request.method == "POST":
         try:
             budget.name = request.form.get("name", budget.name)
             budget.description = request.form.get("description") or None
             budget.amount = Decimal(request.form.get("amount", budget.amount))
-            budget.currency = request.form.get("currency", budget.currency)
+            budget.currency = tenant_currency
             budget.period = request.form.get("period", budget.period)
             budget.start_date = datetime.strptime(request.form["start_date"], "%Y-%m-%d").date()
             budget.end_date = datetime.strptime(request.form["end_date"], "%Y-%m-%d").date()
@@ -539,7 +924,7 @@ def budget_edit(budget_id):
             db.session.rollback()
             flash(f"Could not update budget: {exc}", "error")
 
-    return render_template("budgets/form.html", categories=categories, budget=budget, mode="edit", today=date.today().isoformat())
+    return render_template("budgets/form.html", categories=categories, budget=budget, mode="edit", today=date.today().isoformat(), tenant_currency=tenant_currency)
 
 
 @bp.route("/accounts")
@@ -574,11 +959,88 @@ def accounts():
                          expense_totals=expense_dict)
 
 
+@bp.route("/accounts/<account_id>/transactions")
+@login_required
+def account_transactions(account_id):
+    """Return recent account transactions (credits and expenses)."""
+    from app.models.account import Account
+    from app.models.expense import Expense
+    from sqlalchemy import func
+
+    tenant_id = current_user.tenant_id
+    kind = request.args.get("kind", "both")  # expenses, topups, both
+
+    account = Account.query.filter_by(
+        id=account_id,
+        tenant_id=tenant_id,
+        is_deleted=False
+    ).first()
+
+    if not account:
+        return jsonify({"error": "Account not found"}), 404
+
+    # Expenses (debits)
+    expense_query = Expense.query.filter_by(
+        tenant_id=tenant_id,
+        account_id=account.id,
+        is_deleted=False,
+    ).order_by(Expense.expense_date.desc(), Expense.created_at.desc())
+
+    expenses = []
+    if kind in ("both", "expenses"):
+        expenses = [
+            {
+                "type": "expense",
+                "date": exp.expense_date.isoformat() if exp.expense_date else "",
+                "label": exp.vendor or exp.note or "Expense",
+                "amount": float(exp.amount),
+                "category": exp.category.name if exp.category else None,
+            }
+            for exp in expense_query.limit(200).all()
+        ]
+
+    # Estimate top-ups as the delta between balance + expenses and opening balance
+    topups = []
+    if kind in ("both", "topups"):
+        total_expense_amount = (
+            db.session.query(func.sum(Expense.amount))
+            .filter(
+                Expense.tenant_id == tenant_id,
+                Expense.account_id == account.id,
+                Expense.is_deleted == False,
+            )
+            .scalar()
+            or 0
+        )
+        estimated_topups = float(account.current_balance - account.opening_balance + total_expense_amount)
+        if estimated_topups > 0:
+            topups = [
+                {
+                    "type": "topup",
+                    "date": (account.updated_at or account.created_at).date().isoformat(),
+                    "label": "Account Top-up",
+                    "amount": estimated_topups,
+                    "category": None,
+                }
+            ]
+
+    transactions = topups + expenses
+
+    return jsonify(
+        {
+            "account": {"id": account.id, "name": account.name, "currency": account.currency},
+            "transactions": transactions,
+        }
+    )
+
+
 @bp.route("/accounts/new", methods=["GET", "POST"])
 @login_required
 def account_new():
     """Create new account."""
     from app.models.account import Account
+
+    tenant_currency, _ = get_tenant_preferences()
 
     if request.method == "POST":
         try:
@@ -589,7 +1051,7 @@ def account_new():
                 tenant_id=current_user.tenant_id,
                 name=request.form.get("name"),
                 account_type=request.form.get("account_type", "cash"),
-                currency=request.form.get("currency", "USD"),
+                currency=tenant_currency,
                 opening_balance=opening_balance,
                 current_balance=opening_balance,
                 low_balance_threshold=Decimal(threshold) if threshold else None,
@@ -605,7 +1067,7 @@ def account_new():
             db.session.rollback()
             flash(f"Error creating account: {str(exc)}", "error")
     
-    return render_template("accounts/new.html")
+    return render_template("accounts/new.html", tenant_currency=tenant_currency)
 
 
 @bp.route("/accounts/<account_id>/adjust", methods=["GET", "POST"])

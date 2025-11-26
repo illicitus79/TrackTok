@@ -14,6 +14,7 @@
   <div class="card">
     <div class="card-body">
       <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="form-group">
           <label class="form-label" for="name">Name</label>
           <input class="form-input" type="text" id="name" name="name" required value="{{ budget.name if budget else '' }}" placeholder="Q1 Marketing Budget" />
@@ -31,7 +32,8 @@
           </div>
           <div class="form-group">
             <label class="form-label" for="currency">Currency</label>
-            <input class="form-input" type="text" id="currency" name="currency" value="{{ budget.currency if budget else 'USD' }}" maxlength="3" />
+            <input class="form-input" type="text" id="currency" name="currency" value="{{ tenant_currency }}" readonly />
+            <div class="form-hint">Currency follows tenant settings.</div>
           </div>
           <div class="form-group">
             <label class="form-label" for="period">Period</label>

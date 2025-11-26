@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 
-{% block title %}Add Expense - TrackTok{% endblock %}
+{% block title %}Edit Expense - TrackTok{% endblock %}
 
 {% block content %}
 <div class="container" style="padding: 2rem 0; max-width: 720px;">
-  <h1 style="margin: 0 0 1rem 0; font-size: 2rem;">Add Expense</h1>
+  <h1 style="margin: 0 0 1rem 0; font-size: 2rem;">Edit Expense</h1>
   <div class="card">
     <div class="card-body">
       <form method="POST">
@@ -15,44 +15,43 @@
             <select class="form-input" name="project_id" id="project_id">
               <option value="">Select a project</option>
               {% for project in projects %}
-              <option value="{{ project.id }}" {% if initial_project_id == project.id %}selected{% endif %}>{{ project.name }}</option>
+              <option value="{{ project.id }}" {% if expense.project_id == project.id %}selected{% endif %}>{{ project.name }}</option>
               {% endfor %}
             </select>
-            <div class="form-hint">Select project to see available source accounts.</div>
+            <div class="form-hint">Selecting a project filters available source accounts.</div>
           </div>
           <div class="form-group">
             <label class="form-label" for="vendor">Vendor / Title</label>
-            <input class="form-input" type="text" name="vendor" id="vendor" placeholder="Acme Cloud" />
+            <input class="form-input" type="text" name="vendor" id="vendor" value="{{ expense.vendor or '' }}" />
           </div>
         </div>
 
         <div class="form-group">
           <label class="form-label" for="note">Note</label>
-          <textarea class="form-input" name="note" id="note" rows="2" placeholder="Optional notes"></textarea>
+          <textarea class="form-input" name="note" id="note" rows="2">{{ expense.note or '' }}</textarea>
         </div>
 
         <div class="form-grid">
           <div class="form-group">
             <label class="form-label" for="amount">Amount <span class="required">*</span></label>
-            <input class="form-input" type="number" step="0.01" name="amount" id="amount" required />
+            <input class="form-input" type="number" step="0.01" name="amount" id="amount" required value="{{ expense.amount }}" />
           </div>
           <div class="form-group">
             <label class="form-label" for="currency">Currency</label>
-            <input class="form-input" type="text" name="currency" id="currency" value="{{ tenant_currency }}" maxlength="3" readonly />
+            <input class="form-input" type="text" name="currency" id="currency" value="{{ expense.currency }}" maxlength="3" readonly />
           </div>
           <div class="form-group">
             <label class="form-label" for="expense_date">Date <span class="required">*</span></label>
-            <input class="form-input" type="date" name="expense_date" id="expense_date" value="{{ today }}" required />
+            <input class="form-input" type="date" name="expense_date" id="expense_date" value="{{ expense.expense_date.isoformat() }}" required />
           </div>
         </div>
 
         <div class="form-grid">
           <div class="form-group">
             <label class="form-label" for="account_id">Source Account <span class="required">*</span></label>
-            <select class="form-input" name="account_id" id="account_id" required {% if not initial_project_id %}disabled{% endif %}>
-              <option value="">{% if initial_project_id %}Select account{% else %}Select a project first{% endif %}</option>
+            <select class="form-input" name="account_id" id="account_id" required>
               {% for account in accounts %}
-              <option value="{{ account.id }}">{{ account.name }} ({{ account.account_type }})</option>
+              <option value="{{ account.id }}" {% if expense.account_id == account.id %}selected{% endif %}>{{ account.name }} ({{ account.account_type }})</option>
               {% endfor %}
             </select>
             <div class="form-hint">Accounts are filtered by the selected project.</div>
@@ -62,25 +61,38 @@
             <select class="form-input" name="category_id" id="category_id">
               <option value="">Uncategorized</option>
               {% for category in categories %}
-              <option value="{{ category.id }}">{{ category.name }}</option>
+              <option value="{{ category.id }}" {% if expense.category_id == category.id %}selected{% endif %}>{{ category.name }}</option>
               {% endfor %}
             </select>
           </div>
           <div class="form-group">
             <label class="form-label" for="payment_method">Payment Method</label>
             <select class="form-input" name="payment_method" id="payment_method">
-              <option value="cash">Cash</option>
-              <option value="credit_card">Credit Card</option>
-              <option value="debit_card">Debit Card</option>
-              <option value="bank_transfer">Bank Transfer</option>
-              <option value="other">Other</option>
+              {% for method in ["cash","credit_card","debit_card","bank_transfer","other"] %}
+              <option value="{{ method }}" {% if expense.payment_method == method %}selected{% endif %}>{{ method.replace('_',' ')|title }}</option>
+              {% endfor %}
             </select>
           </div>
         </div>
 
+        {% set meta = expense.expense_metadata or {} %}
+        {% if meta.get("edited") %}
+        <div class="card" style="margin-top: 1rem; background: rgba(59,130,246,0.05); border: 1px solid var(--border);">
+          <div class="card-body">
+            <div style="font-weight: 600; color: var(--text);">Edit History</div>
+            <div style="color: var(--text-muted); font-size: 0.9rem;">
+              Last amount: {% if meta.get("last_amount") is not none %}${{ "%.2f"|format(meta.get("last_amount")|float) }}{% else %}N/A{% endif %}
+              &middot; Last account: {{ meta.get("last_account_id") or "N/A" }}
+              &middot; Edited by: {{ meta.get("last_updated_by_name") or meta.get("last_updated_by") or "Unknown" }}
+              &middot; At: {{ meta.get("last_updated_at") or "Unknown" }}
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
         <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1rem;">
           <a class="btn btn-secondary" href="{{ url_for('web.expenses') }}">Cancel</a>
-          <button type="submit" class="btn btn-primary">Save Expense</button>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
         </div>
       </form>
     </div>
@@ -95,7 +107,7 @@
 
   async function loadAccountsForProject(projectId) {
     if (!projectId) {
-      accountSelect.innerHTML = '<option value="">Select a project first</option>';
+      accountSelect.innerHTML = '<option value=\"\">Select a project first</option>';
       accountSelect.disabled = true;
       document.getElementById("currency").value = "";
       return;
@@ -107,10 +119,10 @@
       if (!res.ok) throw new Error("Failed to load accounts");
       const accounts = await res.json();
       if (!accounts.length) {
-        accountSelect.innerHTML = '<option value="">No accounts allowed for this project</option>';
+        accountSelect.innerHTML = '<option value=\"\">No accounts allowed for this project</option>';
         return;
       }
-      accountSelect.innerHTML = '<option value="">Select account</option>';
+      accountSelect.innerHTML = '<option value=\"\">Select account</option>';
       accounts.forEach((acc) => {
         const opt = document.createElement("option");
         opt.value = acc.id;
@@ -118,29 +130,26 @@
         accountSelect.appendChild(opt);
       });
       accountSelect.disabled = false;
+      // Reselect previous value if still present
+      const current = "{{ expense.account_id }}";
+      if (current) {
+        accountSelect.value = current;
+      }
+      const selected = accounts.find((a) => a.id === accountSelect.value);
+      document.getElementById("currency").value = selected ? selected.currency : "";
     } catch (e) {
-      accountSelect.innerHTML = '<option value="">Error loading accounts</option>';
+      accountSelect.innerHTML = '<option value=\"\">Error loading accounts</option>';
     }
   }
 
   document.addEventListener("DOMContentLoaded", () => {
-    // local accounts metadata for fast currency lookup
     const accountMeta = {{ account_meta|tojson }};
-
-    // Update currency on account change
     accountSelect.addEventListener("change", (e) => {
       const selected = accountMeta.find((a) => a.id === e.target.value);
       document.getElementById("currency").value = selected ? selected.currency : "";
     });
-
-    const onlyOneProject = projectSelect.options.length === 2 && !projectSelect.value;
-    if (onlyOneProject) {
-      projectSelect.selectedIndex = 1;
-    }
     if (projectSelect.value) {
       loadAccountsForProject(projectSelect.value);
-    } else {
-      accountSelect.disabled = true;
     }
     projectSelect.addEventListener("change", (e) => {
       loadAccountsForProject(e.target.value);

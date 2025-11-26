@@ -104,9 +104,11 @@
           >
             Currency *
           </label>
-          <select
+          <input
+            type="text"
             name="currency"
-            required
+            value="{{ tenant_currency }}"
+            readonly
             style="
               width: 100%;
               padding: 0.75rem;
@@ -116,12 +118,8 @@
               color: white;
               font-size: 1rem;
             "
-          >
-            <option value="USD" selected>USD</option>
-            <option value="EUR">EUR</option>
-            <option value="GBP">GBP</option>
-            <option value="JPY">JPY</option>
-          </select>
+          />
+          <div class="form-hint">Currency is managed in Settings and applies to all accounts.</div>
         </div>
 
         <div>

@@ -88,6 +88,7 @@
                 >
                 <hr class="dropdown-divider" />
                 <form action="{{ url_for('web.logout') }}" method="POST">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <button type="submit" class="dropdown-item">Sign Out</button>
                 </form>
               </div>
@@ -209,6 +210,9 @@
     {% endblock %}
 
     <!-- Base JavaScript -->
+    <script>
+      window.TENANT_CURRENCY = "{{ currency_code }}";
+    </script>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     {% block extra_scripts %}{% endblock %}
   </body>

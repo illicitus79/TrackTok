@@ -3,6 +3,7 @@ import os
 import uuid
 
 from flask import Flask, g, jsonify, request
+from flask_login import current_user
 from loguru import logger
 from redis import Redis
 
@@ -119,6 +120,34 @@ def create_app(config_name: str = None) -> Flask:
         ), 200 if status == "healthy" else 503
 
     logger.info("Application initialized successfully")
+
+    @app.context_processor
+    def inject_currency():
+        """Inject tenant currency helpers into templates."""
+        code = "USD"
+        symbol_map = {
+            "USD": "$",
+            "EUR": "€",
+            "GBP": "£",
+            "JPY": "¥",
+            "THB": "฿",
+        }
+        try:
+            tenant = getattr(current_user, "tenant", None)
+            if tenant and tenant.settings:
+                code = tenant.settings.get("currency", code)
+        except Exception:
+            pass
+        symbol = symbol_map.get(code, f"{code} ")
+
+        def format_money(amount):
+            try:
+                return f"{symbol}{float(amount):,.2f}"
+            except Exception:
+                return f"{symbol}{amount}"
+
+        return {"currency_code": code, "currency_symbol": symbol, "format_money": format_money}
+
     return app
 
 
