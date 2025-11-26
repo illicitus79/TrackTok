@@ -111,6 +111,7 @@ class Config:
     OPENAPI_REDOC_URL = (
         "https://cdn.jsdelivr.net/npm/redoc@next/bundles/redoc.standalone.js"
     )
+    API_URL_PREFIX = "/api/v1"
 
 
 class DevelopmentConfig(Config):

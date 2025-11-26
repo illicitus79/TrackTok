@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block title %}New Account - TrackTok{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 800px; padding: 2rem; margin: 0 auto;">
+  <!-- Header -->
+  <div style="margin-bottom: 2rem;">
+    <div style="margin-bottom: 0.5rem;">
+      <a href="{{ url_for('web.accounts') }}" style="color: #6366f1; text-decoration: none; font-size: 0.875rem;">
+        ← Back to Accounts
+      </a>
+    </div>
+    <h1 style="margin: 0; font-size: 2rem; color: white;">Create New Account</h1>
+    <p style="margin: 0.5rem 0 0; color: #9ca3af;">Add a new financial account to track balances and expenses</p>
+  </div>
+
+  <!-- Form Card -->
+  <div style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); border-radius: 12px; padding: 2rem; border: 1px solid #334155;">
+    <form method="POST" style="display: grid; gap: 1.5rem;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <!-- Account Name -->
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; color: white; font-weight: 600;">
+          Account Name *
+        </label>
+        <input type="text" name="name" required 
+               style="width: 100%; padding: 0.75rem; background: rgba(0,0,0,0.3); border: 1px solid #475569; border-radius: 8px; color: white; font-size: 1rem;"
+               placeholder="e.g., Operating Account, Credit Card">
+      </div>
+
+      <!-- Account Type -->
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; color: white; font-weight: 600;">
+          Account Type *
+        </label>
+        <select name="account_type" required
+                style="width: 100%; padding: 0.75rem; background: rgba(0,0,0,0.3); border: 1px solid #475569; border-radius: 8px; color: white; font-size: 1rem;">
+          <option value="cash">Cash</option>
+          <option value="checking">Checking Account</option>
+          <option value="savings">Savings Account</option>
+          <option value="credit_card">Credit Card</option>
+          <option value="digital_wallet">Digital Wallet</option>
+        </select>
+      </div>
+
+      <!-- Currency & Opening Balance Row -->
+      <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 1rem;">
+        <div>
+          <label style="display: block; margin-bottom: 0.5rem; color: white; font-weight: 600;">
+            Currency *
+          </label>
+          <select name="currency" required
+                  style="width: 100%; padding: 0.75rem; background: rgba(0,0,0,0.3); border: 1px solid #475569; border-radius: 8px; color: white; font-size: 1rem;">
+            <option value="USD" selected>USD</option>
+            <option value="EUR">EUR</option>
+            <option value="GBP">GBP</option>
+            <option value="JPY">JPY</option>
+          </select>
+        </div>
+
+        <div>
+          <label style="display: block; margin-bottom: 0.5rem; color: white; font-weight: 600;">
+            Opening Balance *
+          </label>
+          <input type="number" name="opening_balance" step="0.01" value="0.00" required
+                 style="width: 100%; padding: 0.75rem; background: rgba(0,0,0,0.3); border: 1px solid #475569; border-radius: 8px; color: white; font-size: 1rem;"
+                 placeholder="0.00">
+        </div>
+      </div>
+
+      <!-- Low Balance Threshold -->
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; color: white; font-weight: 600;">
+          Low Balance Alert Threshold
+        </label>
+        <input type="number" name="low_balance_threshold" step="0.01"
+               style="width: 100%; padding: 0.75rem; background: rgba(0,0,0,0.3); border: 1px solid #475569; border-radius: 8px; color: white; font-size: 1rem;"
+               placeholder="e.g., 1000.00">
+        <div style="margin-top: 0.5rem; font-size: 0.875rem; color: #9ca3af;">
+          Optional: Get alerted when balance falls below this amount
+        </div>
+      </div>
+
+      <!-- Account Number Last 4 -->
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; color: white; font-weight: 600;">
+          Account Number (Last 4 digits)
+        </label>
+        <input type="text" name="account_number_last4" maxlength="4" pattern="[0-9]{4}"
+               style="width: 100%; padding: 0.75rem; background: rgba(0,0,0,0.3); border: 1px solid #475569; border-radius: 8px; color: white; font-size: 1rem;"
+               placeholder="e.g., 1234">
+        <div style="margin-top: 0.5rem; font-size: 0.875rem; color: #9ca3af;">
+          Optional: For reference only
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div>
+        <label style="display: block; margin-bottom: 0.5rem; color: white; font-weight: 600;">
+          Description
+        </label>
+        <textarea name="description" rows="3"
+                  style="width: 100%; padding: 0.75rem; background: rgba(0,0,0,0.3); border: 1px solid #475569; border-radius: 8px; color: white; font-size: 1rem;"
+                  placeholder="Optional notes about this account"></textarea>
+      </div>
+
+      <!-- Actions -->
+      <div style="display: flex; gap: 1rem; padding-top: 1rem; border-top: 1px solid #475569;">
+        <button type="submit" class="btn btn-primary" style="flex: 1;">
+          Create Account
+        </button>
+        <a href="{{ url_for('web.accounts') }}" class="btn btn-secondary" style="flex: 1; text-align: center;">
+          Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+select, input, textarea {
+  font-family: inherit;
+}
+
+select option {
+  background: #1e293b;
+  color: white;
+}
+</style>
+{% endblock %}

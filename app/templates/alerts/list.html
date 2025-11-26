@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Alerts - TrackTok{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 2rem 0;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <div>
+      <h1 style="margin: 0; font-size: 2rem;">Alerts</h1>
+      <p style="color: var(--text-muted); margin: 0.25rem 0 0;">System notices for your tenant.</p>
+    </div>
+    <a href="{{ url_for('web.dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
+  </div>
+
+  {% if alerts %}
+  <div class="card">
+    <div class="card-body">
+      <ul style="list-style: none; padding: 0; margin: 0;">
+        {% for alert in alerts %}
+        <li style="padding: 0.75rem 0; border-bottom: 1px solid var(--border);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+            <div>
+              <div style="font-weight: 600;">{{ alert.title }}</div>
+              <div style="color: var(--text-muted); font-size: 0.9rem;">{{ alert.message }}</div>
+              <div style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.25rem;">
+                {{ alert.created_at.strftime('%b %d, %Y %H:%M') }} &bull; {{ alert.severity|capitalize }}
+              </div>
+            </div>
+            <span class="badge {% if alert.severity in ['error','critical'] %}badge-error{% elif alert.severity == 'warning' %}badge-warning{% else %}badge-success{% endif %}">
+              {{ alert.alert_type.replace('_', ' ') }}
+            </span>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  {% else %}
+  <div class="card">
+    <div class="card-body" style="text-align: center;">
+      <p style="color: var(--text-muted); margin-bottom: 1rem;">No alerts to show.</p>
+      <a href="{{ url_for('web.dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

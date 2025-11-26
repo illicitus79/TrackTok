@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Projects - TrackTok{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 2rem 0;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <div>
+      <h1 style="margin: 0; font-size: 2rem;">Projects</h1>
+      <p style="color: var(--text-muted); margin: 0.25rem 0 0;">All projects for your tenant.</p>
+    </div>
+    <a href="{{ url_for('web.dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
+  </div>
+
+  {% if projects %}
+  <div class="card">
+    <div class="card-body">
+      <table class="table" style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="text-align: left; border-bottom: 1px solid var(--border);">
+            <th style="padding: 0.75rem 0.5rem;">Name</th>
+            <th style="padding: 0.75rem 0.5rem;">Status</th>
+            <th style="padding: 0.75rem 0.5rem;">Budget</th>
+            <th style="padding: 0.75rem 0.5rem;">Dates</th>
+            <th style="padding: 0.75rem 0.5rem;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for project in projects %}
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 0.75rem 0.5rem; font-weight: 600;">{{ project.name }}</td>
+            <td style="padding: 0.75rem 0.5rem;"><span class="badge badge-success">{{ project.status }}</span></td>
+            <td style="padding: 0.75rem 0.5rem;">${{ "%.2f"|format(project.starting_budget|float) }}</td>
+            <td style="padding: 0.75rem 0.5rem;">
+              {% if project.start_date %}{{ project.start_date.strftime('%b %d, %Y') }}{% else %}N/A{% endif %}
+              {% if project.end_date %} - {{ project.end_date.strftime('%b %d, %Y') }}{% endif %}
+            </td>
+            <td style="padding: 0.75rem 0.5rem;">
+              <a href="{{ url_for('web.project_detail', project_id=project.id) }}" class="btn btn-link">Open</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="card">
+    <div class="card-body" style="text-align: center;">
+      <p style="color: var(--text-muted); margin-bottom: 1rem;">No projects yet.</p>
+      <a href="{{ url_for('web.dashboard') }}" class="btn btn-primary">Go to Dashboard</a>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

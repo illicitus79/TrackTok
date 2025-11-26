@@ -2,15 +2,20 @@
 // ============================================================================
 
 class DashboardApp {
-  constructor(projectId) {
+  constructor(projectId, serverData = null) {
     this.projectId = projectId;
     this.charts = {};
-    this.data = null;
+    this.data = serverData; // Use server-side data if provided
+    this.token = localStorage.getItem("access_token");
+    this.tenantId = localStorage.getItem("tenant_id");
     this.init();
   }
 
   async init() {
-    await this.fetchData();
+    if (!this.data) {
+      // Fallback to API if no server data provided
+      await this.fetchData();
+    }
     this.renderStats();
     this.renderCharts();
   }
@@ -18,12 +23,19 @@ class DashboardApp {
   async fetchData() {
     try {
       const response = await fetch(
-        `/api/v1/dashboards/project/${this.projectId}`
+        `/api/v1/dashboards/project/${this.projectId}`,
+        {
+          headers: {
+            ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
+            ...(this.tenantId ? { "X-Tenant-Id": this.tenantId } : {}),
+          },
+          credentials: "include",
+        }
       );
       if (response.ok) {
         this.data = await response.json();
       } else {
-        console.error("Failed to fetch dashboard data");
+        console.error("Failed to fetch dashboard data", await response.text());
       }
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
@@ -33,21 +45,22 @@ class DashboardApp {
   renderStats() {
     if (!this.data) return;
 
-    const { project } = this.data;
+    // Server-side data is already flat, no need to access .project
+    const data = this.data;
 
     // Update stat cards
-    this.updateStat("starting_budget", project.starting_budget);
-    this.updateStat("projected_estimate", project.projected_estimate);
-    this.updateStat("total_spend", project.total_spend);
-    this.updateStat("remaining_budget", project.remaining_budget);
-    this.updateStat("utilization", project.budget_utilization);
-    this.updateStat("days_remaining", project.days_remaining);
-    this.updateStat("burn_rate", project.burn_rate || 0);
+    this.updateStat("starting_budget", data.starting_budget);
+    this.updateStat("projected_estimate", data.projected_estimate);
+    this.updateStat("total_spend", data.total_spend);
+    this.updateStat("remaining_budget", data.remaining_budget);
+    this.updateStat("utilization", data.budget_utilization);
+    this.updateStat("days_remaining", data.days_remaining);
+    this.updateStat("burn_rate", data.burn_rate || 0);
 
     // Update progress bar
     const progressBar = document.querySelector('[data-progress="utilization"]');
     if (progressBar) {
-      progressBar.style.width = `${project.budget_utilization}%`;
+      progressBar.style.width = `${data.budget_utilization}%`;
     }
 
     // Update card status
@@ -55,9 +68,9 @@ class DashboardApp {
       '[data-card-status="remaining"]'
     );
     if (remainingCard) {
-      if (project.is_over_budget) {
+      if (data.is_over_budget) {
         remainingCard.classList.add("card-gradient-error");
-      } else if (project.budget_utilization > 80) {
+      } else if (data.budget_utilization > 80) {
         remainingCard.classList.add("card-gradient-warning");
       } else {
         remainingCard.classList.add("card-gradient-emerald");
@@ -87,6 +100,12 @@ class DashboardApp {
   }
 
   renderCharts() {
+    if (!this.data) {
+      console.error("No data available for charts");
+      return;
+    }
+    
+    console.log("Rendering charts with data:", this.data);
     this.renderCategoryChart();
     this.renderMonthlyChart();
     this.renderForecastChart();
@@ -96,9 +115,18 @@ class DashboardApp {
   // Category Breakdown Donut Chart
   renderCategoryChart() {
     const ctx = document.getElementById("categoryChart");
-    if (!ctx || !this.data.category_breakdown) return;
+    if (!ctx) {
+      console.error("Category chart canvas not found");
+      return;
+    }
+    
+    if (!this.data.category_breakdown || this.data.category_breakdown.labels.length === 0) {
+      console.log("No category breakdown data");
+      ctx.parentElement.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #9ca3af;">No category data available</div>';
+      return;
+    }
 
-    const { labels, data, colors } = this.data.category_breakdown;
+    const { labels, data } = this.data.category_breakdown;
 
     this.charts.category = new Chart(ctx, {
       type: "doughnut",
@@ -107,7 +135,7 @@ class DashboardApp {
         datasets: [
           {
             data: data,
-            backgroundColor: colors || this.generateColors(labels.length),
+            backgroundColor: this.generateColors(labels.length),
             borderColor: "rgba(18, 24, 38, 1)",
             borderWidth: 2,
           },
@@ -141,9 +169,7 @@ class DashboardApp {
                 const value = context.parsed || 0;
                 const total = context.dataset.data.reduce((a, b) => a + b, 0);
                 const percentage = ((value / total) * 100).toFixed(1);
-                return `${label}: ${window.TrackTok.formatCurrency(
-                  value
-                )} (${percentage}%)`;
+                return `${label}: $${value.toFixed(2)} (${percentage}%)`;
               },
             },
           },
@@ -155,15 +181,24 @@ class DashboardApp {
   // Monthly Spend Stacked Bar Chart
   renderMonthlyChart() {
     const ctx = document.getElementById("monthlyChart");
-    if (!ctx || !this.data.monthly_trend) return;
+    if (!ctx) {
+      console.error("Monthly chart canvas not found");
+      return;
+    }
+    
+    if (!this.data.monthly_trend || this.data.monthly_trend.labels.length === 0) {
+      console.log("No monthly trend data");
+      ctx.parentElement.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #9ca3af;">No monthly data available</div>';
+      return;
+    }
 
     const { labels, datasets } = this.data.monthly_trend;
 
-    // Apply gradient colors to datasets
+    // Apply colors to datasets
     const coloredDatasets = datasets.map((dataset, index) => ({
       ...dataset,
-      backgroundColor: this.getGradientColor(ctx, index),
-      borderColor: this.getGradientColor(ctx, index),
+      backgroundColor: this.getColorForIndex(index),
+      borderColor: this.getColorForIndex(index),
       borderWidth: 0,
     }));
 
@@ -194,7 +229,7 @@ class DashboardApp {
             ticks: {
               color: "#9ca3af",
               callback: function (value) {
-                return window.TrackTok.formatCurrency(value);
+                return "$" + value.toFixed(2);
               },
             },
           },
@@ -219,9 +254,7 @@ class DashboardApp {
             padding: 12,
             callbacks: {
               label: function (context) {
-                return `${
-                  context.dataset.label
-                }: ${window.TrackTok.formatCurrency(context.parsed.y)}`;
+                return `${context.dataset.label}: $${context.parsed.y.toFixed(2)}`;
               },
             },
           },
@@ -233,7 +266,16 @@ class DashboardApp {
   // Forecast vs Actual Line Chart
   renderForecastChart() {
     const ctx = document.getElementById("forecastChart");
-    if (!ctx || !this.data.forecast_vs_actual) return;
+    if (!ctx) {
+      console.error("Forecast chart canvas not found");
+      return;
+    }
+    
+    if (!this.data.forecast_vs_actual || this.data.forecast_vs_actual.labels.length === 0) {
+      console.log("No forecast data");
+      ctx.parentElement.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #9ca3af;">No forecast data available</div>';
+      return;
+    }
 
     const { labels, datasets } = this.data.forecast_vs_actual;
 
@@ -296,7 +338,7 @@ class DashboardApp {
             ticks: {
               color: "#9ca3af",
               callback: function (value) {
-                return window.TrackTok.formatCurrency(value);
+                return "$" + value.toFixed(2);
               },
             },
           },
@@ -322,9 +364,7 @@ class DashboardApp {
             padding: 12,
             callbacks: {
               label: function (context) {
-                return `${
-                  context.dataset.label
-                }: ${window.TrackTok.formatCurrency(context.parsed.y)}`;
+                return `${context.dataset.label}: $${context.parsed.y.toFixed(2)}`;
               },
             },
           },
@@ -332,21 +372,8 @@ class DashboardApp {
       },
     });
 
-    // Update forecast stats
-    if (this.data.project.forecast) {
-      this.updateStat(
-        "projected_total",
-        this.data.project.forecast.projected_total
-      );
-      this.updateStat("confidence", this.data.project.forecast.confidence);
-      this.updateStat("variance", this.data.project.forecast.variance);
-
-      // Update forecast status badge
-      const badge = document.querySelector("[data-forecast-status]");
-      if (badge && this.data.project.forecast.will_exceed) {
-        badge.innerHTML = '<span class="badge badge-error">Over Budget</span>';
-      }
-    }
+    // Update forecast stats (already populated server-side in template)
+    // The forecast stats are rendered in the template, no need to update here
   }
 
   // Account Balances Sparklines
@@ -390,6 +417,21 @@ class DashboardApp {
 
     const colors = gradients[index % gradients.length];
     return colors[1]; // Use middle color for simplicity
+  }
+
+  // Helper: Get color for index
+  getColorForIndex(index) {
+    const colors = [
+      "#3b82f6", // Blue
+      "#10b981", // Green
+      "#f59e0b", // Orange
+      "#8b5cf6", // Purple
+      "#ec4899", // Pink
+      "#14b8a6", // Teal
+      "#f97316", // Orange-red
+      "#06b6d4", // Cyan
+    ];
+    return colors[index % colors.length];
   }
 
   // Helper: Generate colors for pie chart

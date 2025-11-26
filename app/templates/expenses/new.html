@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Add Expense - TrackTok{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 2rem 0; max-width: 720px;">
+  <h1 style="margin: 0 0 1rem 0; font-size: 2rem;">Add Expense</h1>
+  <div class="card">
+    <div class="card-body">
+      <form method="POST">
+        <div class="form-group">
+          <label class="form-label" for="vendor">Vendor / Title</label>
+          <input class="form-input" type="text" name="vendor" id="vendor" placeholder="Acme Cloud" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="note">Note</label>
+          <textarea class="form-input" name="note" id="note" rows="2" placeholder="Optional notes"></textarea>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label" for="amount">Amount <span class="required">*</span></label>
+            <input class="form-input" type="number" step="0.01" name="amount" id="amount" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="currency">Currency</label>
+            <input class="form-input" type="text" name="currency" id="currency" value="USD" maxlength="3" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="expense_date">Date <span class="required">*</span></label>
+            <input class="form-input" type="date" name="expense_date" id="expense_date" value="{{ today }}" required />
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label" for="account_id">Account <span class="required">*</span></label>
+            <select class="form-input" name="account_id" id="account_id" required>
+              <option value="">Select account</option>
+              {% for account in accounts %}
+              <option value="{{ account.id }}">{{ account.name }} ({{ account.account_type }})</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="category_id">Category</label>
+            <select class="form-input" name="category_id" id="category_id">
+              <option value="">Uncategorized</option>
+              {% for category in categories %}
+              <option value="{{ category.id }}">{{ category.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="payment_method">Payment Method</label>
+            <select class="form-input" name="payment_method" id="payment_method">
+              <option value="cash">Cash</option>
+              <option value="credit_card">Credit Card</option>
+              <option value="debit_card">Debit Card</option>
+              <option value="bank_transfer">Bank Transfer</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1rem;">
+          <a class="btn btn-secondary" href="{{ url_for('web.expenses') }}">Cancel</a>
+          <button type="submit" class="btn btn-primary">Save Expense</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

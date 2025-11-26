@@ -179,6 +179,7 @@ def register_blueprints(app: Flask) -> None:
         alerts,
         auth,
         budgets,
+        dashboards,
         expenses,
         preferences,
         projects,
@@ -187,16 +188,19 @@ def register_blueprints(app: Flask) -> None:
         users,
     )
     
-    # Register each with the Api object
-    smorest_api.register_blueprint(auth.blp)
-    smorest_api.register_blueprint(users.blp)
-    smorest_api.register_blueprint(tenants.blp)
-    smorest_api.register_blueprint(projects.blp)
-    smorest_api.register_blueprint(expenses.blp)
-    smorest_api.register_blueprint(budgets.blp)
-    smorest_api.register_blueprint(alerts.blp)
-    smorest_api.register_blueprint(preferences.blp)
-    smorest_api.register_blueprint(reports.blp)
+    api_prefix = app.config.get("API_URL_PREFIX", "/api")
+
+    # Register each with the Api object under a consistent API prefix
+    smorest_api.register_blueprint(auth.blp, url_prefix=f"{api_prefix}/auth")
+    smorest_api.register_blueprint(users.blp, url_prefix=f"{api_prefix}/users")
+    smorest_api.register_blueprint(tenants.blp, url_prefix=f"{api_prefix}/tenants")
+    smorest_api.register_blueprint(projects.blp, url_prefix=f"{api_prefix}/projects")
+    smorest_api.register_blueprint(expenses.blp, url_prefix=f"{api_prefix}/expenses")
+    smorest_api.register_blueprint(budgets.blp, url_prefix=f"{api_prefix}/budgets")
+    smorest_api.register_blueprint(alerts.blp, url_prefix=f"{api_prefix}/alerts")
+    smorest_api.register_blueprint(dashboards.blp, url_prefix=f"{api_prefix}/dashboards")
+    smorest_api.register_blueprint(preferences.blp, url_prefix=f"{api_prefix}/preferences")
+    smorest_api.register_blueprint(reports.blp, url_prefix=f"{api_prefix}/reports")
     
     # TODO: Register remaining blueprints when created:
     # api.register_blueprint(accounts.blp)

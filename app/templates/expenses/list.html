@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Expenses - TrackTok{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 2rem 0;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <div>
+      <h1 style="margin: 0; font-size: 2rem;">Expenses</h1>
+      <p style="color: var(--text-muted); margin: 0.25rem 0 0;">Latest expenses for your tenant.</p>
+    </div>
+    <a href="{{ url_for('web.dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
+  </div>
+
+  {% if expenses %}
+  <div class="card">
+    <div class="card-body">
+      <table class="table" style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="text-align: left; border-bottom: 1px solid var(--border);">
+            <th style="padding: 0.75rem 0.5rem;">Vendor / Note</th>
+            <th style="padding: 0.75rem 0.5rem;">Date</th>
+            <th style="padding: 0.75rem 0.5rem;">Category</th>
+            <th style="padding: 0.75rem 0.5rem;">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for expense in expenses %}
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 0.75rem 0.5rem; font-weight: 500;">{{ expense.vendor or expense.note or 'Expense' }}</td>
+            <td style="padding: 0.75rem 0.5rem;">{{ expense.expense_date.strftime('%b %d, %Y') }}</td>
+            <td style="padding: 0.75rem 0.5rem;">{{ expense.category.name if expense.category else 'Uncategorized' }}</td>
+            <td style="padding: 0.75rem 0.5rem;">${{ "%.2f"|format(expense.amount|float) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="card">
+    <div class="card-body" style="text-align: center;">
+      <p style="color: var(--text-muted); margin-bottom: 1rem;">No expenses yet.</p>
+      <a href="{{ url_for('web.dashboard') }}" class="btn btn-primary">Add your first expense</a>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

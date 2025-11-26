@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Budgets - TrackTok{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 2rem 0;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <div>
+      <h1 style="margin: 0; font-size: 2rem;">Budgets</h1>
+      <p style="color: var(--text-muted); margin: 0.25rem 0 0;">Budget coverage across categories and teams.</p>
+    </div>
+    <div style="display: flex; gap: 0.75rem;">
+      <a href="{{ url_for('web.dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
+      <a href="{{ url_for('web.budget_new') }}" class="btn btn-primary">New Budget</a>
+    </div>
+  </div>
+
+  {% if budgets %}
+  <div class="card">
+    <div class="card-body">
+      <table class="table" style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="text-align: left; border-bottom: 1px solid var(--border);">
+            <th style="padding: 0.75rem 0.5rem;">Name</th>
+            <th style="padding: 0.75rem 0.5rem;">Period</th>
+            <th style="padding: 0.75rem 0.5rem;">Amount</th>
+            <th style="padding: 0.75rem 0.5rem;">Window</th>
+            <th style="padding: 0.75rem 0.5rem;">Status</th>
+            <th style="padding: 0.75rem 0.5rem;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for budget in budgets %}
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 0.75rem 0.5rem; font-weight: 600;">{{ budget.name }}</td>
+            <td style="padding: 0.75rem 0.5rem;">{{ budget.period|capitalize }}</td>
+            <td style="padding: 0.75rem 0.5rem;">${{ "%.2f"|format(budget.amount|float) }}</td>
+            <td style="padding: 0.75rem 0.5rem;">{{ budget.start_date.strftime('%b %d, %Y') }} - {{ budget.end_date.strftime('%b %d, %Y') }}</td>
+            <td style="padding: 0.75rem 0.5rem;">
+              {% if budget.is_active %}
+              <span class="badge badge-success">Active</span>
+              {% else %}
+              <span class="badge badge-secondary">Inactive</span>
+              {% endif %}
+            </td>
+            <td style="padding: 0.75rem 0.5rem;">
+              <a class="btn btn-link" href="{{ url_for('web.budget_edit', budget_id=budget.id) }}">Edit</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="card">
+    <div class="card-body" style="text-align: center;">
+      <p style="color: var(--text-muted); margin-bottom: 1rem;">No budgets have been created yet.</p>
+      <a href="{{ url_for('web.dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

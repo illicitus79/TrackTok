@@ -3,84 +3,146 @@
 {% block title %}Dashboard - TrackTok{% endblock %}
 
 {% block content %}
-<div x-data="dashboardData()">
-    <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-6">Dashboard</h1>
-    
-    <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
-            <div class="p-5">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0 bg-blue-500 rounded-md p-3">
-                        <span class="text-2xl">💵</span>
-                    </div>
-                    <div class="ml-5 w-0 flex-1">
-                        <dl>
-                            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
-                                Total Expenses (Month)
-                            </dt>
-                            <dd class="text-2xl font-semibold text-gray-900 dark:text-white" x-text="formatCurrency(stats.totalExpenses)">
-                            </dd>
-                        </dl>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
-            <div class="p-5">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0 bg-green-500 rounded-md p-3">
-                        <span class="text-2xl">📊</span>
-                    </div>
-                    <div class="ml-5 w-0 flex-1">
-                        <dl>
-                            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
-                                Budget Utilization
-                            </dt>
-                            <dd class="text-2xl font-semibold text-gray-900 dark:text-white" x-text="stats.budgetUtilization + '%'">
-                            </dd>
-                        </dl>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
-            <div class="p-5">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0 bg-purple-500 rounded-md p-3">
-                        <span class="text-2xl">📈</span>
-                    </div>
-                    <div class="ml-5 w-0 flex-1">
-                        <dl>
-                            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
-                                Expenses Count
-                            </dt>
-                            <dd class="text-2xl font-semibold text-gray-900 dark:text-white" x-text="stats.expenseCount">
-                            </dd>
-                        </dl>
-                    </div>
-                </div>
-            </div>
-        </div>
+<div class="container" style="padding: 2rem 0;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <h1 style="font-size: 2rem; font-weight: 700; margin: 0;">Dashboard</h1>
+    <div>
+      <a href="{{ url_for('web.projects') }}" class="btn btn-primary" style="margin-right: 0.5rem;">New Project</a>
+      <a href="{{ url_for('web.expense_new') }}" class="btn btn-secondary">Add Expense</a>
     </div>
-    
-    <!-- Charts -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Monthly Spending</h2>
-            <canvas id="monthlyChart"></canvas>
-        </div>
-        
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">By Category</h2>
-            <canvas id="categoryChart"></canvas>
-        </div>
-    </div>
-</div>
-{% endblock %}
+  </div>
 
-{% block extra_scripts %}
-<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+  <!-- Stats Cards -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+    <div class="card">
+      <div class="card-body">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1rem; border-radius: 0.5rem; font-size: 1.25rem;">$</div>
+          <div>
+            <div style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 0.25rem;">
+              Total Expenses (Month)
+            </div>
+            <div style="font-size: 1.5rem; font-weight: 700;">
+              ${{ "%.2f"|format(monthly_expenses|float) }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 1rem; border-radius: 0.5rem; font-size: 1.25rem;">PRJ</div>
+          <div>
+            <div style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 0.25rem;">
+              Active Projects
+            </div>
+            <div style="font-size: 1.5rem; font-weight: 700;">
+              {{ project_count }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 1rem; border-radius: 0.5rem; font-size: 1.25rem;">#</div>
+          <div>
+            <div style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 0.25rem;">
+              Expenses Count
+            </div>
+            <div style="font-size: 1.5rem; font-weight: 700;">
+              {{ expense_count }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Content Grid -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem;">
+    <!-- Active Projects -->
+    <div class="card">
+      <div class="card-header">
+        <h2 style="font-size: 1.25rem; font-weight: 600; margin: 0;">Active Projects</h2>
+      </div>
+      <div class="card-body">
+        {% if active_projects %}
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+          {% for project in active_projects %}
+          <div style="padding: 1rem; background: var(--bg-secondary); border-radius: 0.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+              <div>
+                <div style="font-weight: 600;">{{ project.name }}</div>
+                <div style="font-size: 0.875rem; color: var(--text-muted);">
+                  Budget: ${{ "%.2f"|format(project.starting_budget|float) }}
+                </div>
+              </div>
+              <span class="badge badge-success">{{ project.status }}</span>
+            </div>
+            {% if project.budget_utilization %}
+            <div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 0.25rem;">
+                <span>Utilization</span>
+                <span>{{ "%.1f"|format(project.budget_utilization|float) }}%</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: {{ project.budget_utilization }}%"></div>
+              </div>
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+          <p>No active projects</p>
+          <a href="{{ url_for('web.projects') }}" class="btn btn-primary" style="margin-top: 1rem;">Create Project</a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Recent Expenses -->
+    <div class="card">
+      <div class="card-header">
+        <h2 style="font-size: 1.25rem; font-weight: 600; margin: 0;">Recent Expenses</h2>
+      </div>
+      <div class="card-body">
+        {% if recent_expenses %}
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+          {% for expense in recent_expenses %}
+          <div style="display: flex; justify-content: space-between; padding: 0.75rem; background: var(--bg-secondary); border-radius: 0.5rem;">
+            <div>
+              <div style="font-weight: 500;">{{ expense.vendor or expense.note or 'Expense' }}</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">
+                {{ expense.expense_date.strftime('%b %d, %Y') }}
+                {% if expense.category %}
+                &nbsp;&bull;&nbsp;{{ expense.category.name }}
+                {% endif %}
+              </div>
+            </div>
+            <div style="font-weight: 600; white-space: nowrap;">
+              ${{ "%.2f"|format(expense.amount|float) }}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        <div style="text-align: center; margin-top: 1rem;">
+          <a href="{{ url_for('web.expenses') }}" style="color: var(--primary); text-decoration: none;">View All -&gt;</a>
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+          <p>No expenses recorded</p>
+          <a href="{{ url_for('web.expenses') }}" class="btn btn-primary" style="margin-top: 1rem;">Add Expense</a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}

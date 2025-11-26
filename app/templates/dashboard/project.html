@@ -1,19 +1,14 @@
 {% extends "base.html" %} {% block title %}{{ project.name }} - Dashboard{%
-endblock %} {% block extra_head %}
-<link
-  rel="stylesheet"
-  href="{{ url_for('static', filename='css/dashboard.css') }}"
-/>
-{% endblock %} {% block content %}
+endblock %} {% block content %}
 <div class="dashboard-container">
   <!-- Project Header -->
   <div class="dashboard-header">
     <div class="header-content">
-      <div class="breadcrumb">
-        <a href="{{ url_for('web.projects') }}">Projects</a>
-        <span>/</span>
-        <span>{{ project.name }}</span>
-      </div>
+          <div class="breadcrumb">
+            <a href="{{ url_for('web.projects') }}">Projects</a>
+            <span>/</span>
+            <span>{{ project.name }}</span>
+          </div>
       <h1>{{ project.name }}</h1>
       <p class="project-description">
         {{ project.description or 'No description' }}
@@ -35,8 +30,8 @@ endblock %} {% block extra_head %}
             <line x1="8" y1="2" x2="8" y2="6"></line>
             <line x1="3" y1="10" x2="21" y2="10"></line>
           </svg>
-          {{ project.start_date.strftime('%b %d, %Y') }} - {{
-          project.end_date.strftime('%b %d, %Y') }}
+          {{ project.start_date.strftime('%b %d, %Y') if project.start_date else 'Start date TBD' }} -
+          {{ project.end_date.strftime('%b %d, %Y') if project.end_date else 'End date TBD' }}
         </span>
         <span class="meta-item">
           <span class="badge badge-{{ project.status }}"
@@ -49,7 +44,7 @@ endblock %} {% block extra_head %}
     <div class="header-actions">
       <button
         class="btn btn-secondary"
-        onclick="window.location.href='{{ url_for('web.project_expenses', project_id=project.id) }}'"
+        onclick="window.location.href='{{ url_for('web.expense_new', project_id=project.id) }}'"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -102,10 +97,10 @@ endblock %} {% block extra_head %}
           <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
         </svg>
       </div>
-      <div class="stat-value" data-stat="starting_budget">$0.00</div>
+      <div class="stat-value" data-stat="starting_budget">${{ "%.2f"|format(dashboard_data.starting_budget) }}</div>
       <div class="stat-footer">
         <span class="stat-change positive"
-          >Projected: <span data-stat="projected_estimate">$0.00</span></span
+          >Projected: <span data-stat="projected_estimate">${{ "%.2f"|format(dashboard_data.projected_estimate) }}</span></span
         >
       </div>
     </div>
@@ -125,22 +120,22 @@ endblock %} {% block extra_head %}
           <path d="M3 3h18v18H3zM12 8v8m-4-4h8"></path>
         </svg>
       </div>
-      <div class="stat-value" data-stat="total_spend">$0.00</div>
+      <div class="stat-value" data-stat="total_spend">${{ "%.2f"|format(dashboard_data.total_spend) }}</div>
       <div class="stat-footer">
         <div class="progress-bar">
           <div
             class="progress-fill"
             data-progress="utilization"
-            style="width: 0%"
+            style="width: {{ dashboard_data.budget_utilization }}%"
           ></div>
         </div>
         <span class="stat-hint"
-          ><span data-stat="utilization">0</span>% of budget</span
+          ><span data-stat="utilization">{{ "%.0f"|format(dashboard_data.budget_utilization) }}</span>% of budget</span
         >
       </div>
     </div>
 
-    <div class="stat-card" data-card-status="remaining">
+    <div class="stat-card{% if dashboard_data.is_over_budget %} card-gradient-error{% elif dashboard_data.budget_utilization > 80 %} card-gradient-warning{% else %} card-gradient-emerald{% endif %}" data-card-status="remaining">
       <div class="stat-card-header">
         <div class="stat-label">Remaining Budget</div>
         <svg
@@ -155,10 +150,10 @@ endblock %} {% block extra_head %}
           <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
         </svg>
       </div>
-      <div class="stat-value" data-stat="remaining_budget">$0.00</div>
+      <div class="stat-value" data-stat="remaining_budget">${{ "%.2f"|format(dashboard_data.remaining_budget) }}</div>
       <div class="stat-footer">
         <span class="stat-hint"
-          ><span data-stat="days_remaining">0</span> days remaining</span
+          ><span data-stat="days_remaining">{{ dashboard_data.days_remaining }}</span> days remaining</span
         >
       </div>
     </div>
@@ -181,7 +176,7 @@ endblock %} {% block extra_head %}
         </svg>
       </div>
       <div class="stat-value" data-stat="burn_rate">
-        $0.00<span class="stat-unit">/day</span>
+        ${{ "%.2f"|format(dashboard_data.burn_rate) }}<span class="stat-unit">/day</span>
       </div>
       <div class="stat-footer">
         <span class="stat-hint">Daily average</span>
@@ -242,15 +237,15 @@ endblock %} {% block extra_head %}
           <div class="forecast-stats">
             <div class="forecast-stat">
               <span class="label">Projected Total:</span>
-              <span class="value" data-stat="projected_total">$0.00</span>
+              <span class="value" data-stat="projected_total">${{ "%.2f"|format(dashboard_data.forecast.projected_total) }}</span>
             </div>
             <div class="forecast-stat">
               <span class="label">Confidence:</span>
-              <span class="value" data-stat="confidence">0%</span>
+              <span class="value" data-stat="confidence">{{ dashboard_data.forecast.confidence }}%</span>
             </div>
             <div class="forecast-stat">
               <span class="label">Variance:</span>
-              <span class="value" data-stat="variance">$0.00</span>
+              <span class="value" data-stat="variance">${{ "%.2f"|format(dashboard_data.forecast.variance) }}</span>
             </div>
           </div>
         </div>
@@ -271,9 +266,10 @@ endblock %} {% block extra_head %}
 {% endblock %} {% block extra_scripts %}
 <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
 <script>
-  // Initialize dashboard with project ID
-  const projectId = {{ project.id }};
-  const dashboardApp = new DashboardApp(projectId);
+  // Initialize dashboard with server-side data
+  const projectId = {{ project.id|tojson }};
+  const serverData = {{ dashboard_data|tojson }};
+  const dashboardApp = new DashboardApp(projectId, serverData);
 
   // Export report function
   async function exportReport() {

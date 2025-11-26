@@ -54,12 +54,13 @@ class AlertService:
             
             if existing_alert:
                 # Update existing alert
+                existing_alert.title = f"Low Balance Alert: {account.name}"
                 existing_alert.message = (
                     f"Account '{account.name}' balance ({account.current_balance:.2f} {account.currency}) "
                     f"is below threshold ({account.low_balance_threshold:.2f} {account.currency})"
                 )
                 existing_alert.severity = AlertSeverity.ERROR if account.current_balance < 0 else AlertSeverity.WARNING
-                existing_alert.metadata = {
+                existing_alert.alert_metadata = {
                     'current_balance': float(account.current_balance),
                     'threshold': float(account.low_balance_threshold),
                     'currency': account.currency,
@@ -74,12 +75,13 @@ class AlertService:
                     alert_type=AlertType.LOW_BALANCE,
                     entity_type='account',
                     entity_id=account.id,
+                    title=f"Low Balance Alert: {account.name}",
                     message=(
                         f"Account '{account.name}' balance ({account.current_balance:.2f} {account.currency}) "
                         f"is below threshold ({account.low_balance_threshold:.2f} {account.currency})"
                     ),
                     severity=AlertSeverity.ERROR if account.current_balance < 0 else AlertSeverity.WARNING,
-                    metadata={
+                    alert_metadata={
                         'current_balance': float(account.current_balance),
                         'threshold': float(account.low_balance_threshold),
                         'currency': account.currency,
@@ -153,8 +155,9 @@ class AlertService:
                         )
                         
                         if existing_alert:
+                            existing_alert.title = f"Budget Overspend Forecast: {project.name}"
                             existing_alert.message = message
-                            existing_alert.metadata = {
+                            existing_alert.alert_metadata = {
                                 'current_spent': float(total_spent),
                                 'starting_budget': float(project.starting_budget),
                                 'projected_total': float(projected_total),
@@ -170,9 +173,10 @@ class AlertService:
                                 alert_type=AlertType.FORECAST_OVERSPEND,
                                 entity_type='project',
                                 entity_id=project.id,
+                                title=f"Budget Overspend Forecast: {project.name}",
                                 message=message,
                                 severity=AlertSeverity.WARNING if confidence < 95 else AlertSeverity.ERROR,
-                                metadata={
+                                alert_metadata={
                                     'current_spent': float(total_spent),
                                     'starting_budget': float(project.starting_budget),
                                     'projected_total': float(projected_total),

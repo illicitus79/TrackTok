@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - TrackTok{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 2rem 0;">
+  <h1 style="margin: 0 0 1rem 0; font-size: 2rem;">Profile</h1>
+  <div class="card">
+    <div class="card-body" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+      <div>
+        <div style="color: var(--text-muted); font-size: 0.85rem;">Email</div>
+        <div style="font-weight: 600;">{{ current_user.email }}</div>
+      </div>
+      <div>
+        <div style="color: var(--text-muted); font-size: 0.85rem;">Name</div>
+        <div style="font-weight: 600;">{{ (current_user.first_name or '') ~ ' ' ~ (current_user.last_name or '') }}</div>
+      </div>
+      <div>
+        <div style="color: var(--text-muted); font-size: 0.85rem;">Role</div>
+        <div style="font-weight: 600;">{{ current_user.role }}</div>
+      </div>
+      <div>
+        <div style="color: var(--text-muted); font-size: 0.85rem;">Last Login</div>
+        <div style="font-weight: 600;">{{ current_user.last_login_at.strftime('%b %d, %Y %H:%M') if current_user.last_login_at else '—' }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

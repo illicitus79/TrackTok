@@ -281,6 +281,10 @@ a:hover {
 }
 
 /* User Menu */
+.user-menu {
+  position: relative;
+}
+
 .user-avatar {
   width: 36px;
   height: 36px;
@@ -304,17 +308,19 @@ a:hover {
   display: none;
   position: absolute;
   right: 0;
-  top: 100%;
-  margin-top: var(--spacing-sm);
+  top: calc(100% + 0.25rem);
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
   min-width: 200px;
   overflow: hidden;
+  z-index: 1000;
 }
 
-.user-menu:hover .dropdown-menu {
+/* Show dropdown on hover of either the menu container or the dropdown itself */
+.user-menu:hover .dropdown-menu,
+.dropdown-menu:hover {
   display: block;
 }
 
@@ -957,7 +963,7 @@ a:hover {
    ========================================================================== */
 
 .dashboard-container {
-  padding: var(--spacing-xl) 0;
+  padding: var(--spacing-2xl) var(--spacing-2xl);
 }
 
 .dashboard-header {

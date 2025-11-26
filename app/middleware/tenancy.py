@@ -45,6 +45,15 @@ class TenancyMiddleware:
         if not tenant_id and resolution_method != "header":
             tenant_id = TenancyMiddleware._resolve_from_header()
 
+        # Final fallback: use logged-in user's tenant (for server-rendered pages)
+        try:
+            from flask_login import current_user
+
+            if not tenant_id and current_user and getattr(current_user, "is_authenticated", False):
+                tenant_id = getattr(current_user, "tenant_id", None)
+        except Exception:
+            pass
+
         if tenant_id:
             g.tenant_id = tenant_id
             logger.debug(f"Tenant resolved: {tenant_id}", method=resolution_method)

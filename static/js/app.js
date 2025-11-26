@@ -60,10 +60,14 @@ class AlertManager {
   constructor() {
     this.alertBell = document.querySelector(".alert-bell");
     this.checkInterval = 30000; // Check every 30 seconds
+    this.token = localStorage.getItem("access_token");
     this.init();
   }
 
   init() {
+    if (!this.token) {
+      return; // Skip API calls when not using JWT-authenticated session
+    }
     this.fetchAlertCount();
     setInterval(() => this.fetchAlertCount(), this.checkInterval);
     this.bindEvents();
@@ -71,7 +75,12 @@ class AlertManager {
 
   async fetchAlertCount() {
     try {
-      const response = await fetch("/api/v1/alerts?is_read=false");
+      const response = await fetch("/api/v1/alerts?is_read=false", {
+        headers: {
+          Authorization: `Bearer ${this.token}`,
+          "X-Tenant-Id": localStorage.getItem("tenant_id") || "",
+        },
+      });
       if (response.ok) {
         const data = await response.json();
         this.updateBadge(data.total || 0);
