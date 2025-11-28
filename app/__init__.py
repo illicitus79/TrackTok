@@ -486,17 +486,6 @@ def register_cli_commands(app: Flask) -> None:
                 db.session.add_all(accounts)
                 db.session.flush()
 
-                # Create categories
-                categories = [
-                    Category(tenant_id=tenant.id, name="Software & SaaS", color="#3b82f6"),
-                    Category(tenant_id=tenant.id, name="Hardware", color="#10b981"),
-                    Category(tenant_id=tenant.id, name="Travel", color="#f59e0b"),
-                    Category(tenant_id=tenant.id, name="Marketing", color="#ec4899"),
-                    Category(tenant_id=tenant.id, name="Office Supplies", color="#8b5cf6"),
-                ]
-                db.session.add_all(categories)
-                db.session.flush()
-
                 # Create projects
                 projects = [
                     Project(
@@ -523,13 +512,47 @@ def register_cli_commands(app: Flask) -> None:
                 db.session.add_all(projects)
                 db.session.flush()
 
+                # Create categories scoped to projects
+                categories = []
+                category_specs = [
+                    (
+                        projects[0],
+                        [
+                            ("Software & SaaS", "#3b82f6"),
+                            ("Marketing", "#ec4899"),
+                            ("Design", "#8b5cf6"),
+                        ],
+                    ),
+                    (
+                        projects[1],
+                        [
+                            ("Hardware", "#10b981"),
+                            ("Travel", "#f59e0b"),
+                            ("Support", "#f97316"),
+                        ],
+                    ),
+                ]
+                for project_ref, specs in category_specs:
+                    for name, color in specs:
+                        categories.append(
+                            Category(
+                                tenant_id=tenant.id,
+                                project_id=project_ref.id,
+                                name=name,
+                                color=color,
+                            )
+                        )
+                db.session.add_all(categories)
+                db.session.flush()
+
                 # Create sample expenses
                 vendors = ["AWS", "GitHub", "Figma", "Adobe", "Microsoft", "Apple", "Dell"]
                 expenses = []
 
                 for i in range(50):
                     project = random.choice(projects + [None, None])  # Some unrelated expenses
-                    category = random.choice(categories)
+                    related_categories = [c for c in categories if c.project_id == (project.id if project else None)]
+                    category = random.choice(related_categories) if project and related_categories else None
                     account = random.choice(accounts)
                     amount = round(random.uniform(50, 5000), 2)
                     expense_date = datetime.utcnow() - timedelta(days=random.randint(0, 90))
@@ -538,7 +561,7 @@ def register_cli_commands(app: Flask) -> None:
                         tenant_id=tenant.id,
                         project_id=project.id if project else None,
                         account_id=account.id,
-                        category_id=category.id,
+                        category_id=category.id if category else None,
                         amount=amount,
                         currency="USD",
                         expense_date=expense_date,
@@ -568,7 +591,7 @@ def register_cli_commands(app: Flask) -> None:
                 print(f"\n  Demo data created:")
                 print(f"    Users: 3 (Owner, Admin, Analyst)")
                 print(f"    Accounts: 2")
-                print(f"    Categories: 5")
+                print(f"    Categories: {len(categories)}")
                 print(f"    Projects: 2")
                 print(f"    Expenses: 50")
 

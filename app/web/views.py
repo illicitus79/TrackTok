@@ -90,7 +90,6 @@ def dashboard():
     from sqlalchemy import func
     from app.models.expense import Expense
     from app.models.project import Project
-    from app.models.budget import Budget
     
     # Get current user's tenant
     tenant_id = current_user.tenant_id
@@ -426,7 +425,12 @@ def project_allowed_accounts(project_id):
     accounts = query.order_by(Account.name).all()
     return jsonify(
         [
-            {"id": account.id, "name": account.name, "account_type": account.account_type}
+            {
+                "id": account.id,
+                "name": account.name,
+                "account_type": account.account_type,
+                "currency": account.currency,
+            }
             for account in accounts
         ]
     )
@@ -562,6 +566,126 @@ def project_detail(project_id):
     return render_template("dashboard/project.html", project=project, dashboard_data=dashboard_data)
 
 
+@bp.route("/projects/<project_id>/categories", methods=["GET", "POST"])
+@login_required
+def project_categories(project_id):
+    """Manage categories scoped to a single project."""
+    from app.models.project import Project
+    from app.models.category import Category
+
+    tenant_id = current_user.tenant_id
+    project = Project.query.filter_by(
+        id=project_id, tenant_id=tenant_id, is_deleted=False
+    ).first()
+    if not project:
+        flash("Project not found.", "error")
+        return redirect(url_for("web.projects"))
+
+    categories_query = Category.query.filter_by(
+        tenant_id=tenant_id, project_id=project.id, is_deleted=False
+    )
+    categories = categories_query.order_by(Category.name).all()
+
+    if request.method == "POST":
+        try:
+            name = (request.form.get("name") or "").strip()
+            if not name:
+                raise ValueError("Category name is required.")
+            color = request.form.get("color") or "#6366F1"
+
+            category = Category(
+                tenant_id=tenant_id,
+                project_id=project.id,
+                name=name,
+                description=request.form.get("description") or None,
+                color=color,
+                icon=request.form.get("icon") or None,
+                created_by=current_user.id,
+            )
+            db.session.add(category)
+            db.session.commit()
+            flash("Category created.", "success")
+            return redirect(url_for("web.project_categories", project_id=project.id))
+        except Exception as exc:
+            db.session.rollback()
+            flash(f"Could not create category: {exc}", "error")
+
+    return render_template(
+        "projects/categories.html",
+        project=project,
+        categories=categories,
+    )
+
+
+@bp.route("/projects/<project_id>/categories/<category_id>", methods=["POST"])
+@login_required
+def project_category_update(project_id, category_id):
+    """Update a category within a project."""
+    from app.models.project import Project
+    from app.models.category import Category
+
+    tenant_id = current_user.tenant_id
+    project = Project.query.filter_by(
+        id=project_id, tenant_id=tenant_id, is_deleted=False
+    ).first()
+    if not project:
+        flash("Project not found.", "error")
+        return redirect(url_for("web.projects"))
+
+    category = Category.query.filter_by(
+        id=category_id, tenant_id=tenant_id, project_id=project.id, is_deleted=False
+    ).first()
+    if not category:
+        flash("Category not found.", "error")
+        return redirect(url_for("web.project_categories", project_id=project_id))
+
+    try:
+        category.name = (request.form.get("name") or category.name).strip() or category.name
+        category.color = request.form.get("color") or category.color
+        category.icon = request.form.get("icon") or None
+        category.description = request.form.get("description") or None
+        category.is_active = bool(request.form.get("is_active"))
+        db.session.commit()
+        flash("Category updated.", "success")
+    except Exception as exc:
+        db.session.rollback()
+        flash(f"Could not update category: {exc}", "error")
+
+    return redirect(url_for("web.project_categories", project_id=project.id))
+
+
+@bp.route("/projects/<project_id>/categories/json")
+@login_required
+def project_categories_json(project_id):
+    """Return categories for a project (for dependent dropdowns)."""
+    from app.models.project import Project
+    from app.models.category import Category
+
+    tenant_id = current_user.tenant_id
+    project = Project.query.filter_by(
+        id=project_id, tenant_id=tenant_id, is_deleted=False
+    ).first()
+    if not project:
+        return jsonify({"error": "Project not found"}), 404
+
+    categories = Category.query.filter_by(
+        tenant_id=tenant_id, project_id=project.id, is_deleted=False
+    ).order_by(Category.name).all()
+
+    return jsonify(
+        [
+            {
+                "id": category.id,
+                "name": category.name,
+                "color": category.color,
+                "icon": category.icon,
+                "is_active": category.is_active,
+            }
+            for category in categories
+        ]
+    )
+
+
 @bp.route("/forgot-password")
 def forgot_password():
     """Forgot password page."""
@@ -636,7 +760,10 @@ def expenses():
     expenses = pagination.items
 
     projects = Project.query.filter_by(tenant_id=tenant_id, is_deleted=False).order_by(Project.name).all()
-    categories = Category.query.filter_by(tenant_id=tenant_id, is_deleted=False).order_by(Category.name).all()
+    categories_query = Category.query.filter_by(tenant_id=tenant_id, is_deleted=False)
+    if project_id:
+        categories_query = categories_query.filter_by(project_id=project_id)
+    categories = categories_query.order_by(Category.name).all()
     accounts = Account.query.filter_by(tenant_id=tenant_id, is_deleted=False).order_by(Account.name).all()
 
     return render_template(
@@ -671,9 +798,13 @@ def expense_new():
     tenant_id = current_user.tenant_id
     tenant_currency, _ = get_tenant_preferences()
     accounts_query = Account.query.filter_by(tenant_id=tenant_id, is_deleted=False)
-    categories = Category.query.filter_by(tenant_id=tenant_id, is_deleted=False).all()
     projects = Project.query.filter_by(tenant_id=tenant_id, is_deleted=False).order_by(Project.name).all()
+    categories_query = Category.query.filter_by(tenant_id=tenant_id, is_deleted=False)
     initial_project_id = request.args.get("project_id") or None
+    selected_project_id = initial_project_id
+    categories = []
+    if selected_project_id:
+        categories = categories_query.filter_by(project_id=selected_project_id).order_by(Category.name).all()
 
     # If the expense is tied to a project, restrict accounts based on allowed list from Redis
     allowed_account_ids = None
@@ -702,6 +833,19 @@ def expense_new():
                 raise ValueError("Account is required.")
 
             project_id = request.form.get("project_id") or None
+            selected_project_id = project_id
+            category_id = request.form.get("category_id") or None
+            if category_id and not project_id:
+                raise ValueError("Select a project before assigning a category.")
+            if category_id and project_id:
+                valid_category = Category.query.filter_by(
+                    id=category_id,
+                    tenant_id=tenant_id,
+                    project_id=project_id,
+                    is_deleted=False,
+                ).first()
+                if not valid_category:
+                    raise ValueError("Category must belong to the selected project.")
 
             expense = Expense(
                 tenant_id=tenant_id,
@@ -709,7 +853,7 @@ def expense_new():
                 currency=request.form.get("currency", "USD"),
                 vendor=request.form.get("vendor") or None,
                 note=request.form.get("note") or None,
-                category_id=request.form.get("category_id") or None,
+                category_id=category_id,
                 project_id=project_id,
                 is_project_related=bool(project_id),
                 account_id=account_id,
@@ -725,6 +869,20 @@ def expense_new():
         except Exception as exc:
             db.session.rollback()
             flash(f"Could not save expense: {exc}", "error")
+
+    accounts_query = Account.query.filter_by(tenant_id=tenant_id, is_deleted=False)
+    if selected_project_id:
+        allowed_str = current_app.redis.get(f"project:{selected_project_id}:accounts")
+        if allowed_str:
+            allowed_account_ids = [aid for aid in allowed_str.split(",") if aid]
+            if allowed_account_ids:
+                accounts_query = accounts_query.filter(Account.id.in_(allowed_account_ids))
+    accounts = accounts_query.order_by(Account.name).all()
+
+    if selected_project_id:
+        categories = categories_query.filter_by(project_id=selected_project_id).order_by(Category.name).all()
+    else:
+        categories = []
 
     return render_template(
         "expenses/new.html",
@@ -756,10 +914,13 @@ def expense_edit(expense_id):
         return redirect(url_for("web.expenses"))
 
     projects = Project.query.filter_by(tenant_id=tenant_id, is_deleted=False).order_by(Project.name).all()
-    categories = Category.query.filter_by(tenant_id=tenant_id, is_deleted=False).all()
+    categories_query = Category.query.filter_by(tenant_id=tenant_id, is_deleted=False)
+    selected_project_id = expense.project_id
+    categories = []
+    if selected_project_id:
+        categories = categories_query.filter_by(project_id=selected_project_id).order_by(Category.name).all()
 
     # Determine allowed accounts based on selected project
-    selected_project_id = expense.project_id
     accounts_query = Account.query.filter_by(tenant_id=tenant_id, is_deleted=False)
     if selected_project_id:
         allowed_str = current_app.redis.get(f"project:{selected_project_id}:accounts")
@@ -775,6 +936,7 @@ def expense_edit(expense_id):
             old_account_id = expense.account_id
 
             project_id = request.form.get("project_id") or None
+            selected_project_id = project_id
             # Refresh allowed accounts when project changed
             accounts_query = Account.query.filter_by(tenant_id=tenant_id, is_deleted=False)
             if project_id:
@@ -790,7 +952,19 @@ def expense_edit(expense_id):
             expense.amount = Decimal(request.form.get("amount", expense.amount))
             expense.currency = request.form.get("currency", expense.currency)
             expense.expense_date = datetime.strptime(request.form["expense_date"], "%Y-%m-%d").date()
-            expense.category_id = request.form.get("category_id") or None
+            category_id = request.form.get("category_id") or None
+            if category_id and not project_id:
+                raise ValueError("Select a project before assigning a category.")
+            if category_id and project_id:
+                valid_category = Category.query.filter_by(
+                    id=category_id,
+                    tenant_id=tenant_id,
+                    project_id=project_id,
+                    is_deleted=False,
+                ).first()
+                if not valid_category:
+                    raise ValueError("Category must belong to the selected project.")
+            expense.category_id = category_id
             expense.project_id = project_id
             expense.is_project_related = bool(project_id)
             expense.account_id = request.form.get("account_id") or None
@@ -819,6 +993,11 @@ def expense_edit(expense_id):
             db.session.rollback()
             flash(f"Could not update expense: {exc}", "error")
 
+    if selected_project_id:
+        categories = categories_query.filter_by(project_id=selected_project_id).order_by(Category.name).all()
+    else:
+        categories = []
+
     return render_template(
         "expenses/edit.html",
         expense=expense,
@@ -828,103 +1007,6 @@ def expense_edit(expense_id):
         account_meta=[{"id": a.id, "currency": a.currency, "name": a.name, "type": a.account_type} for a in accounts],
         tenant_currency=tenant_currency,
     )
-
-
-@bp.route("/budgets")
-@login_required
-def budgets():
-    """Budgets page."""
-    from app.models.budget import Budget
-
-    budgets = Budget.query.filter_by(
-        tenant_id=current_user.tenant_id,
-        is_deleted=False,
-    ).order_by(Budget.start_date.desc()).all()
-
-    return render_template("budgets/list.html", budgets=budgets)
-
-
-@bp.route("/budgets/new", methods=["GET", "POST"])
-@login_required
-def budget_new():
-    """Create a new budget."""
-    from app.models.budget import Budget
-    from app.models.category import Category
-
-    tenant_id = current_user.tenant_id
-    tenant_currency, _ = get_tenant_preferences()
-    categories = Category.query.filter_by(tenant_id=tenant_id, is_deleted=False).all()
-
-    if request.method == "POST":
-        try:
-            amount_raw = request.form.get("amount", "").strip()
-            if not amount_raw:
-                raise ValueError("Amount is required.")
-            amount = Decimal(amount_raw)
-            start_date = datetime.strptime(request.form["start_date"], "%Y-%m-%d").date()
-            end_date = datetime.strptime(request.form["end_date"], "%Y-%m-%d").date()
-
-            budget = Budget(
-                tenant_id=tenant_id,
-                name=request.form.get("name", "Untitled budget"),
-                description=request.form.get("description") or None,
-                amount=amount,
-                currency=tenant_currency,
-                period=request.form.get("period", "monthly"),
-                start_date=start_date,
-                end_date=end_date,
-                category_id=request.form.get("category_id") or None,
-                alert_threshold=int(request.form.get("alert_threshold", 80)),
-                alert_enabled=bool(request.form.get("alert_enabled")),
-                owner_id=current_user.id,
-            )
-            db.session.add(budget)
-            db.session.commit()
-            flash("Budget created.", "success")
-            return redirect(url_for("web.budgets"))
-        except Exception as exc:
-            db.session.rollback()
-            flash(f"Could not create budget: {exc}", "error")
-
-    return render_template("budgets/form.html", categories=categories, mode="create", today=date.today().isoformat(), tenant_currency=tenant_currency)
-
-
-@bp.route("/budgets/<budget_id>/edit", methods=["GET", "POST"])
-@login_required
-def budget_edit(budget_id):
-    """Edit an existing budget."""
-    from app.models.budget import Budget
-    from app.models.category import Category
-
-    tenant_id = current_user.tenant_id
-    budget = Budget.query.filter_by(id=budget_id, tenant_id=tenant_id, is_deleted=False).first()
-    if not budget:
-        flash("Budget not found.", "error")
-        return redirect(url_for("web.budgets"))
-
-    categories = Category.query.filter_by(tenant_id=tenant_id, is_deleted=False).all()
-    tenant_currency, _ = get_tenant_preferences()
-
-    if request.method == "POST":
-        try:
-            budget.name = request.form.get("name", budget.name)
-            budget.description = request.form.get("description") or None
-            budget.amount = Decimal(request.form.get("amount", budget.amount))
-            budget.currency = tenant_currency
-            budget.period = request.form.get("period", budget.period)
-            budget.start_date = datetime.strptime(request.form["start_date"], "%Y-%m-%d").date()
-            budget.end_date = datetime.strptime(request.form["end_date"], "%Y-%m-%d").date()
-            budget.category_id = request.form.get("category_id") or None
-            budget.alert_threshold = int(request.form.get("alert_threshold", budget.alert_threshold))
-            budget.alert_enabled = bool(request.form.get("alert_enabled"))
-            db.session.commit()
-            flash("Budget updated.", "success")
-            return redirect(url_for("web.budgets"))
-        except Exception as exc:
-            db.session.rollback()
-            flash(f"Could not update budget: {exc}", "error")
-
-    return render_template("budgets/form.html", categories=categories, budget=budget, mode="edit", today=date.today().isoformat(), tenant_currency=tenant_currency)
 
 
 @bp.route("/accounts")

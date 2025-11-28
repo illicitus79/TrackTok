@@ -10,6 +10,7 @@ class CategorySchema(Schema):
     """Schema for expense category."""
 
     id = fields.Str(dump_only=True)
+    project_id = fields.Str(required=True)
     name = fields.Str(required=True, validate=lambda x: 1 <= len(x) <= 100)
     description = fields.Str(allow_none=True)
     color = fields.Str(allow_none=True, validate=lambda x: x is None or len(x) == 7)

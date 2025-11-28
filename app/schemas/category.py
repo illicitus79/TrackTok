@@ -7,6 +7,7 @@ class CategorySchema(Schema):
 
     id = fields.Str(dump_only=True)
     tenant_id = fields.Str(dump_only=True)
+    project_id = fields.Str(required=True)
     
     name = fields.Str(required=True, validate=validate.Length(min=1, max=100))
     color = fields.Str(
@@ -34,6 +35,7 @@ class CategoryDetailSchema(CategorySchema):
 class CategoryCreateSchema(Schema):
     """Schema for creating a new category."""
 
+    project_id = fields.Str(required=True)
     name = fields.Str(required=True, validate=validate.Length(min=1, max=100))
     color = fields.Str(
         required=True,
@@ -46,6 +48,7 @@ class CategoryCreateSchema(Schema):
 class CategoryUpdateSchema(Schema):
     """Schema for updating a category."""
 
+    project_id = fields.Str()
     name = fields.Str(validate=validate.Length(min=1, max=100))
     color = fields.Str(
         validate=validate.Regexp(r'^#[0-9A-Fa-f]{6}$', error="Must be valid hex color")

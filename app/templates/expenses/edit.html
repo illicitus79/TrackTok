@@ -58,11 +58,13 @@
           </div>
           <div class="form-group">
             <label class="form-label" for="category_id">Category</label>
-            <select class="form-input" name="category_id" id="category_id">
-              <option value="">Uncategorized</option>
-              {% for category in categories %}
-              <option value="{{ category.id }}" {% if expense.category_id == category.id %}selected{% endif %}>{{ category.name }}</option>
-              {% endfor %}
+            <select class="form-input" name="category_id" id="category_id" {% if not expense.project_id %}disabled{% endif %}>
+              <option value="">{% if expense.project_id %}Uncategorized{% else %}Select a project first{% endif %}</option>
+              {% if expense.project_id %}
+                {% for category in categories %}
+                <option value="{{ category.id }}" {% if expense.category_id == category.id %}selected{% endif %}>{{ category.name }}</option>
+                {% endfor %}
+              {% endif %}
             </select>
           </div>
           <div class="form-group">
@@ -104,6 +106,8 @@
 <script>
   const projectSelect = document.getElementById("project_id");
   const accountSelect = document.getElementById("account_id");
+  const categorySelect = document.getElementById("category_id");
+  let accountMeta = {{ account_meta|tojson }};
 
   async function loadAccountsForProject(projectId) {
     if (!projectId) {
@@ -118,6 +122,7 @@
       const res = await fetch(`/projects/${projectId}/allowed-accounts`, { credentials: "include" });
       if (!res.ok) throw new Error("Failed to load accounts");
       const accounts = await res.json();
+      accountMeta = accounts;
       if (!accounts.length) {
         accountSelect.innerHTML = '<option value=\"\">No accounts allowed for this project</option>';
         return;
@@ -142,17 +147,52 @@
     }
   }
 
+  async function loadCategoriesForProject(projectId) {
+    if (!projectId) {
+      categorySelect.innerHTML = '<option value=\"\">Select a project first</option>';
+      categorySelect.disabled = true;
+      return;
+    }
+    categorySelect.disabled = true;
+    categorySelect.innerHTML = '<option>Loading...</option>';
+    try {
+      const res = await fetch(`/projects/${projectId}/categories/json`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to load categories");
+      const categories = await res.json();
+      if (!categories.length) {
+        categorySelect.innerHTML = '<option value=\"\">No categories yet</option>';
+        categorySelect.disabled = false;
+        return;
+      }
+      categorySelect.innerHTML = '<option value=\"\">Uncategorized</option>';
+      categories.forEach((cat) => {
+        const opt = document.createElement("option");
+        opt.value = cat.id;
+        opt.textContent = `${cat.name}${cat.is_active ? "" : " (inactive)"}`;
+        categorySelect.appendChild(opt);
+      });
+      categorySelect.disabled = false;
+      const current = "{{ expense.category_id or '' }}";
+      if (current) {
+        categorySelect.value = current;
+      }
+    } catch (e) {
+      categorySelect.innerHTML = '<option value=\"\">Error loading categories</option>';
+    }
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
-    const accountMeta = {{ account_meta|tojson }};
     accountSelect.addEventListener("change", (e) => {
       const selected = accountMeta.find((a) => a.id === e.target.value);
       document.getElementById("currency").value = selected ? selected.currency : "";
     });
     if (projectSelect.value) {
       loadAccountsForProject(projectSelect.value);
+      loadCategoriesForProject(projectSelect.value);
     }
     projectSelect.addEventListener("change", (e) => {
       loadAccountsForProject(e.target.value);
+      loadCategoriesForProject(e.target.value);
     });
   });
 </script>

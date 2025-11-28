@@ -104,7 +104,13 @@ body {
   color: var(--text);
   background-color: var(--bg);
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   transition: background-color var(--transition-base);
+}
+
+main#main-content {
+  flex: 1 0 auto;
 }
 
 /* Accessibility: Skip to main content link */

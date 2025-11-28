@@ -20,6 +20,9 @@ class Category(BaseModel):
     tenant_id: Mapped[str] = mapped_column(
         db.String(36), db.ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
     )
+    project_id: Mapped[str] = mapped_column(
+        db.String(36), db.ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True
+    )
 
     # Basic fields
     name: Mapped[str] = mapped_column(db.String(100), nullable=False)
@@ -39,13 +42,14 @@ class Category(BaseModel):
 
     # Relationships
     tenant = relationship("Tenant", back_populates="categories")
+    project = relationship("Project", back_populates="categories")
     expenses = relationship("Expense", back_populates="category", lazy="dynamic")
     creator = relationship("User", foreign_keys=[created_by])
 
     # Indexes
     __table_args__ = (
-        db.Index("ix_categories_tenant_name", "tenant_id", "name"),
-        db.UniqueConstraint("tenant_id", "name", name="uq_category_tenant_name"),
+        db.Index("ix_categories_tenant_project", "tenant_id", "project_id"),
+        db.UniqueConstraint("tenant_id", "project_id", "name", name="uq_category_project_name"),
     )
 
     def __repr__(self):

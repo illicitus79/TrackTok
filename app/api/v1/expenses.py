@@ -1,5 +1,5 @@
 """Expense API endpoints."""
-from flask import g, jsonify
+from flask import g, jsonify, request
 from flask.views import MethodView
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_smorest import Blueprint
@@ -11,6 +11,7 @@ from app.models.expense import Expense
 from app.models.category import Category
 from app.models.audit import AuditLog, AuditAction
 from app.models.user import User
+from app.models.project import Project
 from app.schemas.expense import (
     ExpenseSchema,
     ExpenseCreateSchema,
@@ -222,8 +223,18 @@ class CategoryList(MethodView):
     def get(self):
         """Get all categories for tenant."""
         tenant_id = g.get("tenant_id")
+        project_id = request.args.get("project_id")
 
-        categories = Category.query.filter_by(tenant_id=tenant_id, is_deleted=False).all()
+        if not project_id:
+            return jsonify({"error": "project_id is required"}), 400
+
+        project = Project.query.filter_by(id=project_id, tenant_id=tenant_id, is_deleted=False).first()
+        if not project:
+            return jsonify({"error": "Project not found"}), 404
+
+        categories = Category.query.filter_by(
+            tenant_id=tenant_id, project_id=project_id, is_deleted=False
+        ).all()
 
         return jsonify({"categories": CategorySchema(many=True).dump(categories)})
 
@@ -235,7 +246,11 @@ class CategoryList(MethodView):
         user_id = get_jwt_identity()
         tenant_id = g.get("tenant_id")
 
-        category = Category(**data, tenant_id=tenant_id)
+        project = Project.query.filter_by(id=data.get("project_id"), tenant_id=tenant_id, is_deleted=False).first()
+        if not project:
+            return jsonify({"error": "Project not found"}), 404
+
+        category = Category(**data, tenant_id=tenant_id, project_id=project.id, created_by=user_id)
         db.session.add(category)
         db.session.commit()
 

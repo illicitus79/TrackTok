@@ -50,6 +50,7 @@ class Project(BaseModel):
     # Relationships
     tenant = relationship("Tenant", back_populates="projects")
     expenses = relationship("Expense", back_populates="project", lazy="dynamic")
+    categories = relationship("Category", back_populates="project", lazy="dynamic")
     creator = relationship("User", foreign_keys=[created_by])
 
     # Indexes

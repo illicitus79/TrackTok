@@ -45,6 +45,25 @@ endblock %} {% block content %}
     <div class="header-actions">
       <button
         class="btn btn-secondary"
+        onclick="window.location.href='{{ url_for('web.project_categories', project_id=project.id) }}'"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M3 7h18"></path>
+          <path d="M6 3h12"></path>
+          <rect x="3" y="7" width="18" height="14" rx="2"></rect>
+        </svg>
+        Manage Categories
+      </button>
+      <button
+        class="btn btn-secondary"
         onclick="window.location.href='{{ url_for('web.expense_new', project_id=project.id) }}'"
       >
         <svg
