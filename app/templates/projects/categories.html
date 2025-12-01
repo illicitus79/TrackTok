@@ -24,7 +24,7 @@
   <div class="card" style="margin-bottom: 1rem;">
     <div class="card-body">
       <h3 style="margin-top: 0;">New Category</h3>
-      <form method="POST" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem; align-items: end;">
+      <form method="POST" style="display: grid; grid-template-columns: repeat(4, minmax(200px, 1fr)); gap: 0.75rem; align-items: start;">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div>
           <label class="form-label" for="name">Name</label>
@@ -44,7 +44,7 @@
           <label class="form-label" for="description">Description</label>
           <input class="form-input" type="text" id="description" name="description" placeholder="Optional note">
         </div>
-        <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+        <div style="grid-column: 1 / -1; display: flex; justify-content: flex-end;">
           <button type="submit" class="btn btn-primary">Create</button>
         </div>
       </form>
