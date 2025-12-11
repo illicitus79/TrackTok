@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}Expense Details - TrackTok{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 2rem 0; max-width: 960px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+    <div>
+      <h1 style="margin: 0; font-size: 2rem;">Expense Details</h1>
+      <p style="margin: 0.35rem 0 0; color: var(--text-muted);">Review the expense and its uploaded images.</p>
+    </div>
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+      <a class="btn btn-secondary" href="{{ url_for('web.expenses') }}">Back to Expenses</a>
+      <a class="btn btn-primary" href="{{ url_for('web.expense_edit', expense_id=expense.id) }}">Edit</a>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top: 1.25rem;">
+    <div class="card-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <div class="form-label">Vendor / Title</div>
+          <div class="form-value">{{ expense.vendor or '—' }}</div>
+        </div>
+        <div class="form-group">
+          <div class="form-label">Project</div>
+          <div class="form-value">{{ expense.project.name if expense.project else '—' }}</div>
+        </div>
+        <div class="form-group">
+          <div class="form-label">Category</div>
+          <div class="form-value">{{ expense.category.name if expense.category else 'Uncategorized' }}</div>
+        </div>
+        <div class="form-group">
+          <div class="form-label">Source Account</div>
+          <div class="form-value">{{ expense.account.name if expense.account else '—' }}</div>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <div class="form-label">Amount</div>
+          <div class="form-value" style="font-weight: 700;">{{ format_money(expense.amount|float) }} {{ expense.currency }}</div>
+        </div>
+        <div class="form-group">
+          <div class="form-label">Date</div>
+          <div class="form-value">{{ expense.expense_date.strftime('%b %d, %Y') }}</div>
+        </div>
+        <div class="form-group">
+          <div class="form-label">Payment Method</div>
+          <div class="form-value">{{ expense.payment_method.replace('_',' ')|title }}</div>
+        </div>
+        <div class="form-group">
+          <div class="form-label">Status</div>
+          <div class="form-value">{{ expense.status|title }}</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <div class="form-label">Note</div>
+        <div class="form-value" style="white-space: pre-line;">{{ expense.note or 'No note provided.' }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top: 1.25rem;">
+    <div class="card-body">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+        <div style="font-weight: 700;">Attachments</div>
+        {% if expense.attachments %}
+        <div style="color: var(--text-muted); font-size: 0.9rem;">{{ expense.attachments|length }} image{{ 's' if expense.attachments|length != 1 else '' }}</div>
+        {% endif %}
+      </div>
+      {% if expense.attachments %}
+
+      <div class="gallery-grid">
+        {% for attachment in expense.attachments %}
+        <div class="thumb" data-index="{{ loop.index0 }}">
+          <div style="position:relative;">
+            <img data-src="data:{{ attachment.content_type or 'image/png' }};base64,{{ attachment.data }}" src="data:{{ attachment.content_type or 'image/png' }};base64,{{ attachment.data }}" alt="{{ attachment.filename or 'Attachment' }}" loading="lazy">
+          </div>
+          <div class="thumb-meta">
+            <div style="font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ attachment.filename or 'Image' }}</div>
+            <div style="font-size:0.8rem; color:var(--text-muted);">{{ (attachment.size / 1024)|round(1) }} KB</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Modal viewer -->
+      <div id="imgModal" class="img-modal" aria-hidden="true">
+        <div class="img-viewer" role="dialog" aria-modal="true" aria-label="Image viewer">
+          <div class="viewer-nav">
+            <button id="prevBtn" title="Previous">◀</button>
+            <button id="nextBtn" title="Next">▶</button>
+          </div>
+          <div class="viewer-controls">
+            <button id="zoomOut" title="Zoom out">−</button>
+            <button id="fitBtn" title="Fit">Fit</button>
+            <button id="zoomIn" title="Zoom in">+</button>
+            <button id="closeModal" title="Close">✕</button>
+          </div>
+          <div class="img-wrap">
+            <img id="modalImage" src="" alt="Attachment full">
+          </div>
+        </div>
+      </div>
+
+      {% else %}
+      <div style="text-align: center; color: var(--text-muted); padding: 1rem 0;">No attachments for this expense.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  {% block extra_scripts %}
+  <script>
+    (function(){
+      const thumbs = Array.from(document.querySelectorAll('.thumb'));
+      if (!thumbs.length) return;
+
+      const modal = document.getElementById('imgModal');
+      const modalImg = document.getElementById('modalImage');
+      const prevBtn = document.getElementById('prevBtn');
+      const nextBtn = document.getElementById('nextBtn');
+      const zoomIn = document.getElementById('zoomIn');
+      const zoomOut = document.getElementById('zoomOut');
+      const fitBtn = document.getElementById('fitBtn');
+      const closeModal = document.getElementById('closeModal');
+
+      let index = 0;
+      let scale = 1, tx = 0, ty = 0;
+      let dragging = false, lastX = 0, lastY = 0;
+
+      function open(i){
+        index = i;
+        const img = thumbs[i].querySelector('img');
+        modalImg.src = img.dataset.src || img.src;
+        modal.classList.add('open');
+        modal.setAttribute('aria-hidden', 'false');
+        resetTransform();
+      }
+
+      function close(){
+        modal.classList.remove('open');
+        modal.setAttribute('aria-hidden', 'true');
+      }
+
+      function prev(){ index = (index - 1 + thumbs.length) % thumbs.length; open(index); }
+      function next(){ index = (index + 1) % thumbs.length; open(index); }
+
+      function resetTransform(){ scale = 1; tx = 0; ty = 0; applyTransform(); }
+
+      function applyTransform(){ modalImg.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`; }
+
+      thumbs.forEach((t, i) => t.addEventListener('click', ()=> open(i)));
+
+      closeModal.addEventListener('click', close);
+      prevBtn.addEventListener('click', prev);
+      nextBtn.addEventListener('click', next);
+      zoomIn.addEventListener('click', ()=>{ scale = Math.min(8, scale * 1.25); applyTransform(); });
+      zoomOut.addEventListener('click', ()=>{ scale = Math.max(0.25, scale / 1.25); applyTransform(); });
+      fitBtn.addEventListener('click', resetTransform);
+
+      // keyboard
+      window.addEventListener('keydown', (e)=>{
+        if (!modal.classList.contains('open')) return;
+        if (e.key === 'Escape') close();
+        if (e.key === 'ArrowRight') next();
+        if (e.key === 'ArrowLeft') prev();
+        if (e.key === '+' || e.key === '=') { scale = Math.min(8, scale * 1.25); applyTransform(); }
+        if (e.key === '-') { scale = Math.max(0.25, scale / 1.25); applyTransform(); }
+      });
+
+      // pointer dragging for panning
+      modalImg.addEventListener('pointerdown', (e)=>{
+        e.preventDefault();
+        dragging = true; lastX = e.clientX; lastY = e.clientY; modalImg.setPointerCapture(e.pointerId); modalImg.style.cursor = 'grabbing';
+      });
+      modalImg.addEventListener('pointermove', (e)=>{
+        if (!dragging) return;
+        const dx = e.clientX - lastX; const dy = e.clientY - lastY; lastX = e.clientX; lastY = e.clientY; tx += dx; ty += dy; applyTransform();
+      });
+      modalImg.addEventListener('pointerup', (e)=>{ dragging = false; try{ modalImg.releasePointerCapture(e.pointerId); }catch(e){} modalImg.style.cursor = 'grab'; });
+      modalImg.addEventListener('pointercancel', ()=>{ dragging = false; modalImg.style.cursor = 'grab'; });
+
+      // wheel to zoom
+      modal.addEventListener('wheel', (e)=>{
+        if (!modal.classList.contains('open')) return;
+        e.preventDefault();
+        const delta = -e.deltaY;
+        const factor = delta > 0 ? 1.08 : 0.92;
+        const oldScale = scale; scale = Math.max(0.25, Math.min(8, scale * factor));
+        const rect = modalImg.getBoundingClientRect();
+        const cx = e.clientX - rect.left - rect.width/2; const cy = e.clientY - rect.top - rect.height/2;
+        tx = tx - cx*(scale/oldScale - 1); ty = ty - cy*(scale/oldScale - 1);
+        applyTransform();
+      }, { passive: false });
+
+      // click on backdrop to close
+      modal.addEventListener('click', (e)=>{ if (e.target === modal) close(); });
+    })();
+  </script>
+  {% endblock %}
+</div>
+{% endblock %}

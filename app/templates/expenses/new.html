@@ -7,7 +7,7 @@
   <h1 style="margin: 0 0 1rem 0; font-size: 2rem;">Add Expense</h1>
   <div class="card">
     <div class="card-body">
-      <form method="POST">
+      <form method="POST" enctype="multipart/form-data">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="form-grid">
           <div class="form-group">
@@ -78,6 +78,12 @@
               <option value="other">Other</option>
             </select>
           </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="attachments">Attachments</label>
+          <input class="form-input" type="file" name="attachments" id="attachments" accept="image/*" multiple>
+          <div class="form-hint">Upload images (png, jpg, jpeg, gif, webp). Max 5MB per image.</div>
         </div>
 
         <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1rem;">

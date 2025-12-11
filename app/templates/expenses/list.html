@@ -29,7 +29,62 @@
     gap: 0.75rem;
   }
   .expenses-table-wrapper {
-    overflow-x: auto;
+    /* Prevent horizontal scroll by using fixed table layout and ellipsis truncation */
+    overflow-x: hidden;
+    margin-top: 0.5rem;
+    padding: 0 0.25rem;
+  }
+
+  /* Make tables reliably truncate long content instead of forcing scroll */
+  .table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+  }
+
+  .table th,
+  .table td {
+    padding: 0.5rem 0.5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+
+  /* Give the vendor column a bit more room, other columns can shrink */
+  .table th:first-child,
+  .table td:first-child {
+    max-width: 240px;
+  }
+
+  /* Actions styling */
+  .table-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  .table-actions .btn {
+    padding: 0.375rem 0.6rem;
+    min-height: 36px;
+    font-size: 0.8125rem;
+  }
+
+  .table-actions .btn.btn-primary {
+    box-shadow: none;
+  }
+
+  @media (max-width: 640px) {
+    .table-actions {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.45rem;
+    }
+    .table-actions .btn {
+      width: 100%;
+      justify-content: center;
+    }
   }
   @media (max-width: 640px) {
     .expenses-table-wrapper {
@@ -140,9 +195,9 @@
 
   {% if expenses %}
   <div class="card">
-    <div class="card-body" style="padding: 0; overflow: hidden;">
+    <div class="card-body" style="padding: 0.5rem 0; overflow: hidden;">
       <div class="expenses-table-wrapper">
-        <table class="table stackable" style="width: 100%; border-collapse: collapse; min-width: 720px;">
+        <table class="table stackable">
           <thead>
             <tr>
               <th>Vendor / Note</th>
@@ -174,7 +229,8 @@
                 {% endif %}
               </td>
               <td data-label="Actions" class="table-actions">
-                <a href="{{ url_for('web.expense_edit', expense_id=expense.id) }}" class="btn btn-secondary btn-sm">Edit</a>
+                <a href="{{ url_for('web.expense_detail', expense_id=expense.id) }}" class="btn btn-primary btn-sm action-btn">View</a>
+                <a href="{{ url_for('web.expense_edit', expense_id=expense.id) }}" class="btn btn-secondary btn-sm action-btn">Edit</a>
               </td>
             </tr>
             {% endfor %}

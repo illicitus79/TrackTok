@@ -1,10 +1,13 @@
 """Web views for server-rendered pages."""
 from datetime import datetime, date
 from decimal import Decimal
+import base64
+from uuid import uuid4
 
 from flask import render_template, redirect, url_for, request, flash, session, current_app, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token, set_access_cookies
 from flask_login import logout_user, login_user, login_required, current_user
+from werkzeug.utils import secure_filename
 
 from app.web import bp
 from app.web.forms import LoginForm, RegistrationForm
@@ -74,6 +77,45 @@ def get_tenant_preferences():
     currency = settings.get("currency", "USD")
     timezone = settings.get("timezone", "UTC")
     return currency, timezone
+
+
+def _prepare_image_attachments(files):
+    """
+    Convert uploaded image files to attachment dicts stored in the DB.
+
+    Returns a list of dicts with base64-encoded data and metadata. Raises
+    ValueError if a file is too large or not an allowed image type.
+    """
+    allowed_exts = {"png", "jpg", "jpeg", "gif", "webp"}
+    max_per_file = 5 * 1024 * 1024  # 5MB per image to keep rows reasonable
+    attachments = []
+
+    for file in files or []:
+        if not file or not file.filename:
+            continue
+        filename = secure_filename(file.filename)
+        ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+        if ext not in allowed_exts:
+            raise ValueError("Only image uploads are allowed (png, jpg, jpeg, gif, webp).")
+
+        data = file.read()
+        if not data:
+            continue
+        if len(data) > max_per_file:
+            raise ValueError(f"Image {filename} is too large (max 5MB).")
+
+        attachments.append(
+            {
+                "id": str(uuid4()),
+                "filename": filename,
+                "content_type": file.mimetype or "application/octet-stream",
+                "size": len(data),
+                "uploaded_at": datetime.utcnow().isoformat(),
+                "data": base64.b64encode(data).decode("utf-8"),
+            }
+        )
+
+    return attachments
 
 
 @bp.route("/")
@@ -863,6 +905,10 @@ def expense_new():
                 status="submitted",
                 created_by=current_user.id,
             )
+            new_attachments = _prepare_image_attachments(request.files.getlist("attachments"))
+            if new_attachments:
+                expense.attachments = new_attachments
+
             db.session.add(expense)
             db.session.commit()
             flash("Expense added successfully.", "success")
@@ -895,6 +941,21 @@ def expense_new():
         account_meta=[{"id": a.id, "currency": a.currency, "name": a.name, "type": a.account_type} for a in accounts],
         tenant_currency=tenant_currency,
     )
+
+
+@bp.route("/expenses/<expense_id>")
+@login_required
+def expense_detail(expense_id):
+    """Expense detail page with attachment previews."""
+    from app.models.expense import Expense
+
+    tenant_id = current_user.tenant_id
+    expense = Expense.query.filter_by(id=expense_id, tenant_id=tenant_id, is_deleted=False).first()
+    if not expense:
+        flash("Expense not found.", "error")
+        return redirect(url_for("web.expenses"))
+
+    return render_template("expenses/detail.html", expense=expense)
 
 
 @bp.route("/expenses/<expense_id>/edit", methods=["GET", "POST"])
@@ -970,6 +1031,10 @@ def expense_edit(expense_id):
             expense.is_project_related = bool(project_id)
             expense.account_id = request.form.get("account_id") or None
             expense.payment_method = request.form.get("payment_method", expense.payment_method)
+            new_attachments = _prepare_image_attachments(request.files.getlist("attachments"))
+            if new_attachments:
+                existing_attachments = expense.attachments or []
+                expense.attachments = existing_attachments + new_attachments
 
             # Mark edited metadata
             meta = expense.expense_metadata or {}

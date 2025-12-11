@@ -7,7 +7,7 @@
   <h1 style="margin: 0 0 1rem 0; font-size: 2rem;">Edit Expense</h1>
   <div class="card">
     <div class="card-body">
-      <form method="POST">
+      <form method="POST" enctype="multipart/form-data">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="form-grid">
           <div class="form-group">
@@ -76,6 +76,28 @@
             </select>
           </div>
         </div>
+
+        <div class="form-group">
+          <label class="form-label" for="attachments">Add Attachments</label>
+          <input class="form-input" type="file" name="attachments" id="attachments" accept="image/*" multiple>
+          <div class="form-hint">Upload additional images (png, jpg, jpeg, gif, webp). Max 5MB per image. Existing attachments stay intact.</div>
+        </div>
+
+        {% if expense.attachments %}
+        <div class="card" style="margin-top: 0.75rem; background: rgba(255,255,255,0.03); border: 1px solid var(--border);">
+          <div class="card-body" style="display: flex; flex-direction: column; gap: 0.35rem;">
+            <div style="font-weight: 600;">Existing Attachments</div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.5rem;">
+              {% for attachment in expense.attachments %}
+              <div style="padding: 0.5rem; border: 1px solid var(--border); border-radius: 8px; text-align: center; background: rgba(255,255,255,0.02);">
+                <div style="font-size: 0.9rem; margin-bottom: 0.35rem;">{{ attachment.filename or 'Image' }}</div>
+                <img src="data:{{ attachment.content_type or 'image/png' }};base64,{{ attachment.data }}" alt="{{ attachment.filename or 'Attachment' }}" style="width: 100%; height: 100px; object-fit: cover; border-radius: 6px;" loading="lazy">
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        {% endif %}
 
         {% set meta = expense.expense_metadata or {} %}
         {% if meta.get("edited") %}
