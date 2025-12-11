@@ -1949,7 +1949,7 @@ a:hover {
   border: 1px solid var(--border);
   border-radius: 10px;
   overflow: hidden;
-  background: rgba(255,255,255,0.02);
+  background: rgba(255, 255, 255, 0.02);
   display: flex;
   flex-direction: column;
   cursor: zoom-in;
@@ -1970,20 +1970,24 @@ a:hover {
   display: block;
   transition: transform 150ms ease;
 }
-.thumb:hover img { transform: scale(1.03); }
+.thumb:hover img {
+  transform: scale(1.03);
+}
 
 /* Modal viewer */
 .img-modal {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.85);
+  background: rgba(0, 0, 0, 0.85);
   z-index: 99999;
   align-items: center;
   justify-content: center;
   padding: 1rem;
 }
-.img-modal.open { display:flex; }
+.img-modal.open {
+  display: flex;
+}
 .img-viewer {
   position: relative;
   max-width: 95vw;
@@ -2022,7 +2026,7 @@ a:hover {
   z-index: 3;
 }
 .viewer-controls button {
-  background: rgba(255,255,255,0.06);
+  background: rgba(255, 255, 255, 0.06);
   border: 1px solid var(--border);
   color: var(--text);
   padding: 6px 8px;
@@ -2035,13 +2039,13 @@ a:hover {
   left: 8px;
   top: 50%;
   transform: translateY(-50%);
-  display:flex;
+  display: flex;
   flex-direction: column;
   gap: 8px;
   z-index: 3;
 }
 .viewer-nav button {
-  background: rgba(255,255,255,0.04);
+  background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border);
   color: var(--text);
   padding: 8px 10px;
@@ -2049,5 +2053,7 @@ a:hover {
   cursor: pointer;
 }
 @media (max-width: 640px) {
-  .thumb img { height: 110px; }
+  .thumb img {
+    height: 110px;
+  }
 }
