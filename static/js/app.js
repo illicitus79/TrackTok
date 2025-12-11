@@ -60,7 +60,11 @@ class AlertManager {
   constructor() {
     this.alertBell = document.querySelector(".alert-bell");
     this.checkInterval = 30000; // Check every 30 seconds
-    this.token = localStorage.getItem("access_token");
+    // Ignore empty/invalid tokens to avoid hammering the API with bad requests
+    const rawToken = (localStorage.getItem("access_token") || "").trim();
+    this.token =
+      rawToken && rawToken !== "null" && rawToken !== "undefined" ? rawToken : null;
+    this.timerId = null;
     this.init();
   }
 
@@ -69,11 +73,14 @@ class AlertManager {
       return; // Skip API calls when not using JWT-authenticated session
     }
     this.fetchAlertCount();
-    setInterval(() => this.fetchAlertCount(), this.checkInterval);
+    this.timerId = setInterval(() => this.fetchAlertCount(), this.checkInterval);
     this.bindEvents();
   }
 
   async fetchAlertCount() {
+    if (!this.token) {
+      return;
+    }
     try {
       const response = await fetch("/api/v1/alerts?is_read=false", {
         headers: {
@@ -84,6 +91,10 @@ class AlertManager {
       if (response.ok) {
         const data = await response.json();
         this.updateBadge(data.total || 0);
+      } else if (response.status === 401 || response.status === 422) {
+        // Token is invalid/expired; stop polling and clean it up
+        this.stopPolling();
+        localStorage.removeItem("access_token");
       }
     } catch (error) {
       console.error("Failed to fetch alert count:", error);
@@ -105,6 +116,13 @@ class AlertManager {
       this.alertBell.addEventListener("click", () => {
         window.location.href = "/alerts";
       });
+    }
+  }
+
+  stopPolling() {
+    if (this.timerId) {
+      clearInterval(this.timerId);
+      this.timerId = null;
     }
   }
 }

@@ -294,6 +294,7 @@ def project_new():
     from app.models.account import Account
 
     tenant_id = current_user.tenant_id
+    tenant_currency, _ = get_tenant_preferences()
     accounts = Account.query.filter_by(tenant_id=tenant_id, is_deleted=False).order_by(Account.name).all()
 
     if request.method == "POST":

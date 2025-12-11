@@ -1,95 +1,48 @@
 {% extends "base.html" %} {% block title %}{{ project.name }} - Dashboard{%
 endblock %} {% block content %}
 <div class="dashboard-container">
-  <!-- Project Header -->
-  <div class="dashboard-header">
+  <header class="dashboard-header" aria-label="Project overview">
     <div class="header-content">
-      <div class="breadcrumb">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
         <a href="{{ url_for('web.projects') }}">Projects</a>
-        <span>/</span>
+        <span aria-hidden="true">/</span>
         <span>{{ project.name }}</span>
-      </div>
-      <h1>{{ project.name }}</h1>
-      <p class="project-description">
-        {{ project.description or 'No description' }}
-      </p>
-
+      </nav>
+      <h1 class="page-title">{{ project.name }}</h1>
+      <p class="project-description">{{ project.description or 'No description' }}</p>
       <div class="project-meta">
-        <span class="meta-item">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
+        <span class="meta-item" aria-label="Project dates">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
             <line x1="16" y1="2" x2="16" y2="6"></line>
             <line x1="8" y1="2" x2="8" y2="6"></line>
             <line x1="3" y1="10" x2="21" y2="10"></line>
           </svg>
-          {{ project.start_date.strftime('%b %d, %Y') if project.start_date else
-          'Start date TBD' }} - {{ project.end_date.strftime('%b %d, %Y') if
-          project.end_date else 'End date TBD' }}
+          {{ project.start_date.strftime('%b %d, %Y') if project.start_date else 'Start date TBD' }} – {{ project.end_date.strftime('%b %d, %Y') if project.end_date else 'End date TBD' }}
         </span>
-        <span class="meta-item">
-          <span class="badge badge-{{ project.status }}"
-            >{{ project.status.capitalize() }}</span
-          >
+        <span class="meta-item" aria-label="Project status">
+          <span class="badge badge-{{ project.status }}">{{ project.status.capitalize() }}</span>
         </span>
       </div>
     </div>
-
-    <div class="header-actions">
-      <button
-        class="btn btn-secondary"
-        onclick="window.location.href='{{ url_for('web.project_categories', project_id=project.id) }}'"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
+    <div class="header-actions" role="group" aria-label="Primary actions">
+      <button class="btn btn-secondary" onclick="window.location.href='{{ url_for('web.project_categories', project_id=project.id) }}'">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <path d="M3 7h18"></path>
           <path d="M6 3h12"></path>
           <rect x="3" y="7" width="18" height="14" rx="2"></rect>
         </svg>
         Manage Categories
       </button>
-      <button
-        class="btn btn-secondary"
-        onclick="window.location.href='{{ url_for('web.expense_new', project_id=project.id) }}'"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
+      <button class="btn btn-secondary" onclick="window.location.href='{{ url_for('web.expense_new', project_id=project.id) }}'">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <line x1="12" y1="5" x2="12" y2="19"></line>
           <line x1="5" y1="12" x2="19" y2="12"></line>
         </svg>
         Add Expense
       </button>
       <button class="btn btn-secondary" onclick="exportReport()">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
           <polyline points="7 10 12 15 17 10"></polyline>
           <line x1="12" y1="15" x2="12" y2="3"></line>
@@ -97,10 +50,12 @@ endblock %} {% block content %}
         Export
       </button>
     </div>
-  </div>
+  </header>
 
-  <!-- Budget Overview Cards -->
-  <div class="cards-grid">
+  <div class="dashboard-grid">
+    <div class="dashboard-main">
+      <!-- Budget Overview Cards -->
+      <div class="cards-grid">
     <div class="stat-card card-gradient-indigo">
       <div class="stat-card-header">
         <div class="stat-label">Total Budget</div>
@@ -153,7 +108,7 @@ endblock %} {% block content %}
           <div
             class="progress-fill"
             data-progress="utilization"
-            style="width: {{ dashboard_data.budget_utilization }}%"
+            style="width: {{ dashboard_data.budget_utilization }}%;"
           ></div>
         </div>
         <span class="stat-hint"
@@ -223,10 +178,10 @@ endblock %} {% block content %}
     </div>
   </div>
 
-  <!-- Charts Section -->
-  <div class="charts-section">
-    <!-- Row 1: Category Breakdown & Monthly Trend -->
-    <div class="charts-row">
+      <!-- Charts Section -->
+      <div class="charts-section">
+        <!-- Row 1: Category Breakdown & Monthly Trend -->
+        <div class="charts-row">
       <div class="chart-card">
         <div class="chart-header">
           <h3>Category Breakdown</h3>
@@ -258,10 +213,10 @@ endblock %} {% block content %}
           <span class="chart-hint">Stacked by account</span>
         </div>
       </div>
-    </div>
+        </div>
 
-    <!-- Row 2: Forecast & Account Balances -->
-    <div class="charts-row">
+        <!-- Row 2: Forecast -->
+        <div class="charts-row">
       <div class="chart-card chart-wide">
         <div class="chart-header">
           <h3>Forecast vs Actual</h3>
@@ -296,17 +251,20 @@ endblock %} {% block content %}
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- Account Balances Sparklines -->
-    <div class="chart-card">
-      <div class="chart-header">
-        <h3>Account Balances</h3>
-      </div>
-      <div class="accounts-list" id="accountsList">
-        <!-- Populated by JavaScript -->
+        </div>
       </div>
     </div>
+    <aside class="dashboard-side" aria-label="Secondary insights">
+      <!-- Account Balances Sparklines -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>Account Balances</h3>
+        </div>
+        <div class="accounts-list" id="accountsList">
+          <!-- Populated by JavaScript -->
+        </div>
+      </div>
+    </aside>
   </div>
 </div>
 {% endblock %} {% block extra_scripts %}

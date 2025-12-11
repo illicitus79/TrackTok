@@ -1,18 +1,9 @@
 {% extends "base.html" %} {% block title %}Categories - {{ project.name }}{%
 endblock %} {% block content %}
-<div class="container" style="padding: 2rem 0">
-  <div
-    style="
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 1rem;
-      flex-wrap: wrap;
-      margin-bottom: 1rem;
-    "
-  >
-    <div>
-      <div class="breadcrumb" style="margin-bottom: 0.5rem">
+<div class="container page-section">
+  <div class="page-header">
+    <div class="page-title-group">
+      <div class="breadcrumb" style="margin-bottom: 0.25rem">
         <a href="{{ url_for('web.projects') }}">Projects</a>
         <span>/</span>
         <a href="{{ url_for('web.project_detail', project_id=project.id) }}"
@@ -21,12 +12,10 @@ endblock %} {% block content %}
         <span>/</span>
         <span>Categories</span>
       </div>
-      <h1 style="margin: 0; font-size: 2rem">Categories</h1>
-      <p style="color: var(--text-muted); margin: 0.25rem 0 0">
-        Only used within {{ project.name }}.
-      </p>
+      <h1 style="font-size: 2rem; margin: 0">Categories</h1>
+      <p class="page-subtitle">Only used within {{ project.name }}.</p>
     </div>
-    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap">
+    <div class="page-actions">
       <a
         class="btn btn-secondary"
         href="{{ url_for('web.project_detail', project_id=project.id) }}"
@@ -35,18 +24,10 @@ endblock %} {% block content %}
     </div>
   </div>
 
-  <div class="card" style="margin-bottom: 1rem">
+  <div class="card">
     <div class="card-body">
-      <h3 style="margin-top: 0">New Category</h3>
-      <form
-        method="POST"
-        style="
-          display: grid;
-          grid-template-columns: repeat(4, minmax(200px, 1fr));
-          gap: 0.75rem;
-          align-items: start;
-        "
-      >
+      <h3 class="card-title">New Category</h3>
+      <form method="POST" class="form-grid form-grid-compact">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <div>
           <label class="form-label" for="name">Name</label>
@@ -79,7 +60,7 @@ endblock %} {% block content %}
             type="text"
             id="icon"
             name="icon"
-            placeholder="🚀 or fe-icon"
+            placeholder="dYs? or fe-icon"
             maxlength="10"
           />
           <div class="form-hint">Optional emoji or short icon code.</div>
@@ -94,9 +75,7 @@ endblock %} {% block content %}
             placeholder="Optional note"
           />
         </div>
-        <div
-          style="grid-column: 1 / -1; display: flex; justify-content: flex-end"
-        >
+        <div class="form-actions">
           <button type="submit" class="btn btn-primary">Create</button>
         </div>
       </form>
@@ -105,23 +84,18 @@ endblock %} {% block content %}
 
   <div class="card">
     <div class="card-body">
-      <h3 style="margin-top: 0">Existing Categories</h3>
+      <h3 class="card-title">Existing Categories</h3>
       {% if categories %}
-      <div style="overflow-x: auto">
-        <table
-          class="table"
-          style="width: 100%; border-collapse: collapse; min-width: 720px"
-        >
+      <div class="table-responsive">
+        <table class="table stackable">
           <thead>
-            <tr
-              style="text-align: left; border-bottom: 1px solid var(--border)"
-            >
-              <th style="padding: 0.75rem 0.5rem">Name</th>
-              <th style="padding: 0.75rem 0.5rem">Icon</th>
-              <th style="padding: 0.75rem 0.5rem">Color</th>
-              <th style="padding: 0.75rem 0.5rem">Description</th>
-              <th style="padding: 0.75rem 0.5rem">Active</th>
-              <th style="padding: 0.75rem 0.5rem">Actions</th>
+            <tr>
+              <th>Name</th>
+              <th>Icon</th>
+              <th>Color</th>
+              <th>Description</th>
+              <th>Active</th>
+              <th style="text-align: right">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -131,8 +105,8 @@ endblock %} {% block content %}
               action="{{ url_for('web.project_category_update', project_id=project.id, category_id=category.id) }}"
               style="display: contents"
             >
-              <tr style="border-bottom: 1px solid var(--border)">
-                <td style="padding: 0.75rem 0.5rem">
+              <tr>
+                <td data-label="Name">
                   <input
                     type="hidden"
                     name="csrf_token"
@@ -146,7 +120,7 @@ endblock %} {% block content %}
                     required
                   />
                 </td>
-                <td style="padding: 0.75rem 0.5rem">
+                <td data-label="Icon">
                   <input
                     class="form-input"
                     type="text"
@@ -155,10 +129,11 @@ endblock %} {% block content %}
                     maxlength="10"
                   />
                 </td>
-                <td style="padding: 0.75rem 0.5rem">
+                <td data-label="Color">
                   <div style="display: flex; align-items: center; gap: 0.5rem">
                     <span
-                      style="width: 14px; height: 14px; border-radius: 4px; display: inline-block; background: {{ category.color }};"
+                      class="color-chip"
+                      style="background: {{ category.color }}"
                     ></span>
                     <input
                       class="form-input"
@@ -170,7 +145,7 @@ endblock %} {% block content %}
                     />
                   </div>
                 </td>
-                <td style="padding: 0.75rem 0.5rem">
+                <td data-label="Description">
                   <input
                     class="form-input"
                     type="text"
@@ -178,8 +153,8 @@ endblock %} {% block content %}
                     value="{{ category.description or '' }}"
                   />
                 </td>
-                <td style="padding: 0.75rem 0.5rem">
-                  <div style="display: flex; align-items: center; gap: 0.25rem">
+                <td data-label="Active">
+                  <div class="form-check">
                     <input
                       type="checkbox"
                       id="active_{{ category.id }}"
@@ -191,14 +166,12 @@ endblock %} {% block content %}
                       endif
                       %}
                     />
-                    <label
-                      for="active_{{ category.id }}"
-                      style="color: var(--text-muted)"
+                    <label class="form-check-label" for="active_{{ category.id }}"
                       >Active</label
                     >
                   </div>
                 </td>
-                <td style="padding: 0.75rem 0.5rem; text-align: right">
+                <td data-label="Actions" style="text-align: right">
                   <button type="submit" class="btn btn-secondary btn-sm">
                     Save
                   </button>
@@ -210,7 +183,7 @@ endblock %} {% block content %}
         </table>
       </div>
       {% else %}
-      <p style="color: var(--text-muted); margin: 0">
+      <p class="text-muted" style="margin: 0">
         No categories yet. Create your first category above.
       </p>
       {% endif %}

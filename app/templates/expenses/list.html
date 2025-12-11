@@ -3,13 +3,70 @@
 {% block title %}Expenses - TrackTok{% endblock %}
 
 {% block content %}
-<div class="container" style="padding: 2rem 0;">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+<style>
+  /* Narrow, centered layout with small horizontal padding */
+  .expenses-container {
+    padding: 1.5rem 1rem;
+    margin: 0 auto;
+    max-width: 1200px;
+  }
+  .expenses-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    gap: 1rem;
+  }
+  .expenses-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+  .expenses-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0.75rem;
+  }
+  .expenses-table-wrapper {
+    overflow-x: auto;
+  }
+  @media (max-width: 640px) {
+    .expenses-table-wrapper {
+      overflow-x: visible;
+    }
+    .expenses-table-wrapper .table {
+      min-width: unset !important;
+    }
+  }
+  @media (max-width: 720px) {
+    .expenses-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+    .expenses-container {
+      padding: 1rem 0.75rem;
+    }
+    .expenses-grid {
+      grid-template-columns: 1fr;
+    }
+    .expenses-actions {
+      width: 100%;
+    }
+    .expenses-actions .btn {
+      flex: 1;
+    }
+  }
+</style>
+
+<div class="container expenses-container">
+  <div class="expenses-header">
     <div>
-      <h1 style="margin: 0; font-size: 2rem;">Expenses</h1>
+      <h1 style="margin: 0;">Expenses</h1>
       <p style="color: var(--text-muted); margin: 0.25rem 0 0;">Latest expenses for your tenant.</p>
     </div>
-    <div style="display: flex; gap: 0.75rem;">
+    <div class="expenses-actions">
       <a href="{{ url_for('web.expense_new') }}" class="btn btn-primary">Add Expense</a>
       <a href="{{ url_for('web.dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
     </div>
@@ -17,8 +74,8 @@
 
   <form method="GET" class="card" style="margin-bottom: 1rem;">
     <div class="card-body">
-      <!-- Row 1: Project, Category, Source Account, Min Amount, Max Amount, Start Date -->
-      <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.75rem; margin-bottom: 0.75rem;">
+      <!-- Filters row 1 -->
+      <div class="expenses-grid" style="margin-bottom: 0.75rem;">
         <div>
           <label class="form-label" for="project_id">Project</label>
           <select class="form-input" name="project_id" id="project_id">
@@ -59,8 +116,8 @@
           <input class="form-input" type="date" name="start_date" id="start_date" value="{{ filters.start_date }}">
         </div>
       </div>
-      <!-- Row 2: End Date, Per Page -->
-      <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.75rem;">
+      <!-- Filters row 2 -->
+      <div class="expenses-grid">
         <div>
           <label class="form-label" for="end_date">End Date</label>
           <input class="form-input" type="date" name="end_date" id="end_date" value="{{ filters.end_date }}">
@@ -83,45 +140,47 @@
 
   {% if expenses %}
   <div class="card">
-    <div class="card-body">
-      <table class="table" style="width: 100%; border-collapse: collapse;">
-        <thead>
-          <tr style="text-align: left; border-bottom: 1px solid var(--border);">
-            <th style="padding: 0.75rem 0.5rem;">Vendor / Note</th>
-            <th style="padding: 0.75rem 0.5rem;">Project</th>
-            <th style="padding: 0.75rem 0.5rem;">Date</th>
-            <th style="padding: 0.75rem 0.5rem;">Category</th>
-            <th style="padding: 0.75rem 0.5rem;">Source Account</th>
-            <th style="padding: 0.75rem 0.5rem;">Amount</th>
-            <th style="padding: 0.75rem 0.5rem;">Edited</th>
-            <th style="padding: 0.75rem 0.5rem;">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for expense in expenses %}
-          <tr style="border-bottom: 1px solid var(--border);">
-            <td style="padding: 0.75rem 0.5rem; font-weight: 500;">{{ expense.vendor or expense.note or 'Expense' }}</td>
-            <td style="padding: 0.75rem 0.5rem;">{{ expense.project.name if expense.project else '-' }}</td>
-            <td style="padding: 0.75rem 0.5rem;">{{ expense.expense_date.strftime('%b %d, %Y') }}</td>
-            <td style="padding: 0.75rem 0.5rem;">{{ expense.category.name if expense.category else 'Uncategorized' }}</td>
-            <td style="padding: 0.75rem 0.5rem;">{{ expense.account.name if expense.account else '-' }}</td>
-            <td style="padding: 0.75rem 0.5rem;">{{ format_money(expense.amount|float) }}</td>
-            {% set meta = expense.expense_metadata or {} %}
-            <td style="padding: 0.75rem 0.5rem; color: {% if meta.get('edited') %}#10b981{% else %}var(--text-muted){% endif %};">
-            {% if meta.get("edited") %}
-                Yes (by {{ meta.get("last_updated_by_name") or meta.get("last_updated_by") or "?" }} at {{ meta.get("last_updated_at") or "?" }}
-                {% if meta.get("last_amount") is not none %} | prev {{ format_money(meta.get("last_amount")|float) }}{% endif %})
-              {% else %}
-                No
-              {% endif %}
-            </td>
-            <td style="padding: 0.75rem 0.5rem;">
-              <a href="{{ url_for('web.expense_edit', expense_id=expense.id) }}" class="btn btn-link">Edit</a>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    <div class="card-body" style="padding: 0; overflow: hidden;">
+      <div class="expenses-table-wrapper">
+        <table class="table stackable" style="width: 100%; border-collapse: collapse; min-width: 720px;">
+          <thead>
+            <tr>
+              <th>Vendor / Note</th>
+              <th>Project</th>
+              <th>Date</th>
+              <th>Category</th>
+              <th>Account</th>
+              <th>Amount</th>
+              <th>Edited</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for expense in expenses %}
+            <tr>
+              <td data-label="Vendor" style="font-weight: 500;">{{ expense.vendor or expense.note or 'Expense' }}</td>
+              <td data-label="Project">{{ expense.project.name if expense.project else '-' }}</td>
+              <td data-label="Date">{{ expense.expense_date.strftime('%b %d, %Y') }}</td>
+              <td data-label="Category">{{ expense.category.name if expense.category else 'Uncategorized' }}</td>
+              <td data-label="Account">{{ expense.account.name if expense.account else '-' }}</td>
+              <td data-label="Amount" style="font-weight: 600;">{{ format_money(expense.amount|float) }}</td>
+              {% set meta = expense.expense_metadata or {} %}
+              <td data-label="Edited" style="color: {% if meta.get('edited') %}#10b981{% else %}var(--text-muted){% endif %};">
+                {% if meta.get("edited") %}
+                  Yes (by {{ meta.get("last_updated_by_name") or meta.get("last_updated_by") or "?" }} at {{ meta.get("last_updated_at") or "?" }}
+                  {% if meta.get("last_amount") is not none %} | prev {{ format_money(meta.get("last_amount")|float) }}{% endif %})
+                {% else %}
+                  No
+                {% endif %}
+              </td>
+              <td data-label="Actions" class="table-actions">
+                <a href="{{ url_for('web.expense_edit', expense_id=expense.id) }}" class="btn btn-secondary btn-sm">Edit</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
   {% if pagination.pages > 1 %}
