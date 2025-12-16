@@ -1,171 +1,201 @@
 {% extends "base.html" %} {% block title %}Dashboard - TrackTok{% endblock %} {%
 block content %}
-<div class="container page-section">
-  <div class="page-header">
-    <div class="page-title-group">
-      <h1 style="font-size: 2rem; margin: 0">Dashboard</h1>
-      <p class="page-subtitle">Quick view of spend, projects, and activity.</p>
+{% set avg_expense = (monthly_expenses|float / expense_count) if expense_count else 0 %}
+{% set total_active_budget = active_projects|sum(attribute='starting_budget') if active_projects else 0 %}
+{% set latest_expense = recent_expenses[0] if recent_expenses else None %}
+
+<div class="container page-section dashboard-page">
+  <div class="dashboard-hero">
+    <div class="hero-content">
+      <p class="eyebrow">Portfolio snapshot</p>
+      <h1 class="hero-title">Dashboard</h1>
+      <p class="hero-subtitle">
+        First-stop overview of spend, project health, and recent activity. Drill into projects or record a new expense without leaving this page.
+      </p>
+      <div class="hero-actions">
+        <a href="{{ url_for('web.expense_new') }}" class="btn btn-primary">Add Expense</a>
+        <a href="{{ url_for('web.projects') }}" class="btn btn-secondary">New Project</a>
+      </div>
     </div>
-    <div class="page-actions">
-      <a href="{{ url_for('web.projects') }}" class="btn btn-primary"
-        >New Project</a
-      >
-      <a href="{{ url_for('web.expense_new') }}" class="btn btn-secondary"
-        >Add Expense</a
-      >
+    <div class="hero-stats">
+      <div class="stat-chip">
+        <span class="chip-label">This month</span>
+        <div class="chip-value">{{ format_money(monthly_expenses|float) }}</div>
+        <div class="chip-meta">{{ expense_count }} expenses logged</div>
+      </div>
+      <div class="stat-chip">
+        <span class="chip-label">Active projects</span>
+        <div class="chip-value">{{ project_count }}</div>
+        <div class="chip-meta">Budget in play: {{ format_money(total_active_budget|float) }}</div>
+      </div>
+      {% if latest_expense %}
+      <div class="stat-chip">
+        <span class="chip-label">Latest expense</span>
+        <div class="chip-value">{{ format_money(latest_expense.amount|float) }}</div>
+        <div class="chip-meta">
+          {{ latest_expense.vendor or latest_expense.note or 'Expense' }} &bull;
+          {{ latest_expense.expense_date.strftime('%b %d') }}
+        </div>
+      </div>
+      {% endif %}
     </div>
   </div>
 
-  <!-- Stats Cards -->
-  <div class="cards-grid">
-    <div class="card">
-      <div class="card-body">
-        <div class="metric-card">
-          <div
-            class="metric-icon"
-            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-          >
-            $
-          </div>
-          <div>
-            <div class="metric-label">Total Expenses (Month)</div>
-            <div class="metric-value">
-              {{ format_money(monthly_expenses|float) }}
-            </div>
-          </div>
+  <div class="insight-grid">
+    <div class="insight-card primary">
+      <div class="insight-top">
+        <div>
+          <p class="insight-label">Month-to-date spend</p>
+          <div class="insight-value">{{ format_money(monthly_expenses|float) }}</div>
         </div>
+        <span class="badge-soft badge-info">Live</span>
+      </div>
+      <p class="insight-hint">Across {{ expense_count }} expenses recorded this month.</p>
+      <div class="insight-footer">
+        <span class="pill pill-soft">Avg per entry: {{ format_money(avg_expense) }}</span>
+        <a class="link-muted" href="{{ url_for('web.expenses') }}">Open expenses</a>
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-body">
-        <div class="metric-card">
-          <div
-            class="metric-icon"
-            style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
-          >
-            PRJ
-          </div>
-          <div>
-            <div class="metric-label">Active Projects</div>
-            <div class="metric-value">{{ project_count }}</div>
-          </div>
+    <div class="insight-card">
+      <div class="insight-top">
+        <div>
+          <p class="insight-label">Active projects</p>
+          <div class="insight-value">{{ project_count }}</div>
         </div>
+        <span class="badge-soft badge-success">Operational</span>
+      </div>
+      <p class="insight-hint">Budgets under management: {{ format_money(total_active_budget|float) }}</p>
+      <div class="insight-footer">
+        <span class="pill pill-soft">Tap a card below to drill in</span>
+        <a class="link-muted" href="{{ url_for('web.projects') }}">View projects</a>
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-body">
-        <div class="metric-card">
-          <div
-            class="metric-icon"
-            style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"
-          >
-            #
-          </div>
-          <div>
-            <div class="metric-label">Expenses Count</div>
-            <div class="metric-value">{{ expense_count }}</div>
-          </div>
+    <div class="insight-card">
+      <div class="insight-top">
+        <div>
+          <p class="insight-label">Expense velocity</p>
+          <div class="insight-value">{{ expense_count }}</div>
         </div>
+        <span class="badge-soft badge-warning">Pace</span>
+      </div>
+      <p class="insight-hint">Entries created this month. Keep an eye on daily logging cadence.</p>
+      <div class="insight-footer">
+        <span class="pill pill-soft">Avg amount: {{ format_money(avg_expense) }}</span>
+        <a class="link-muted" href="{{ url_for('web.expense_new') }}">Log another</a>
+      </div>
+    </div>
+
+    <div class="insight-card">
+      <div class="insight-top">
+        <div>
+          <p class="insight-label">Latest activity</p>
+          {% if latest_expense %}
+          <div class="insight-value">{{ latest_expense.vendor or latest_expense.note or 'Expense' }}</div>
+          {% else %}
+          <div class="insight-value">Nothing yet</div>
+          {% endif %}
+        </div>
+        <span class="badge-soft badge-info">Feed</span>
+      </div>
+      <p class="insight-hint">
+        {% if latest_expense %}
+        {{ latest_expense.expense_date.strftime('%b %d, %Y') }} • {{ format_money(latest_expense.amount|float) }} {% if latest_expense.category %}• {{ latest_expense.category.name }}{% endif %}
+        {% else %}
+        Recent activity will appear here after you add expenses.
+        {% endif %}
+      </p>
+      <div class="insight-footer">
+        <span class="pill pill-soft">Track vendors and notes</span>
+        <a class="link-muted" href="{{ url_for('web.expenses') }}">See timeline</a>
       </div>
     </div>
   </div>
 
-  <!-- Content Grid -->
   <div class="content-grid">
-    <!-- Active Projects -->
     <div class="card">
       <div class="card-header">
-        <h2 class="card-title" style="margin: 0">Active Projects</h2>
+        <div>
+          <p class="eyebrow">Projects</p>
+          <h2 class="card-title">Health by budget</h2>
+        </div>
         {% if active_projects %}
         <span class="text-muted">{{ active_projects|length }} active</span>
         {% else %}
         <span class="text-muted">No active projects</span>
         {% endif %}
       </div>
-      <div class="card-body">
+      <div class="card-body project-grid">
         {% if active_projects %}
-        <div class="tile-stack">
           {% for project in active_projects %}
-          <div class="tile">
-            <div class="tile-header">
+          {% set utilization = project.budget_utilization|float if project.budget_utilization else 0 %}
+          {% set remaining_budget = (project.starting_budget|float) * (1 - (utilization / 100)) %}
+          <div class="project-card">
+            <div class="project-head">
               <div>
-                <div class="tile-title">{{ project.name }}</div>
-                <div class="tile-subtitle">
-                  Budget: {{ format_money(project.starting_budget|float) }}
-                </div>
+                <p class="project-name">{{ project.name }}</p>
+                <p class="project-meta">
+                  Budget {{ format_money(project.starting_budget|float) }} • Remaining {{ format_money(remaining_budget) }}
+                </p>
               </div>
-              <span class="badge badge-success">{{ project.status }}</span>
+              <span class="badge-soft badge-success">{{ project.status }}</span>
             </div>
-            {% if project.budget_utilization %}
-            <div>
-              <div class="tile-meta">
-                <span>Utilization</span>
-                <span
-                  >{{ "%.1f"|format(project.budget_utilization|float) }}%</span
-                >
-              </div>
+            <div class="project-progress">
               <div class="progress-bar">
-                <div
-                  class="progress-fill"
-                  style="width: {{ project.budget_utilization }}%"
-                ></div>
+                <div class="progress-fill" style="width: {{ utilization }}%"></div>
+              </div>
+              <div class="progress-meta">
+                <span>Utilization</span>
+                <span>{{ "%.1f"|format(utilization) }}%</span>
               </div>
             </div>
-            {% endif %}
+            <div class="project-footer">
+              <a class="link-muted" href="{{ url_for('web.projects') }}">Open project</a>
+              <span class="pill pill-soft">Stay under {{ format_money(project.starting_budget|float) }}</span>
+            </div>
           </div>
           {% endfor %}
-        </div>
         {% else %}
         <div class="empty-state">
           <p>No active projects</p>
-          <a href="{{ url_for('web.projects') }}" class="btn btn-primary"
-            >Create Project</a
-          >
+          <a href="{{ url_for('web.projects') }}" class="btn btn-primary">Create Project</a>
         </div>
         {% endif %}
       </div>
     </div>
 
-    <!-- Recent Expenses -->
     <div class="card">
       <div class="card-header">
-        <h2 class="card-title" style="margin: 0">Recent Expenses</h2>
-        <span class="text-muted">Latest recorded costs</span>
+        <div>
+          <p class="eyebrow">Spending log</p>
+          <h2 class="card-title">Recent expenses</h2>
+        </div>
+        <span class="text-muted">Most recent 10</span>
       </div>
       <div class="card-body">
         {% if recent_expenses %}
-        <div class="tile-stack">
+        <div class="list-table">
           {% for expense in recent_expenses %}
-          <div class="tile">
-            <div class="tile-header">
-              <div>
-                <div class="tile-title">
-                  {{ expense.vendor or expense.note or 'Expense' }}
-                </div>
-                <div class="tile-subtitle">
-                  {{ expense.expense_date.strftime('%b %d, %Y') }} {% if
-                  expense.category %} &nbsp;&bull;&nbsp;{{
-                  expense.category.name }} {% endif %}
-                </div>
-              </div>
-              <div class="tile-value">
-                {{ format_money(expense.amount|float) }}
-              </div>
+          <div class="list-row">
+            <div class="list-main">
+              <p class="list-title">{{ expense.vendor or expense.note or 'Expense' }}</p>
+              <p class="list-subtitle">
+                {{ expense.expense_date.strftime('%b %d, %Y') }}
+                {% if expense.category %} • {{ expense.category.name }}{% endif %}
+              </p>
             </div>
+            <div class="list-value">{{ format_money(expense.amount|float) }}</div>
           </div>
           {% endfor %}
         </div>
         <div class="card-footer">
-          <a href="{{ url_for('web.expenses') }}">View All -></a>
+          <a href="{{ url_for('web.expenses') }}">View full expense list</a>
         </div>
         {% else %}
         <div class="empty-state">
           <p>No expenses recorded</p>
-          <a href="{{ url_for('web.expenses') }}" class="btn btn-primary"
-            >Add Expense</a
-          >
+          <a href="{{ url_for('web.expenses') }}" class="btn btn-primary">Add Expense</a>
         </div>
         {% endif %}
       </div>
