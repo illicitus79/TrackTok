@@ -117,13 +117,14 @@ endblock %} {% block content %}
           ></div>
         </div>
         <span class="stat-hint">
-          <span data-stat="utilization">{{ "%.0f"|format(dashboard_data.budget_utilization) }}</span>% used
-          {% if dashboard_data.insights and dashboard_data.insights.top_category_name %}
-          • Top category: {{ dashboard_data.insights.top_category_name }}
-          {% if dashboard_data.insights.top_category_share is not none %}
-          ({{ "%.0f"|format(dashboard_data.insights.top_category_share) }}%)
-          {% endif %}
-          {% endif %}
+          <span data-stat="utilization"
+            >{{ "%.0f"|format(dashboard_data.budget_utilization) }}</span
+          >% used {% if dashboard_data.insights and
+          dashboard_data.insights.top_category_name %} • Top category: {{
+          dashboard_data.insights.top_category_name }} {% if
+          dashboard_data.insights.top_category_share is not none %} ({{
+          "%.0f"|format(dashboard_data.insights.top_category_share) }}%) {%
+          endif %} {% endif %}
         </span>
       </div>
     </div>
@@ -132,35 +133,39 @@ endblock %} {% block content %}
       <div class="stat-chip">
         <div class="chip-label">Spent (7 days)</div>
         <div class="chip-value" data-stat="spend_7d">
-          {{ format_money(dashboard_data.insights.spend_7d) if dashboard_data.insights else format_money(0) }}
+          {{ format_money(dashboard_data.insights.spend_7d) if
+          dashboard_data.insights else format_money(0) }}
         </div>
         <div class="chip-meta">
-          Avg/day: <span data-stat="avg_daily_7d">{{ format_money(dashboard_data.insights.avg_daily_7d) if dashboard_data.insights else format_money(0) }}</span>
+          Avg/day:
+          <span data-stat="avg_daily_7d"
+            >{{ format_money(dashboard_data.insights.avg_daily_7d) if
+            dashboard_data.insights else format_money(0) }}</span
+          >
         </div>
       </div>
 
       <div class="stat-chip">
         <div class="chip-label">This month (MTD)</div>
         <div class="chip-value" data-stat="spend_mtd">
-          {{ format_money(dashboard_data.insights.spend_mtd) if dashboard_data.insights else format_money(0) }}
+          {{ format_money(dashboard_data.insights.spend_mtd) if
+          dashboard_data.insights else format_money(0) }}
         </div>
         <div class="chip-meta">
-          {% if dashboard_data.insights and dashboard_data.insights.mtd_change_pct is not none %}
-            {{ "%.0f"|format(dashboard_data.insights.mtd_change_pct) }}% vs last month
-          {% else %}
-            Compared to last month
-          {% endif %}
+          {% if dashboard_data.insights and
+          dashboard_data.insights.mtd_change_pct is not none %} {{
+          "%.0f"|format(dashboard_data.insights.mtd_change_pct) }}% vs last
+          month {% else %} Compared to last month {% endif %}
         </div>
       </div>
 
       <div class="stat-chip">
         <div class="chip-label">Runway</div>
         <div class="chip-value">
-          {% if dashboard_data.insights and dashboard_data.insights.runway_days is not none %}
-            {{ "%.0f"|format(dashboard_data.insights.runway_days) }}<span class="stat-unit">days</span>
-          {% else %}
-            —
-          {% endif %}
+          {% if dashboard_data.insights and dashboard_data.insights.runway_days
+          is not none %} {{ "%.0f"|format(dashboard_data.insights.runway_days)
+          }}<span class="stat-unit">days</span>
+          {% else %} — {% endif %}
         </div>
         <div class="chip-meta">At the 30-day average pace</div>
       </div>
@@ -168,18 +173,16 @@ endblock %} {% block content %}
       <div class="stat-chip">
         <div class="chip-label">Largest expense</div>
         <div class="chip-value">
-          {% if dashboard_data.insights and dashboard_data.insights.biggest_expense %}
-            {{ format_money(dashboard_data.insights.biggest_expense.amount) }}
-          {% else %}
-            —
-          {% endif %}
+          {% if dashboard_data.insights and
+          dashboard_data.insights.biggest_expense %} {{
+          format_money(dashboard_data.insights.biggest_expense.amount) }} {%
+          else %} — {% endif %}
         </div>
         <div class="chip-meta">
-          {% if dashboard_data.insights and dashboard_data.insights.biggest_expense %}
-            {{ dashboard_data.insights.biggest_expense.vendor }}
-          {% else %}
-            No expense data yet
-          {% endif %}
+          {% if dashboard_data.insights and
+          dashboard_data.insights.biggest_expense %} {{
+          dashboard_data.insights.biggest_expense.vendor }} {% else %} No
+          expense data yet {% endif %}
         </div>
       </div>
     </div>
@@ -341,7 +344,6 @@ endblock %} {% block content %}
               <span class="chart-hint">Total expenses by category</span>
             </div>
           </div>
-
         </div>
 
         <!-- Row 2: Monthly Spend & Top Vendors -->
@@ -433,28 +435,27 @@ endblock %} {% block content %}
           <h3>Recent Expenses</h3>
         </div>
         <div class="recent-expenses">
-          {% if dashboard_data.recent_expenses %}
-            {% for e in dashboard_data.recent_expenses %}
-              <div class="recent-expense">
-                <div class="recent-main">
-                  <div class="recent-vendor">{{ e.vendor }}</div>
-                  <div class="recent-meta">
-                    <span>{{ e.category }}</span>
-                    <span aria-hidden="true">•</span>
-                    <span>{{ e.account }}</span>
-                    {% if e.date %}
-                      <span aria-hidden="true">•</span>
-                      <span>{{ e.date }}</span>
-                    {% endif %}
-                  </div>
-                </div>
-                <div class="recent-amount">{{ format_money(e.amount) }}</div>
+          {% if dashboard_data.recent_expenses %} {% for e in
+          dashboard_data.recent_expenses %}
+          <div class="recent-expense">
+            <div class="recent-main">
+              <div class="recent-vendor">{{ e.vendor }}</div>
+              <div class="recent-meta">
+                <span>{{ e.category }}</span>
+                <span aria-hidden="true">•</span>
+                <span>{{ e.account }}</span>
+                {% if e.date %}
+                <span aria-hidden="true">•</span>
+                <span>{{ e.date }}</span>
+                {% endif %}
               </div>
-            {% endfor %}
-          {% else %}
-            <div class="empty-state empty-state-compact">
-              <p>No expenses yet for this project.</p>
             </div>
+            <div class="recent-amount">{{ format_money(e.amount) }}</div>
+          </div>
+          {% endfor %} {% else %}
+          <div class="empty-state empty-state-compact">
+            <p>No expenses yet for this project.</p>
+          </div>
           {% endif %}
         </div>
       </div>

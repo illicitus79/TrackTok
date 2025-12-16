@@ -23,8 +23,13 @@ class DashboardApp {
       isDark,
       text: get("--text", isDark ? "#e5e7eb" : "#111827"),
       textMuted: get("--text-muted", isDark ? "#9ca3af" : "#6b7280"),
-      border: get("--border", isDark ? "rgba(42, 53, 68, 0.6)" : "rgba(15, 23, 42, 0.12)"),
-      tooltipBg: isDark ? "rgba(18, 24, 38, 0.92)" : "rgba(255, 255, 255, 0.95)",
+      border: get(
+        "--border",
+        isDark ? "rgba(42, 53, 68, 0.6)" : "rgba(15, 23, 42, 0.12)"
+      ),
+      tooltipBg: isDark
+        ? "rgba(18, 24, 38, 0.92)"
+        : "rgba(255, 255, 255, 0.95)",
       tooltipTitle: get("--text-bright", isDark ? "#f3f4f6" : "#0f172a"),
       tooltipBody: get("--text", isDark ? "#111827" : "#111827"),
     };
@@ -65,7 +70,9 @@ class DashboardApp {
     if (!this.data) return;
 
     // Normalize: API may return nested under .project; server-rendered data is flat
-    const data = this.data.project ? { ...this.data, ...this.data.project } : this.data;
+    const data = this.data.project
+      ? { ...this.data, ...this.data.project }
+      : this.data;
 
     // Update stat cards
     this.updateStat("starting_budget", data.starting_budget);
@@ -379,7 +386,9 @@ class DashboardApp {
             padding: 12,
             callbacks: {
               label: function (context) {
-                return `${context.dataset.label}: $${context.parsed.y.toFixed(2)}`;
+                return `${context.dataset.label}: $${context.parsed.y.toFixed(
+                  2
+                )}`;
               },
             },
           },

@@ -2189,6 +2189,114 @@ a:hover {
 .category-table .form-check {
   align-items: center;
 }
+
+.input-with-action {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+}
+
+.input-with-action .form-input {
+  flex: 1;
+}
+
+/* Icon picker modal */
+.icon-picker-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: var(--spacing-lg);
+}
+
+.icon-picker-modal.open {
+  display: flex;
+}
+
+.icon-picker-dialog {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  width: min(960px, 95vw);
+  max-height: 85vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-lg);
+}
+
+.icon-picker-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--border);
+}
+
+.icon-picker-search-row {
+  padding: 0 var(--spacing-lg) var(--spacing-md);
+}
+
+.icon-picker-grid {
+  padding: 0 var(--spacing-lg) var(--spacing-lg);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--spacing-sm);
+  overflow: auto;
+}
+
+.icon-picker-status {
+  padding: 0 var(--spacing-lg) var(--spacing-sm);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.icon-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 var(--spacing-lg) var(--spacing-sm);
+  gap: var(--spacing-sm);
+}
+
+.icon-page-controls {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.icon-page-label {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.icon-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  color: var(--text);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.icon-pill i {
+  font-size: 1.25rem;
+}
+
+.icon-pill:hover {
+  border-color: var(--text-muted);
+  background: var(--panel-hover);
+}
+
+.icon-pill span {
+  font-size: 0.9rem;
+}
 .list-table {
   display: flex;
   flex-direction: column;

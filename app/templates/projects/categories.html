@@ -65,7 +65,8 @@ endblock %} {% block content %}
           </div>
           <div class="form-group">
             <label class="form-label" for="icon">Icon</label>
-            <input
+            <div class="input-with-action">
+              <input
               class="form-input"
               type="text"
               id="icon"
@@ -73,6 +74,11 @@ endblock %} {% block content %}
               placeholder="Emoji or short icon code"
               maxlength="10"
             />
+              <button type="button" class="btn btn-ghost btn-sm icon-picker-trigger" data-target="icon">
+                <i class="ph ph-magnifying-glass"></i>
+                Choose Icon
+              </button>
+            </div>
             <div class="form-hint">Optional emoji or short icon code.</div>
           </div>
           <div class="form-group full-row">
@@ -131,14 +137,25 @@ endblock %} {% block content %}
                   />
                 </td>
                 <td data-label="Icon">
-                  <input
-                    class="form-input"
-                    type="text"
-                    name="icon"
-                    value="{{ category.icon or '' }}"
-                    maxlength="10"
-                    placeholder="Emoji or short code"
-                  />
+                  <div class="input-with-action">
+                    <input
+                      class="form-input"
+                      type="text"
+                      name="icon"
+                      value="{{ category.icon or '' }}"
+                      maxlength="10"
+                      placeholder="Emoji or short code"
+                      id="icon_{{ category.id }}"
+                    />
+                    <button
+                      type="button"
+                      class="btn btn-ghost btn-sm icon-picker-trigger"
+                      data-target="icon_{{ category.id }}"
+                    >
+                      <i class="ph ph-magnifying-glass"></i>
+                      Pick
+                    </button>
+                  </div>
                 </td>
                 <td data-label="Color">
                   <div class="color-row">
@@ -235,6 +252,169 @@ endblock %} {% block content %}
       const text = row.querySelector('input[type="text"]');
       syncPair(picker, text);
     });
+
+    // Icon picker
+    const iconModal = document.getElementById("icon-picker-modal");
+    const iconSearch = document.getElementById("icon-picker-search");
+    const iconGrid = document.getElementById("icon-picker-grid");
+    const iconClose = document.getElementById("icon-picker-close");
+    const iconStatus = document.getElementById("icon-picker-status");
+    const iconPagePrev = document.getElementById("icon-page-prev");
+    const iconPageNext = document.getElementById("icon-page-next");
+    const iconPageLabel = document.getElementById("icon-page-label");
+    let currentTarget = null;
+    let iconsCache = [];
+    let isLoading = false;
+    let pageSize = 60;
+    let currentPage = 1;
+    const iconLengthLimit = 10; // DB constraint on category.icon
+
+    const loadIcons = async () => {
+      if (iconsCache.length || isLoading) return;
+      try {
+        isLoading = true;
+        iconStatus.textContent = "Loading icons...";
+        const res = await fetch("https://api.iconify.design/collection?prefix=ph");
+        if (!res.ok) throw new Error("Failed to load icons");
+        const data = await res.json();
+        const weights = ["-bold", "-duotone", "-fill", "-light", "-thin"];
+        iconsCache = (data.uncategorized || [])
+          .map((name) => name.replace(/_/g, "-"))
+          .filter((name) => !weights.some((w) => name.endsWith(w)))
+          .filter((name) => name.length <= iconLengthLimit);
+        iconStatus.textContent = `Loaded ${iconsCache.length} icons (max ${iconLengthLimit} chars to satisfy DB limits).`;
+      } catch (err) {
+        console.error(err);
+        iconStatus.textContent = "Unable to load icons. Check your connection.";
+      } finally {
+        isLoading = false;
+      }
+    };
+
+    const renderIcons = (filter = "", page = 1) => {
+      if (!iconGrid) return;
+      const term = filter.toLowerCase();
+      iconGrid.innerHTML = "";
+
+      const startsWith = iconsCache.filter(
+        (name) => term && name.toLowerCase().startsWith(term)
+      );
+      const contains = iconsCache.filter(
+        (name) => term && !name.toLowerCase().startsWith(term) && name.toLowerCase().includes(term)
+      );
+      const base = term ? [...startsWith, ...contains] : iconsCache;
+
+      const totalPages = Math.max(1, Math.ceil(base.length / pageSize));
+      currentPage = Math.min(Math.max(page, 1), totalPages);
+      const start = (currentPage - 1) * pageSize;
+      const results = base.slice(start, start + pageSize);
+
+      if (!results.length) {
+        iconStatus.textContent = term
+          ? "No icons match your search."
+          : "No icons loaded.";
+        iconPageLabel.textContent = "";
+        iconPagePrev.disabled = true;
+        iconPageNext.disabled = true;
+        return;
+      }
+
+      iconStatus.textContent = `${base.length} icons found (max ${iconLengthLimit} chars each)`;
+      iconPageLabel.textContent = `Page ${currentPage} of ${totalPages}`;
+      iconPagePrev.disabled = currentPage <= 1;
+      iconPageNext.disabled = currentPage >= totalPages;
+
+      results
+        .forEach((name) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "icon-pill";
+          btn.innerHTML = `<i class="ph ph-${name}"></i><span>${name}</span>`;
+          btn.addEventListener("click", () => {
+            if (currentTarget) {
+              currentTarget.value = name;
+              currentTarget.focus();
+            }
+            closeIconModal();
+          });
+          iconGrid.appendChild(btn);
+        });
+    };
+
+    const openIconModal = (targetId) => {
+      currentTarget = document.getElementById(targetId);
+      if (!iconModal || !iconGrid || !currentTarget) return;
+      iconModal.classList.add("open");
+      iconStatus.textContent = "";
+      currentPage = 1;
+      renderIcons(iconSearch.value, currentPage);
+      iconSearch.value = "";
+      iconSearch.focus();
+      loadIcons().then(() => renderIcons(iconSearch.value, currentPage));
+    };
+
+    const closeIconModal = () => {
+      iconModal?.classList.remove("open");
+      currentTarget = null;
+    };
+
+    document.querySelectorAll(".icon-picker-trigger").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const targetId = btn.dataset.target;
+        openIconModal(targetId);
+      });
+    });
+
+    iconSearch?.addEventListener("input", (e) => {
+      currentPage = 1;
+      renderIcons(e.target.value, currentPage);
+    });
+    iconClose?.addEventListener("click", closeIconModal);
+    iconModal?.addEventListener("click", (e) => {
+      if (e.target === iconModal) {
+        closeIconModal();
+      }
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeIconModal();
+    });
+    iconPagePrev?.addEventListener("click", () => {
+      currentPage = Math.max(1, currentPage - 1);
+      renderIcons(iconSearch.value, currentPage);
+    });
+    iconPageNext?.addEventListener("click", () => {
+      currentPage += 1;
+      renderIcons(iconSearch.value, currentPage);
+    });
   });
 </script>
+
+<!-- Icon picker modal -->
+<div class="icon-picker-modal" id="icon-picker-modal">
+  <div class="icon-picker-dialog">
+    <div class="icon-picker-header">
+      <h4>Select an icon</h4>
+      <button type="button" class="btn btn-ghost btn-sm" id="icon-picker-close">
+        Close
+      </button>
+    </div>
+    <div class="icon-picker-search-row">
+      <input
+        type="text"
+        class="form-input"
+        id="icon-picker-search"
+        placeholder="Search icons... (e.g., home, rocket, wallet)"
+      />
+    </div>
+    <div class="icon-picker-status" id="icon-picker-status"></div>
+    <div class="icon-pagination">
+      <div id="icon-page-label" class="icon-page-label"></div>
+      <div class="icon-page-controls">
+        <button type="button" class="btn btn-secondary btn-sm" id="icon-page-prev">Prev</button>
+        <button type="button" class="btn btn-secondary btn-sm" id="icon-page-next">Next</button>
+      </div>
+    </div>
+    <div class="icon-picker-grid" id="icon-picker-grid"></div>
+  </div>
+</div>
 {% endblock %}
