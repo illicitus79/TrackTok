@@ -50,56 +50,57 @@ block content %}
       </div>
       <span class="pill pill-soft">{{ project_count }} total</span>
     </div>
-    <div class="table-responsive">
-      <table class="table table-modern">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Status</th>
-            <th>Budget</th>
-            <th>Dates</th>
-            <th class="actions-col">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for project in projects %}
-          <tr>
-            <td data-label="Name" class="cell-strong">
-              <div class="cell-title">
-                <i class="ph ph-briefcase"></i>
-                {{ project.name }}
-              </div>
-            </td>
-            <td data-label="Status">
-              <span class="badge badge-success">{{ project.status }}</span>
-            </td>
-            <td data-label="Budget">
-              {{ format_money(project.starting_budget|float) }}
-            </td>
-            <td data-label="Dates">
+    <div class="card-body project-card-list">
+      {% for project in projects %}
+      <div class="project-row">
+        <div class="project-row-main">
+          <div class="project-row-title">
+            <i class="ph ph-briefcase"></i>
+            <div>
+              <p class="project-row-name">{{ project.name }}</p>
+              <p class="project-row-meta">
+                Budget {{ format_money(project.starting_budget|float) }}
+              </p>
+            </div>
+          </div>
+          <span class="badge badge-success">{{ project.status }}</span>
+        </div>
+        <div class="project-row-meta-grid">
+          <div class="meta-item">
+            <span class="meta-label">Start</span>
+            <span class="meta-value">
               {% if project.start_date %}{{ project.start_date.strftime('%b %d, %Y') }}{% else %}N/A{% endif %}
-              {% if project.end_date %} &bull; {{ project.end_date.strftime('%b %d, %Y') }}{% endif %}
-            </td>
-            <td data-label="Actions" class="table-actions">
-              <a
-                href="{{ url_for('web.project_detail', project_id=project.id) }}"
-                class="btn btn-secondary btn-sm"
-              >
-                <i class="ph ph-arrow-square-out"></i>
-                Open
-              </a>
-              <a
-                href="{{ url_for('web.project_edit', project_id=project.id) }}"
-                class="btn btn-ghost btn-sm"
-              >
-                <i class="ph ph-pencil-simple-line"></i>
-                Edit
-              </a>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+            </span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">End</span>
+            <span class="meta-value">
+              {% if project.end_date %}{{ project.end_date.strftime('%b %d, %Y') }}{% else %}—{% endif %}
+            </span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Budget</span>
+            <span class="meta-value">{{ format_money(project.starting_budget|float) }}</span>
+          </div>
+        </div>
+        <div class="project-row-actions">
+          <a
+            href="{{ url_for('web.project_detail', project_id=project.id) }}"
+            class="btn btn-secondary btn-sm"
+          >
+            <i class="ph ph-arrow-square-out"></i>
+            Open
+          </a>
+          <a
+            href="{{ url_for('web.project_edit', project_id=project.id) }}"
+            class="btn btn-ghost btn-sm"
+          >
+            <i class="ph ph-pencil-simple-line"></i>
+            Edit
+          </a>
+        </div>
+      </div>
+      {% endfor %}
     </div>
   </div>
   {% else %}

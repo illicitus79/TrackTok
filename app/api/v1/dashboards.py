@@ -2,6 +2,7 @@
 from collections import defaultdict
 from decimal import Decimal
 from datetime import date
+from datetime import timedelta
 
 from flask import jsonify, g
 from flask.views import MethodView
@@ -274,19 +275,66 @@ class TenantDashboard(MethodView):
             .all()
         )
 
+        # Projects ending soon (next 14 days)
+        today = date.today()
+        soon = today + timedelta(days=14)
+        projects_ending_soon = (
+            db.session.query(Project)
+            .filter(
+                Project.tenant_id == tenant_id,
+                Project.is_deleted == False,
+                Project.end_date != None,
+                Project.end_date >= today,
+                Project.end_date <= soon,
+            )
+            .all()
+        )
+
+        # Over-budget projects (total spend exceeds starting budget)
+        spend_by_project = dict(
+            db.session.query(Project.id, func.coalesce(func.sum(Expense.amount), 0))
+            .join(Expense, Expense.project_id == Project.id)
+            .filter(
+                Expense.tenant_id == tenant_id,
+                Expense.is_deleted == False,
+            )
+            .group_by(Project.id)
+            .all()
+        )
+        project_budgets = dict(
+            db.session.query(Project.id, Project.starting_budget)
+            .filter(Project.tenant_id == tenant_id, Project.is_deleted == False)
+            .all()
+        )
+        over_budget_projects = [
+            pid
+            for pid, total in spend_by_project.items()
+            if pid in project_budgets and float(total or 0) > float(project_budgets[pid] or 0)
+        ]
+
+        alert_total = len(low_balance_accounts) + len(projects_ending_soon) + len(over_budget_projects)
+
         return jsonify(
             {
                 "total_spend": float(total_spend),
                 "top_vendors": [{"vendor": v[0], "total": float(v[1])} for v in top_vendors],
                 "low_balance_accounts": [
-                    {
-                        "id": a.id,
-                        "name": a.name,
-                        "current_balance": float(a.current_balance or 0),
-                        "threshold": float(a.low_balance_threshold or 0),
+                {
+                    "id": a.id,
+                    "name": a.name,
+                    "current_balance": float(a.current_balance or 0),
+                    "threshold": float(a.low_balance_threshold or 0),
                     }
                     for a in low_balance_accounts
                 ],
-                "alerts": {"total": 0, "unread": 0},
+                "alerts": {
+                    "total": alert_total,
+                    "unread": alert_total,  # mirror total for now
+                    "breakdown": {
+                        "low_balance_accounts": len(low_balance_accounts),
+                        "projects_ending_soon": len(projects_ending_soon),
+                        "over_budget_projects": len(over_budget_projects),
+                    },
+                },
             }
         ), 200

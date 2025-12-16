@@ -43,11 +43,13 @@ class ThemeManager {
       if (isDark) {
         sunIcon.classList.remove("hidden");
         moonIcon.classList.add("hidden");
-        if (toggleBtn) toggleBtn.setAttribute("aria-label", "Switch to light mode");
+        if (toggleBtn)
+          toggleBtn.setAttribute("aria-label", "Switch to light mode");
       } else {
         sunIcon.classList.add("hidden");
         moonIcon.classList.remove("hidden");
-        if (toggleBtn) toggleBtn.setAttribute("aria-label", "Switch to dark mode");
+        if (toggleBtn)
+          toggleBtn.setAttribute("aria-label", "Switch to dark mode");
       }
     }
   }
@@ -66,41 +68,30 @@ class AlertManager {
   constructor() {
     this.alertBell = document.querySelector(".alert-bell");
     this.checkInterval = 30000; // Check every 30 seconds
-    // Ignore empty/invalid tokens to avoid hammering the API with bad requests
-    const rawToken = (localStorage.getItem("access_token") || "").trim();
-    this.token =
-      rawToken && rawToken !== "null" && rawToken !== "undefined" ? rawToken : null;
     this.timerId = null;
     this.init();
   }
 
   init() {
-    if (!this.token) {
-      return; // Skip API calls when not using JWT-authenticated session
-    }
     this.fetchAlertCount();
-    this.timerId = setInterval(() => this.fetchAlertCount(), this.checkInterval);
+    this.timerId = setInterval(
+      () => this.fetchAlertCount(),
+      this.checkInterval
+    );
     this.bindEvents();
   }
 
   async fetchAlertCount() {
-    if (!this.token) {
-      return;
-    }
     try {
-      const response = await fetch("/api/v1/alerts?is_read=false", {
+      const response = await fetch("/api/v1/dashboards/tenant", {
         headers: {
-          Authorization: `Bearer ${this.token}`,
-          "X-Tenant-Id": localStorage.getItem("tenant_id") || "",
+          "X-Requested-With": "XMLHttpRequest",
         },
       });
       if (response.ok) {
         const data = await response.json();
-        this.updateBadge(data.total || 0);
-      } else if (response.status === 401 || response.status === 422) {
-        // Token is invalid/expired; stop polling and clean it up
-        this.stopPolling();
-        localStorage.removeItem("access_token");
+        const count = data.alerts?.total || 0;
+        this.updateBadge(count);
       }
     } catch (error) {
       console.error("Failed to fetch alert count:", error);
@@ -120,7 +111,7 @@ class AlertManager {
   bindEvents() {
     if (this.alertBell) {
       this.alertBell.addEventListener("click", () => {
-        window.location.href = "/alerts";
+        window.location.href = "/dashboard";
       });
     }
   }
