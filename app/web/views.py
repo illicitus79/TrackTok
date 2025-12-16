@@ -568,6 +568,162 @@ def project_detail(project_id):
 
     forecast_total = float(project.projected_estimate or project.starting_budget or 0)
 
+    # ------------------------------------------------------------------
+    # Additional insights (spend velocity, runway, vendors, recents)
+    # ------------------------------------------------------------------
+    from datetime import date, timedelta
+
+    today = date.today()
+    start_30d = today - timedelta(days=29)
+
+    # Daily spend series (last 30 days)
+    daily_rows = (
+        db.session.query(Expense.expense_date, func.sum(Expense.amount))
+        .filter(
+            Expense.tenant_id == tenant_id,
+            Expense.project_id == project.id,
+            Expense.is_deleted == False,
+            Expense.expense_date >= start_30d,
+            Expense.expense_date <= today,
+        )
+        .group_by(Expense.expense_date)
+        .order_by(Expense.expense_date)
+        .all()
+    )
+    daily_map = {r[0].isoformat(): float(r[1] or 0) for r in daily_rows}
+    daily_labels = [(start_30d + timedelta(days=i)).isoformat() for i in range(30)]
+    daily_data = [daily_map.get(d, 0.0) for d in daily_labels]
+
+    spend_7d = float(sum(daily_data[-7:])) if daily_data else 0.0
+    spend_30d = float(sum(daily_data)) if daily_data else 0.0
+    avg_daily_7d = (spend_7d / 7.0) if spend_7d else 0.0
+    avg_daily_30d = (spend_30d / 30.0) if spend_30d else 0.0
+
+    remaining_budget_float = float(remaining_budget)
+    runway_days = None
+    if avg_daily_30d > 0 and remaining_budget_float > 0:
+        runway_days = remaining_budget_float / avg_daily_30d
+
+    # Month-to-date vs previous month (use full previous month total)
+    month_start = today.replace(day=1)
+    prev_month_end = month_start - timedelta(days=1)
+    prev_month_start = prev_month_end.replace(day=1)
+
+    spend_mtd = (
+        db.session.query(func.sum(Expense.amount))
+        .filter(
+            Expense.tenant_id == tenant_id,
+            Expense.project_id == project.id,
+            Expense.is_deleted == False,
+            Expense.expense_date >= month_start,
+            Expense.expense_date <= today,
+        )
+        .scalar()
+        or Decimal("0.00")
+    )
+    spend_prev_month = (
+        db.session.query(func.sum(Expense.amount))
+        .filter(
+            Expense.tenant_id == tenant_id,
+            Expense.project_id == project.id,
+            Expense.is_deleted == False,
+            Expense.expense_date >= prev_month_start,
+            Expense.expense_date <= prev_month_end,
+        )
+        .scalar()
+        or Decimal("0.00")
+    )
+
+    mtd_change_pct = None
+    if spend_prev_month and float(spend_prev_month) > 0:
+        mtd_change_pct = ((float(spend_mtd) - float(spend_prev_month)) / float(spend_prev_month)) * 100.0
+
+    # Top vendors (by spend)
+    vendor_rows = (
+        db.session.query(Expense.vendor, func.sum(Expense.amount))
+        .filter(
+            Expense.tenant_id == tenant_id,
+            Expense.project_id == project.id,
+            Expense.is_deleted == False,
+            Expense.vendor != None,
+            Expense.vendor != "",
+        )
+        .group_by(Expense.vendor)
+        .order_by(func.sum(Expense.amount).desc())
+        .limit(8)
+        .all()
+    )
+    top_vendor_labels = [r[0] for r in vendor_rows]
+    top_vendor_data = [float(r[1] or 0) for r in vendor_rows]
+
+    # Largest single expense
+    biggest_row = (
+        db.session.query(Expense.vendor, Expense.amount, Expense.expense_date)
+        .filter(
+            Expense.tenant_id == tenant_id,
+            Expense.project_id == project.id,
+            Expense.is_deleted == False,
+        )
+        .order_by(Expense.amount.desc())
+        .first()
+    )
+    biggest_expense = None
+    if biggest_row:
+        biggest_expense = {
+            "vendor": biggest_row[0] or "(No vendor)",
+            "amount": float(biggest_row[1] or 0),
+            "date": biggest_row[2].isoformat() if biggest_row[2] else None,
+        }
+
+    # Recent expenses (for quick review)
+    recent_rows = (
+        db.session.query(
+            Expense.id,
+            Expense.expense_date,
+            Expense.vendor,
+            Expense.amount,
+            Category.name.label("category"),
+            Account.name.label("account"),
+        )
+        .outerjoin(Category, Category.id == Expense.category_id)
+        .join(Account, Account.id == Expense.account_id)
+        .filter(
+            Expense.tenant_id == tenant_id,
+            Expense.project_id == project.id,
+            Expense.is_deleted == False,
+        )
+        .order_by(Expense.expense_date.desc(), Expense.id.desc())
+        .limit(6)
+        .all()
+    )
+    recent_expenses = [
+        {
+            "id": str(r.id),
+            "date": r.expense_date.isoformat() if r.expense_date else None,
+            "vendor": r.vendor or "(No vendor)",
+            "amount": float(r.amount or 0),
+            "category": r.category or "Uncategorized",
+            "account": r.account or "—",
+        }
+        for r in recent_rows
+    ]
+
+    # Category concentration
+    total_spend_float = float(total_spend or 0)
+    top_category_name = None
+    top_category_share = None
+    if category_breakdown and total_spend_float > 0:
+        top_category_name, top_category_total = max(category_breakdown, key=lambda x: float(x[1] or 0))
+        top_category_share = (float(top_category_total or 0) / total_spend_float) * 100.0
+
+    # Projected end spend (if project has an end date / duration)
+    projected_end_total = None
+    projected_end_variance = None
+    project_total_days = (project.days_elapsed or 0) + (project.days_remaining or 0)
+    if project_total_days > 0:
+        projected_end_total = float(burn_rate) * float(project_total_days)
+        projected_end_variance = projected_end_total - float(project.starting_budget or 0)
+
     dashboard_data = {
         'starting_budget': float(project.starting_budget or 0),
         'projected_estimate': float(project.projected_estimate or 0),
@@ -577,6 +733,30 @@ def project_detail(project_id):
         'is_over_budget': remaining_budget < 0,
         'days_remaining': project.days_remaining or 0,
         'burn_rate': burn_rate,
+        'insights': {
+            'spend_7d': spend_7d,
+            'spend_30d': spend_30d,
+            'avg_daily_7d': avg_daily_7d,
+            'avg_daily_30d': avg_daily_30d,
+            'runway_days': runway_days,
+            'spend_mtd': float(spend_mtd or 0),
+            'spend_prev_month': float(spend_prev_month or 0),
+            'mtd_change_pct': mtd_change_pct,
+            'top_category_name': top_category_name,
+            'top_category_share': top_category_share,
+            'projected_end_total': projected_end_total,
+            'projected_end_variance': projected_end_variance,
+            'biggest_expense': biggest_expense,
+        },
+        'daily_spend': {
+            'labels': daily_labels,
+            'data': daily_data,
+        },
+        'top_vendors': {
+            'labels': top_vendor_labels,
+            'data': top_vendor_data,
+        },
+        'recent_expenses': recent_expenses,
         'forecast': {
             'projected_total': forecast_total,
             'confidence': 75,

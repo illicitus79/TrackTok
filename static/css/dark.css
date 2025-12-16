@@ -856,6 +856,32 @@ a:hover {
   border: 1px solid var(--border);
 }
 
+.color-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.color-chip-input {
+  width: 48px;
+  height: 38px;
+  padding: 0;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--panel);
+  cursor: pointer;
+}
+
+.color-chip-input::-webkit-color-swatch {
+  border-radius: var(--radius-md);
+  border: none;
+}
+
+.color-chip-input::-webkit-color-swatch-wrapper {
+  padding: 4px;
+  border-radius: var(--radius-md);
+}
+
 /* ==========================================================================
    Tables
    ========================================================================== */
@@ -1486,6 +1512,7 @@ a:hover {
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-lg);
+  margin-bottom: var(--spacing-xl);
 }
 
 .hero-content h1 {
@@ -2110,6 +2137,58 @@ a:hover {
   justify-content: flex-start;
 }
 
+/* Categories page */
+.category-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.category-grid .full-row {
+  grid-column: 1 / -1;
+}
+
+.category-table-wrap {
+  overflow-x: auto;
+}
+
+.category-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.category-table th,
+.category-table td {
+  padding: var(--spacing-sm);
+  vertical-align: middle;
+}
+
+.category-table th {
+  text-align: left;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.category-table td .form-input {
+  width: 100%;
+}
+
+.category-table .color-row input.form-input {
+  width: 100%;
+}
+
+.category-table .form-check {
+  align-items: center;
+}
 .list-table {
   display: flex;
   flex-direction: column;
@@ -2157,8 +2236,14 @@ a:hover {
 
 .charts-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: var(--spacing-lg);
+}
+
+@media (max-width: 480px) {
+  .charts-row {
+    grid-template-columns: 1fr;
+  }
 }
 
 .chart-card {
@@ -2264,6 +2349,73 @@ a:hover {
 
 .account-balance.low {
   color: var(--error);
+}
+
+/* Project dashboard: recent expenses list */
+.stat-footer.stat-footer-tight {
+  gap: var(--spacing-xs);
+}
+
+.recent-expenses {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.recent-expense {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.recent-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.recent-vendor {
+  font-weight: 700;
+  color: var(--text-bright);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recent-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.recent-amount {
+  font-weight: 800;
+  color: var(--text-bright);
+  white-space: nowrap;
+}
+
+.empty-state.empty-state-compact {
+  margin: 0;
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+}
+
+@media (max-width: 640px) {
+  .recent-expense {
+    flex-direction: column;
+  }
+
+  .recent-amount {
+    align-self: flex-end;
+  }
 }
 
 /* ==========================================================================

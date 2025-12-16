@@ -11,6 +11,25 @@ class DashboardApp {
     this.init();
   }
 
+  getTheme() {
+    const isDark = document.documentElement.classList.contains("dark");
+    const css = window.getComputedStyle(document.documentElement);
+    const get = (name, fallback) => {
+      const value = (css.getPropertyValue(name) || "").trim();
+      return value || fallback;
+    };
+
+    return {
+      isDark,
+      text: get("--text", isDark ? "#e5e7eb" : "#111827"),
+      textMuted: get("--text-muted", isDark ? "#9ca3af" : "#6b7280"),
+      border: get("--border", isDark ? "rgba(42, 53, 68, 0.6)" : "rgba(15, 23, 42, 0.12)"),
+      tooltipBg: isDark ? "rgba(18, 24, 38, 0.92)" : "rgba(255, 255, 255, 0.95)",
+      tooltipTitle: get("--text-bright", isDark ? "#f3f4f6" : "#0f172a"),
+      tooltipBody: get("--text", isDark ? "#111827" : "#111827"),
+    };
+  }
+
   async init() {
     if (!this.data) {
       // Fallback to API if no server data provided
@@ -45,8 +64,8 @@ class DashboardApp {
   renderStats() {
     if (!this.data) return;
 
-    // Server-side data is already flat, no need to access .project
-    const data = this.data;
+    // Normalize: API may return nested under .project; server-rendered data is flat
+    const data = this.data.project ? { ...this.data, ...this.data.project } : this.data;
 
     // Update stat cards
     this.updateStat("starting_budget", data.starting_budget);
@@ -56,6 +75,13 @@ class DashboardApp {
     this.updateStat("utilization", data.budget_utilization);
     this.updateStat("days_remaining", data.days_remaining);
     this.updateStat("burn_rate", data.burn_rate || 0);
+
+    // Optional insight chips
+    if (data.insights) {
+      this.updateStat("spend_7d", data.insights.spend_7d || 0);
+      this.updateStat("avg_daily_7d", data.insights.avg_daily_7d || 0);
+      this.updateStat("spend_mtd", data.insights.spend_mtd || 0);
+    }
 
     // Update progress bar
     const progressBar = document.querySelector('[data-progress="utilization"]');
@@ -85,7 +111,8 @@ class DashboardApp {
         if (
           key.includes("budget") ||
           key.includes("spend") ||
-          key.includes("rate")
+          key.includes("rate") ||
+          key.includes("avg_daily")
         ) {
           element.textContent = window.TrackTok.formatCurrency(value);
         } else if (key === "utilization") {
@@ -106,8 +133,10 @@ class DashboardApp {
     }
 
     console.log("Rendering charts with data:", this.data);
+    this.renderDailySpendChart();
     this.renderCategoryChart();
     this.renderMonthlyChart();
+    this.renderTopVendorsChart();
     this.renderForecastChart();
     this.renderAccountBalances();
   }
@@ -130,6 +159,7 @@ class DashboardApp {
       return;
     }
 
+    const theme = this.getTheme();
     const { labels, data } = this.data.category_breakdown;
 
     this.charts.category = new Chart(ctx, {
@@ -152,7 +182,7 @@ class DashboardApp {
           legend: {
             position: "bottom",
             labels: {
-              color: "#e5e7eb",
+              color: theme.text,
               padding: 15,
               font: {
                 size: 12,
@@ -160,10 +190,10 @@ class DashboardApp {
             },
           },
           tooltip: {
-            backgroundColor: "rgba(18, 24, 38, 0.9)",
-            titleColor: "#e5e7eb",
-            bodyColor: "#e5e7eb",
-            borderColor: "#2a3544",
+            backgroundColor: theme.tooltipBg,
+            titleColor: theme.tooltipTitle,
+            bodyColor: theme.text,
+            borderColor: theme.border,
             borderWidth: 1,
             padding: 12,
             displayColors: true,
@@ -200,6 +230,7 @@ class DashboardApp {
       return;
     }
 
+    const theme = this.getTheme();
     const { labels, datasets } = this.data.monthly_trend;
 
     // Apply colors to datasets
@@ -226,16 +257,16 @@ class DashboardApp {
               display: false,
             },
             ticks: {
-              color: "#9ca3af",
+              color: theme.textMuted,
             },
           },
           y: {
             stacked: true,
             grid: {
-              color: "rgba(42, 53, 68, 0.5)",
+              color: theme.border,
             },
             ticks: {
-              color: "#9ca3af",
+              color: theme.textMuted,
               callback: function (value) {
                 return "$" + value.toFixed(2);
               },
@@ -246,7 +277,7 @@ class DashboardApp {
           legend: {
             position: "bottom",
             labels: {
-              color: "#e5e7eb",
+              color: theme.text,
               padding: 15,
               font: {
                 size: 12,
@@ -254,10 +285,10 @@ class DashboardApp {
             },
           },
           tooltip: {
-            backgroundColor: "rgba(18, 24, 38, 0.9)",
-            titleColor: "#e5e7eb",
-            bodyColor: "#e5e7eb",
-            borderColor: "#2a3544",
+            backgroundColor: theme.tooltipBg,
+            titleColor: theme.tooltipTitle,
+            bodyColor: theme.text,
+            borderColor: theme.border,
             borderWidth: 1,
             padding: 12,
             callbacks: {
@@ -265,6 +296,159 @@ class DashboardApp {
                 return `${context.dataset.label}: $${context.parsed.y.toFixed(
                   2
                 )}`;
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  // Daily Spend (Last 30 Days)
+  renderDailySpendChart() {
+    const ctx = document.getElementById("dailyChart");
+    if (!ctx) return;
+
+    if (!this.data.daily_spend || !this.data.daily_spend.labels?.length) {
+      ctx.parentElement.innerHTML =
+        '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-muted);">No daily spend data available</div>';
+      return;
+    }
+
+    const theme = this.getTheme();
+    const { labels, data } = this.data.daily_spend;
+
+    this.charts.daily = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels,
+        datasets: [
+          {
+            label: "Daily Spend",
+            data,
+            borderColor: "#3b82f6",
+            backgroundColor: "rgba(59, 130, 246, 0.12)",
+            borderWidth: 2,
+            tension: 0.35,
+            fill: true,
+            pointRadius: 0,
+            pointHitRadius: 10,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: {
+              color: theme.textMuted,
+              maxRotation: 0,
+              autoSkip: true,
+              callback: function (value) {
+                const label = this.getLabelForValue(value);
+                // YYYY-MM-DD -> MM-DD
+                return typeof label === "string" && label.length >= 10
+                  ? label.slice(5)
+                  : label;
+              },
+            },
+          },
+          y: {
+            grid: { color: theme.border },
+            ticks: {
+              color: theme.textMuted,
+              callback: function (value) {
+                return "$" + Number(value).toFixed(0);
+              },
+            },
+          },
+        },
+        plugins: {
+          legend: {
+            display: false,
+          },
+          tooltip: {
+            backgroundColor: theme.tooltipBg,
+            titleColor: theme.tooltipTitle,
+            bodyColor: theme.text,
+            borderColor: theme.border,
+            borderWidth: 1,
+            padding: 12,
+            callbacks: {
+              label: function (context) {
+                return `${context.dataset.label}: $${context.parsed.y.toFixed(2)}`;
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  // Top Vendors (Horizontal Bar)
+  renderTopVendorsChart() {
+    const ctx = document.getElementById("vendorChart");
+    if (!ctx) return;
+
+    if (!this.data.top_vendors || !this.data.top_vendors.labels?.length) {
+      ctx.parentElement.innerHTML =
+        '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-muted);">No vendor data available</div>';
+      return;
+    }
+
+    const theme = this.getTheme();
+    const { labels, data } = this.data.top_vendors;
+
+    this.charts.vendors = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels,
+        datasets: [
+          {
+            label: "Spend",
+            data,
+            backgroundColor: labels.map((_, idx) => this.getColorForIndex(idx)),
+            borderWidth: 0,
+            borderRadius: 8,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: "y",
+        scales: {
+          x: {
+            grid: { color: theme.border },
+            ticks: {
+              color: theme.textMuted,
+              callback: function (value) {
+                return "$" + Number(value).toFixed(0);
+              },
+            },
+          },
+          y: {
+            grid: { display: false },
+            ticks: { color: theme.textMuted },
+          },
+        },
+        plugins: {
+          legend: {
+            display: false,
+          },
+          tooltip: {
+            backgroundColor: theme.tooltipBg,
+            titleColor: theme.tooltipTitle,
+            bodyColor: theme.text,
+            borderColor: theme.border,
+            borderWidth: 1,
+            padding: 12,
+            callbacks: {
+              label: function (context) {
+                return `Spend: $${context.parsed.x.toFixed(2)}`;
               },
             },
           },
@@ -291,6 +475,7 @@ class DashboardApp {
       return;
     }
 
+    const theme = this.getTheme();
     const { labels, datasets } = this.data.forecast_vs_actual;
 
     this.charts.forecast = new Chart(ctx, {
@@ -342,15 +527,15 @@ class DashboardApp {
               display: false,
             },
             ticks: {
-              color: "#9ca3af",
+              color: theme.textMuted,
             },
           },
           y: {
             grid: {
-              color: "rgba(42, 53, 68, 0.5)",
+              color: theme.border,
             },
             ticks: {
-              color: "#9ca3af",
+              color: theme.textMuted,
               callback: function (value) {
                 return "$" + value.toFixed(2);
               },
@@ -361,7 +546,7 @@ class DashboardApp {
           legend: {
             position: "top",
             labels: {
-              color: "#e5e7eb",
+              color: theme.text,
               padding: 15,
               font: {
                 size: 12,
@@ -370,10 +555,10 @@ class DashboardApp {
             },
           },
           tooltip: {
-            backgroundColor: "rgba(18, 24, 38, 0.9)",
-            titleColor: "#e5e7eb",
-            bodyColor: "#e5e7eb",
-            borderColor: "#2a3544",
+            backgroundColor: theme.tooltipBg,
+            titleColor: theme.tooltipTitle,
+            bodyColor: theme.text,
+            borderColor: theme.border,
             borderWidth: 1,
             padding: 12,
             callbacks: {

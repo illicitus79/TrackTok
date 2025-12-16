@@ -27,53 +27,64 @@ endblock %} {% block content %}
   <div class="card">
     <div class="card-body">
       <h3 class="card-title">New Category</h3>
-      <form method="POST" class="form-grid form-grid-compact">
+      <form method="POST" class="category-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-        <div>
-          <label class="form-label" for="name">Name</label>
-          <input
-            class="form-input"
-            type="text"
-            id="name"
-            name="name"
-            placeholder="Design, Ops"
-            required
-          />
-        </div>
-        <div>
-          <label class="form-label" for="color">Color</label>
-          <input
-            class="form-input"
-            type="text"
-            id="color"
-            name="color"
-            value="#6366F1"
-            maxlength="7"
-            required
-          />
-          <div class="form-hint">Hex color (e.g., #6366F1).</div>
-        </div>
-        <div>
-          <label class="form-label" for="icon">Icon</label>
-          <input
-            class="form-input"
-            type="text"
-            id="icon"
-            name="icon"
-            placeholder="dYs? or fe-icon"
-            maxlength="10"
-          />
-          <div class="form-hint">Optional emoji or short icon code.</div>
-        </div>
-        <div>
-          <label class="form-label" for="description">Description</label>
-          <input
-            class="form-input"
-            type="text"
-            id="description"
-            name="description"
-            placeholder="Optional note"
-          />
+        <div class="category-grid">
+          <div class="form-group">
+            <label class="form-label" for="name">Name</label>
+            <input
+              class="form-input"
+              type="text"
+              id="name"
+              name="name"
+              placeholder="Design, Ops"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="color">Color</label>
+            <div class="color-row">
+              <input
+                class="color-chip-input"
+                type="color"
+                id="color_picker_new"
+                value="#6366F1"
+                aria-label="Pick a color"
+              />
+              <input
+                class="form-input"
+                type="text"
+                id="color"
+                name="color"
+                value="#6366F1"
+                maxlength="7"
+                required
+              />
+            </div>
+            <div class="form-hint">Hex color (e.g., #6366F1).</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="icon">Icon</label>
+            <input
+              class="form-input"
+              type="text"
+              id="icon"
+              name="icon"
+              placeholder="Emoji or short icon code"
+              maxlength="10"
+            />
+            <div class="form-hint">Optional emoji or short icon code.</div>
+          </div>
+          <div class="form-group full-row">
+            <label class="form-label" for="description">Description</label>
+            <input
+              class="form-input"
+              type="text"
+              id="description"
+              name="description"
+              placeholder="Optional note"
+            />
+          </div>
         </div>
         <div class="form-actions">
           <button type="submit" class="btn btn-primary">Create</button>
@@ -86,8 +97,8 @@ endblock %} {% block content %}
     <div class="card-body">
       <h3 class="card-title">Existing Categories</h3>
       {% if categories %}
-      <div class="table-responsive">
-        <table class="table stackable">
+      <div class="table-responsive category-table-wrap">
+        <table class="table category-table">
           <thead>
             <tr>
               <th>Name</th>
@@ -100,12 +111,11 @@ endblock %} {% block content %}
           </thead>
           <tbody>
             {% for category in categories %}
-            <form
-              method="POST"
-              action="{{ url_for('web.project_category_update', project_id=project.id, category_id=category.id) }}"
-              style="display: contents"
-            >
-              <tr>
+            <tr>
+              <form
+                method="POST"
+                action="{{ url_for('web.project_category_update', project_id=project.id, category_id=category.id) }}"
+              >
                 <td data-label="Name">
                   <input
                     type="hidden"
@@ -127,14 +137,18 @@ endblock %} {% block content %}
                     name="icon"
                     value="{{ category.icon or '' }}"
                     maxlength="10"
+                    placeholder="Emoji or short code"
                   />
                 </td>
                 <td data-label="Color">
-                  <div style="display: flex; align-items: center; gap: 0.5rem">
-                    <span
-                      class="color-chip"
-                      style="background: {{ category.color }}"
-                    ></span>
+                  <div class="color-row">
+                    <input
+                      class="color-chip-input"
+                      type="color"
+                      value="{{ category.color }}"
+                      aria-label="Pick a color"
+                      onchange="this.nextElementSibling.value=this.value"
+                    />
                     <input
                       class="form-input"
                       type="text"
@@ -151,6 +165,7 @@ endblock %} {% block content %}
                     type="text"
                     name="description"
                     value="{{ category.description or '' }}"
+                    placeholder="Optional note"
                   />
                 </td>
                 <td data-label="Active">
@@ -176,8 +191,8 @@ endblock %} {% block content %}
                     Save
                   </button>
                 </td>
-              </tr>
-            </form>
+              </form>
+            </tr>
             {% endfor %}
           </tbody>
         </table>
@@ -190,4 +205,36 @@ endblock %} {% block content %}
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const hexPattern = /^#([0-9a-fA-F]{6})$/;
+    const syncPair = (picker, input) => {
+      if (!picker || !input) return;
+      picker.addEventListener("input", () => {
+        input.value = picker.value;
+      });
+      input.addEventListener("input", () => {
+        if (hexPattern.test(input.value)) {
+          picker.value = input.value;
+        }
+      });
+    };
+
+    // New category form
+    syncPair(
+      document.getElementById("color_picker_new"),
+      document.getElementById("color")
+    );
+
+    // Existing category rows
+    document.querySelectorAll(".category-table .color-row").forEach((row) => {
+      const picker = row.querySelector('input[type="color"]');
+      const text = row.querySelector('input[type="text"]');
+      syncPair(picker, text);
+    });
+  });
+</script>
 {% endblock %}

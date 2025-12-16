@@ -100,6 +100,91 @@ endblock %} {% block content %}
     </div>
   </header>
 
+  <section class="dashboard-hero" aria-label="Spending health">
+    <div class="hero-content">
+      <div class="eyebrow">Spending health</div>
+      <h2 class="hero-title">How the project is tracking</h2>
+      <p class="hero-subtitle">
+        A quick pulse-check on pace, runway, and where money is going.
+      </p>
+
+      <div class="stat-footer stat-footer-tight">
+        <div class="progress-bar" aria-label="Budget utilization">
+          <div
+            class="progress-fill"
+            data-progress="utilization"
+            style="width: {{ dashboard_data.budget_utilization }}%;"
+          ></div>
+        </div>
+        <span class="stat-hint">
+          <span data-stat="utilization">{{ "%.0f"|format(dashboard_data.budget_utilization) }}</span>% used
+          {% if dashboard_data.insights and dashboard_data.insights.top_category_name %}
+          • Top category: {{ dashboard_data.insights.top_category_name }}
+          {% if dashboard_data.insights.top_category_share is not none %}
+          ({{ "%.0f"|format(dashboard_data.insights.top_category_share) }}%)
+          {% endif %}
+          {% endif %}
+        </span>
+      </div>
+    </div>
+
+    <div class="hero-stats" aria-label="Key spend insights">
+      <div class="stat-chip">
+        <div class="chip-label">Spent (7 days)</div>
+        <div class="chip-value" data-stat="spend_7d">
+          {{ format_money(dashboard_data.insights.spend_7d) if dashboard_data.insights else format_money(0) }}
+        </div>
+        <div class="chip-meta">
+          Avg/day: <span data-stat="avg_daily_7d">{{ format_money(dashboard_data.insights.avg_daily_7d) if dashboard_data.insights else format_money(0) }}</span>
+        </div>
+      </div>
+
+      <div class="stat-chip">
+        <div class="chip-label">This month (MTD)</div>
+        <div class="chip-value" data-stat="spend_mtd">
+          {{ format_money(dashboard_data.insights.spend_mtd) if dashboard_data.insights else format_money(0) }}
+        </div>
+        <div class="chip-meta">
+          {% if dashboard_data.insights and dashboard_data.insights.mtd_change_pct is not none %}
+            {{ "%.0f"|format(dashboard_data.insights.mtd_change_pct) }}% vs last month
+          {% else %}
+            Compared to last month
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="stat-chip">
+        <div class="chip-label">Runway</div>
+        <div class="chip-value">
+          {% if dashboard_data.insights and dashboard_data.insights.runway_days is not none %}
+            {{ "%.0f"|format(dashboard_data.insights.runway_days) }}<span class="stat-unit">days</span>
+          {% else %}
+            —
+          {% endif %}
+        </div>
+        <div class="chip-meta">At the 30-day average pace</div>
+      </div>
+
+      <div class="stat-chip">
+        <div class="chip-label">Largest expense</div>
+        <div class="chip-value">
+          {% if dashboard_data.insights and dashboard_data.insights.biggest_expense %}
+            {{ format_money(dashboard_data.insights.biggest_expense.amount) }}
+          {% else %}
+            —
+          {% endif %}
+        </div>
+        <div class="chip-meta">
+          {% if dashboard_data.insights and dashboard_data.insights.biggest_expense %}
+            {{ dashboard_data.insights.biggest_expense.vendor }}
+          {% else %}
+            No expense data yet
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </section>
+
   <div class="dashboard-grid">
     <div class="dashboard-main">
       <!-- Budget Overview Cards -->
@@ -230,8 +315,20 @@ endblock %} {% block content %}
 
       <!-- Charts Section -->
       <div class="charts-section">
-        <!-- Row 1: Category Breakdown & Monthly Trend -->
+        <!-- Row 1: Daily Trend & Category Breakdown -->
         <div class="charts-row">
+          <div class="chart-card">
+            <div class="chart-header">
+              <h3>Daily Spend (Last 30 Days)</h3>
+            </div>
+            <div class="chart-container">
+              <canvas id="dailyChart"></canvas>
+            </div>
+            <div class="chart-footer">
+              <span class="chart-hint">Spot spikes and spend momentum</span>
+            </div>
+          </div>
+
           <div class="chart-card">
             <div class="chart-header">
               <h3>Category Breakdown</h3>
@@ -245,6 +342,10 @@ endblock %} {% block content %}
             </div>
           </div>
 
+        </div>
+
+        <!-- Row 2: Monthly Spend & Top Vendors -->
+        <div class="charts-row">
           <div class="chart-card">
             <div class="chart-header">
               <h3>Monthly Spend by Account</h3>
@@ -263,9 +364,21 @@ endblock %} {% block content %}
               <span class="chart-hint">Stacked by account</span>
             </div>
           </div>
+
+          <div class="chart-card">
+            <div class="chart-header">
+              <h3>Top Vendors</h3>
+            </div>
+            <div class="chart-container">
+              <canvas id="vendorChart"></canvas>
+            </div>
+            <div class="chart-footer">
+              <span class="chart-hint">Where the spend is concentrated</span>
+            </div>
+          </div>
         </div>
 
-        <!-- Row 2: Forecast -->
+        <!-- Row 3: Forecast -->
         <div class="charts-row">
           <div class="chart-card chart-wide">
             <div class="chart-header">
@@ -312,6 +425,37 @@ endblock %} {% block content %}
         </div>
         <div class="accounts-list" id="accountsList">
           <!-- Populated by JavaScript -->
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>Recent Expenses</h3>
+        </div>
+        <div class="recent-expenses">
+          {% if dashboard_data.recent_expenses %}
+            {% for e in dashboard_data.recent_expenses %}
+              <div class="recent-expense">
+                <div class="recent-main">
+                  <div class="recent-vendor">{{ e.vendor }}</div>
+                  <div class="recent-meta">
+                    <span>{{ e.category }}</span>
+                    <span aria-hidden="true">•</span>
+                    <span>{{ e.account }}</span>
+                    {% if e.date %}
+                      <span aria-hidden="true">•</span>
+                      <span>{{ e.date }}</span>
+                    {% endif %}
+                  </div>
+                </div>
+                <div class="recent-amount">{{ format_money(e.amount) }}</div>
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="empty-state empty-state-compact">
+              <p>No expenses yet for this project.</p>
+            </div>
+          {% endif %}
         </div>
       </div>
     </aside>
