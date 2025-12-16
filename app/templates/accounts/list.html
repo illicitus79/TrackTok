@@ -24,17 +24,19 @@ block content %}
     gap: 1.5rem;
   }
   .account-card {
-    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    background: var(--panel);
     border-radius: 12px;
     padding: 1.5rem;
-    border: 1px solid #334155;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-md);
   }
   .account-details {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: 1rem;
     padding: 1rem;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
     border-radius: 8px;
     margin-bottom: 1rem;
   }
@@ -121,8 +123,8 @@ block content %}
   <!-- Header -->
   <div class="page-header accounts-header">
     <div>
-      <h1 style="margin: 0; font-size: 2rem; color: white">Accounts</h1>
-      <p style="margin: 0.5rem 0 0; color: #9ca3af">
+      <h1 style="margin: 0; font-size: 2rem; color: var(--text-bright)">Accounts</h1>
+      <p style="margin: 0.5rem 0 0; color: var(--text-muted)">
         Manage your financial accounts and balances
       </p>
     </div>
@@ -189,14 +191,14 @@ block content %}
             </span>
           </div>
           {% if account.description %}
-          <p style="margin: 0; color: #9ca3af; font-size: 0.875rem">
+          <p style="margin: 0; color: var(--text-muted); font-size: 0.875rem">
             {{ account.description }}
           </p>
           {% endif %}
         </div>
         <div style="text-align: right">
           <div
-            style="font-size: 0.75rem; color: #9ca3af; margin-bottom: 0.25rem"
+            style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem"
           >
             Current Balance
           </div>
@@ -212,37 +214,37 @@ block content %}
       <div class="account-details">
         <div>
           <div
-            style="font-size: 0.75rem; color: #9ca3af; margin-bottom: 0.25rem"
+            style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem"
           >
             Opening Balance
           </div>
-          <div style="font-size: 1.125rem; color: white">
+          <div style="font-size: 1.125rem; color: var(--text)">
             {{ format_money(account.opening_balance) }}
           </div>
         </div>
         <div>
           <div
-            style="font-size: 0.75rem; color: #9ca3af; margin-bottom: 0.25rem"
+            style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem"
           >
             Balance Change
           </div>
           <div
-            style="font-size: 1.125rem; {% if account.balance_change > 0 %}color: #10b981;{% elif account.balance_change < 0 %}color: #ef4444;{% else %}color: white;{% endif %}"
+            style="font-size: 1.125rem; {% if account.balance_change > 0 %}color: #10b981;{% elif account.balance_change < 0 %}color: #ef4444;{% else %}color: var(--text);{% endif %}"
           >
             {% if account.balance_change > 0 %}+{% endif %}{{
             format_money(account.balance_change) }}
-            <span style="font-size: 0.875rem; color: #9ca3af"
+            <span style="font-size: 0.875rem; color: var(--text-muted)"
               >({{ "%.1f"|format(account.balance_change_percentage) }}%)</span
             >
           </div>
         </div>
         <div>
           <div
-            style="font-size: 0.75rem; color: #9ca3af; margin-bottom: 0.25rem"
+            style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem"
           >
             Total Expenses
           </div>
-          <div style="font-size: 1.125rem; color: white">
+          <div style="font-size: 1.125rem; color: var(--text)">
             {{ format_money(expense_totals.get(account.id|string, 0)) }}
           </div>
         </div>
@@ -303,9 +305,9 @@ block content %}
       style="
         text-align: center;
         padding: 3rem;
-        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        background: var(--panel);
         border-radius: 12px;
-        border: 2px dashed #475569;
+        border: 2px dashed var(--border);
       "
     >
       <svg
@@ -314,15 +316,15 @@ block content %}
         height="48"
         viewBox="0 0 24 24"
         fill="none"
-        stroke="#6b7280"
+        stroke="currentColor"
         stroke-width="2"
-        style="margin: 0 auto 1rem"
+        style="margin: 0 auto 1rem; color: var(--text-muted)"
       >
         <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
         <line x1="1" y1="10" x2="23" y2="10"></line>
       </svg>
-      <h3 style="margin: 0 0 0.5rem; color: white">No Accounts Yet</h3>
-      <p style="margin: 0 0 1.5rem; color: #9ca3af">
+      <h3 style="margin: 0 0 0.5rem; color: var(--text-bright)">No Accounts Yet</h3>
+      <p style="margin: 0 0 1.5rem; color: var(--text-muted)">
         Create your first account to start tracking finances
       </p>
       <a href="{{ url_for('web.account_new') }}" class="btn btn-primary"

@@ -13,8 +13,8 @@ block content %}
         First-stop overview of spend, project health, and recent activity. Drill into projects or record a new expense without leaving this page.
       </p>
       <div class="hero-actions">
-        <a href="{{ url_for('web.expense_new') }}" class="btn btn-primary">Add Expense</a>
-        <a href="{{ url_for('web.projects') }}" class="btn btn-secondary">New Project</a>
+        <a href="{{ url_for('web.expense_new') }}" class="btn btn-primary"><i class="ph ph-plus-circle"></i> Add Expense</a>
+        <a href="{{ url_for('web.projects') }}" class="btn btn-secondary"><i class="ph ph-briefcase"></i> New Project</a>
       </div>
     </div>
     <div class="hero-stats">
@@ -53,7 +53,7 @@ block content %}
       <p class="insight-hint">Across {{ expense_count }} expenses recorded this month.</p>
       <div class="insight-footer">
         <span class="pill pill-soft">Avg per entry: {{ format_money(avg_expense) }}</span>
-        <a class="link-muted" href="{{ url_for('web.expenses') }}">Open expenses</a>
+        <a class="link-action" href="{{ url_for('web.expenses') }}"><i class="ph ph-arrow-square-out"></i>Open expenses</a>
       </div>
     </div>
 
@@ -68,7 +68,7 @@ block content %}
       <p class="insight-hint">Budgets under management: {{ format_money(total_active_budget|float) }}</p>
       <div class="insight-footer">
         <span class="pill pill-soft">Tap a card below to drill in</span>
-        <a class="link-muted" href="{{ url_for('web.projects') }}">View projects</a>
+        <a class="link-action" href="{{ url_for('web.projects') }}"><i class="ph ph-folders"></i>View projects</a>
       </div>
     </div>
 
@@ -83,7 +83,7 @@ block content %}
       <p class="insight-hint">Entries created this month. Keep an eye on daily logging cadence.</p>
       <div class="insight-footer">
         <span class="pill pill-soft">Avg amount: {{ format_money(avg_expense) }}</span>
-        <a class="link-muted" href="{{ url_for('web.expense_new') }}">Log another</a>
+        <a class="link-action" href="{{ url_for('web.expense_new') }}"><i class="ph ph-plus-circle"></i>Log another</a>
       </div>
     </div>
 
@@ -108,7 +108,7 @@ block content %}
       </p>
       <div class="insight-footer">
         <span class="pill pill-soft">Track vendors and notes</span>
-        <a class="link-muted" href="{{ url_for('web.expenses') }}">See timeline</a>
+        <a class="link-action" href="{{ url_for('web.expenses') }}"><i class="ph ph-clock-counter-clockwise"></i>See timeline</a>
       </div>
     </div>
   </div>
@@ -151,7 +151,7 @@ block content %}
               </div>
             </div>
             <div class="project-footer">
-              <a class="link-muted" href="{{ url_for('web.projects') }}">Open project</a>
+              <a class="link-action" href="{{ url_for('web.projects') }}"><i class="ph ph-arrow-square-out"></i>Open project</a>
               <span class="pill pill-soft">Stay under {{ format_money(project.starting_budget|float) }}</span>
             </div>
           </div>

@@ -1,82 +1,119 @@
 {% extends "base.html" %} {% block title %}Projects - TrackTok{% endblock %} {%
 block content %}
-<div class="container" style="padding: 2rem 0">
-  <header class="page-header" style="margin-bottom: 1.5rem">
-    <div class="page-title-group">
-      <h1 style="margin: 0">Projects</h1>
-      <p class="page-subtitle" style="margin: 0.25rem 0 0">
-        All projects for your tenant.
-      </p>
+{% set project_count = projects|length if projects else 0 %}
+{% set total_budget = projects|sum(attribute='starting_budget') if projects else 0 %}
+
+<div class="container projects-page">
+  <header class="projects-hero">
+    <div>
+      <p class="eyebrow">Portfolio</p>
+      <h1>Projects</h1>
+      <p class="page-subtitle">All projects for your tenant.</p>
     </div>
-    <div class="page-actions">
-      <a href="{{ url_for('web.project_new') }}" class="btn btn-primary"
-        >New Project</a
-      >
-      <a href="{{ url_for('web.dashboard') }}" class="btn btn-secondary"
-        >Back to Dashboard</a
-      >
+    <div class="action-toolbar">
+      <a href="{{ url_for('web.project_new') }}" class="btn btn-primary">
+        <i class="ph ph-plus-circle"></i> New Project
+      </a>
+      <a href="{{ url_for('web.dashboard') }}" class="btn btn-ghost">
+        <i class="ph ph-gauge"></i> Back to Dashboard
+      </a>
     </div>
   </header>
 
-  {% if projects %}
-  <div class="card">
-    <div class="card-body" style="padding: 0; overflow: hidden">
-      <div class="table-responsive">
-        <table class="table stackable">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Status</th>
-              <th>Budget</th>
-              <th>Dates</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for project in projects %}
-            <tr>
-              <td data-label="Name" style="font-weight: 600">
-                {{ project.name }}
-              </td>
-              <td data-label="Status">
-                <span class="badge badge-success">{{ project.status }}</span>
-              </td>
-              <td data-label="Budget">
-                {{ format_money(project.starting_budget|float) }}
-              </td>
-              <td data-label="Dates">
-                {% if project.start_date %}{{ project.start_date.strftime('%b
-                %d, %Y') }}{% else %}N/A{% endif %} {% if project.end_date %} –
-                {{ project.end_date.strftime('%b %d, %Y') }}{% endif %}
-              </td>
-              <td data-label="Actions" class="table-actions">
-                <a
-                  href="{{ url_for('web.project_detail', project_id=project.id) }}"
-                  class="btn btn-secondary btn-sm"
-                  >Open</a
-                >
-                <a
-                  href="{{ url_for('web.project_edit', project_id=project.id) }}"
-                  class="btn btn-secondary btn-sm"
-                  >Edit</a
-                >
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+  <section class="projects-summary">
+    <div class="summary-card">
+      <div class="summary-icon gradient-bg-indigo">
+        <i class="ph ph-folders"></i>
       </div>
+      <div>
+        <p class="summary-label">Active projects</p>
+        <p class="summary-value">{{ project_count }}</p>
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-icon gradient-bg-emerald">
+        <i class="ph ph-wallet"></i>
+      </div>
+      <div>
+        <p class="summary-label">Total budget</p>
+        <p class="summary-value">{{ format_money(total_budget|float) }}</p>
+      </div>
+    </div>
+  </section>
+
+  {% if projects %}
+  <div class="card project-list-card">
+    <div class="card-header">
+      <div>
+        <p class="eyebrow">Overview</p>
+        <h2 class="card-title" style="margin: 0">All projects</h2>
+      </div>
+      <span class="pill pill-soft">{{ project_count }} total</span>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-modern">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Status</th>
+            <th>Budget</th>
+            <th>Dates</th>
+            <th class="actions-col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for project in projects %}
+          <tr>
+            <td data-label="Name" class="cell-strong">
+              <div class="cell-title">
+                <i class="ph ph-briefcase"></i>
+                {{ project.name }}
+              </div>
+            </td>
+            <td data-label="Status">
+              <span class="badge badge-success">{{ project.status }}</span>
+            </td>
+            <td data-label="Budget">
+              {{ format_money(project.starting_budget|float) }}
+            </td>
+            <td data-label="Dates">
+              {% if project.start_date %}{{ project.start_date.strftime('%b %d, %Y') }}{% else %}N/A{% endif %}
+              {% if project.end_date %} &bull; {{ project.end_date.strftime('%b %d, %Y') }}{% endif %}
+            </td>
+            <td data-label="Actions" class="table-actions">
+              <a
+                href="{{ url_for('web.project_detail', project_id=project.id) }}"
+                class="btn btn-secondary btn-sm"
+              >
+                <i class="ph ph-arrow-square-out"></i>
+                Open
+              </a>
+              <a
+                href="{{ url_for('web.project_edit', project_id=project.id) }}"
+                class="btn btn-ghost btn-sm"
+              >
+                <i class="ph ph-pencil-simple-line"></i>
+                Edit
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
   </div>
   {% else %}
-  <div class="card">
-    <div class="card-body" style="text-align: center">
-      <p style="color: var(--text-muted); margin-bottom: 1rem">
-        No projects yet.
-      </p>
-      <a href="{{ url_for('web.dashboard') }}" class="btn btn-primary"
-        >Go to Dashboard</a
-      >
+  <div class="card empty-card">
+    <div class="card-body">
+      <p class="page-subtitle">No projects yet. Start with your first one.</p>
+      <div class="action-toolbar">
+        <a href="{{ url_for('web.project_new') }}" class="btn btn-primary">
+          <i class="ph ph-plus-circle"></i> Create Project
+        </a>
+        <a href="{{ url_for('web.dashboard') }}" class="btn btn-ghost">
+          <i class="ph ph-gauge"></i> Back to Dashboard
+        </a>
+      </div>
     </div>
   </div>
   {% endif %}

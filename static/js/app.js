@@ -34,14 +34,20 @@ class ThemeManager {
   updateIcon(isDark) {
     const sunIcon = document.querySelector(".sun-icon");
     const moonIcon = document.querySelector(".moon-icon");
+    const toggleBtn = document.querySelector(".theme-toggle");
 
     if (sunIcon && moonIcon) {
+      // Button indicates the *target* theme:
+      // - When currently dark, show sun (switch to light)
+      // - When currently light, show moon (switch to dark)
       if (isDark) {
-        sunIcon.classList.add("hidden");
-        moonIcon.classList.remove("hidden");
-      } else {
         sunIcon.classList.remove("hidden");
         moonIcon.classList.add("hidden");
+        if (toggleBtn) toggleBtn.setAttribute("aria-label", "Switch to light mode");
+      } else {
+        sunIcon.classList.add("hidden");
+        moonIcon.classList.remove("hidden");
+        if (toggleBtn) toggleBtn.setAttribute("aria-label", "Switch to dark mode");
       }
     }
   }

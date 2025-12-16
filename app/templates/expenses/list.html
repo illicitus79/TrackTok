@@ -3,117 +3,6 @@
 {% block title %}Expenses - TrackTok{% endblock %}
 
 {% block content %}
-<style>
-  /* Narrow, centered layout with small horizontal padding */
-  .expenses-container {
-    padding: 1.5rem 1rem;
-    margin: 0 auto;
-    max-width: 1200px;
-  }
-  .expenses-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-    gap: 1rem;
-  }
-  .expenses-actions {
-    display: flex;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-    justify-content: flex-start;
-  }
-  .expenses-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 0.75rem;
-  }
-  .expenses-table-wrapper {
-    /* Prevent horizontal scroll by using fixed table layout and ellipsis truncation */
-    overflow-x: hidden;
-    margin-top: 0.5rem;
-    padding: 0 0.25rem;
-  }
-
-  /* Make tables reliably truncate long content instead of forcing scroll */
-  .table {
-    width: 100%;
-    table-layout: fixed;
-    border-collapse: collapse;
-  }
-
-  .table th,
-  .table td {
-    padding: 0.5rem 0.5rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    vertical-align: middle;
-  }
-
-  /* Give the vendor column a bit more room, other columns can shrink */
-  .table th:first-child,
-  .table td:first-child {
-    max-width: 240px;
-  }
-
-  /* Actions styling */
-  .table-actions {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-    justify-content: flex-end;
-  }
-
-  .table-actions .btn {
-    padding: 0.375rem 0.6rem;
-    min-height: 36px;
-    font-size: 0.8125rem;
-  }
-
-  .table-actions .btn.btn-primary {
-    box-shadow: none;
-  }
-
-  @media (max-width: 640px) {
-    .table-actions {
-      flex-direction: column;
-      align-items: stretch;
-      gap: 0.45rem;
-    }
-    .table-actions .btn {
-      width: 100%;
-      justify-content: center;
-    }
-  }
-  @media (max-width: 640px) {
-    .expenses-table-wrapper {
-      overflow-x: visible;
-    }
-    .expenses-table-wrapper .table {
-      min-width: unset !important;
-    }
-  }
-  @media (max-width: 720px) {
-    .expenses-header {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.75rem;
-    }
-    .expenses-container {
-      padding: 1rem 0.75rem;
-    }
-    .expenses-grid {
-      grid-template-columns: 1fr;
-    }
-    .expenses-actions {
-      width: 100%;
-    }
-    .expenses-actions .btn {
-      flex: 1;
-    }
-  }
-</style>
 
 <div class="container expenses-container">
   <div class="expenses-header">
@@ -128,9 +17,9 @@
   </div>
 
   <form method="GET" class="card" style="margin-bottom: 1rem;">
-    <div class="card-body">
+    <div class="card-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
       <!-- Filters row 1 -->
-      <div class="expenses-grid" style="margin-bottom: 0.75rem;">
+      <div class="expenses-grid">
         <div>
           <label class="form-label" for="project_id">Project</label>
           <select class="form-input" name="project_id" id="project_id">
@@ -166,18 +55,18 @@
           <label class="form-label" for="max_amount">Max Amount</label>
           <input class="form-input" type="number" step="0.01" name="max_amount" id="max_amount" value="{{ filters.max_amount }}">
         </div>
+      </div>
+      <!-- Filters row 2 -->
+      <div class="expenses-grid narrow">
         <div>
           <label class="form-label" for="start_date">Start Date</label>
           <input class="form-input" type="date" name="start_date" id="start_date" value="{{ filters.start_date }}">
         </div>
-      </div>
-      <!-- Filters row 2 -->
-      <div class="expenses-grid">
         <div>
           <label class="form-label" for="end_date">End Date</label>
           <input class="form-input" type="date" name="end_date" id="end_date" value="{{ filters.end_date }}">
         </div>
-        <div>
+        <div class="field-small">
           <label class="form-label" for="per_page">Per Page</label>
           <select class="form-input" name="per_page" id="per_page">
             {% for size in [10,25,50,100] %}
@@ -187,7 +76,7 @@
         </div>
       </div>
     </div>
-    <div class="card-footer" style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+    <div class="card-footer filter-actions">
       <a class="btn btn-secondary" href="{{ url_for('web.expenses') }}">Reset</a>
       <button type="submit" class="btn btn-primary">Apply Filters</button>
     </div>

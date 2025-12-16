@@ -6,13 +6,13 @@
     <div style="margin-bottom: 0.5rem">
       <a
         href="{{ url_for('web.accounts') }}"
-        style="color: #6366f1; text-decoration: none; font-size: 0.875rem"
+        style="color: var(--link); text-decoration: none; font-size: 0.875rem"
       >
         ← Back to Accounts
       </a>
     </div>
-    <h1 style="margin: 0; font-size: 2rem; color: white">Create New Account</h1>
-    <p style="margin: 0.5rem 0 0; color: #9ca3af">
+    <h1 style="margin: 0; font-size: 2rem; color: var(--text-bright)">Create New Account</h1>
+    <p style="margin: 0.5rem 0 0; color: var(--text-muted)">
       Add a new financial account to track balances and expenses
     </p>
   </div>
@@ -20,10 +20,11 @@
   <!-- Form Card -->
   <div
     style="
-      background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+      background: var(--panel);
       border-radius: 12px;
       padding: 2rem;
-      border: 1px solid #334155;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-md);
     "
   >
     <form method="POST" style="display: grid; gap: 1.5rem">
@@ -35,7 +36,7 @@
           style="
             display: block;
             margin-bottom: 0.5rem;
-            color: white;
+            color: var(--text);
             font-weight: 600;
           "
         >
@@ -48,10 +49,10 @@
           style="
             width: 100%;
             padding: 0.75rem;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid #475569;
+            background: var(--bg);
+            border: 1px solid var(--border);
             border-radius: 8px;
-            color: white;
+            color: var(--text);
             font-size: 1rem;
           "
           placeholder="e.g., Operating Account, Credit Card"
@@ -64,7 +65,7 @@
           style="
             display: block;
             margin-bottom: 0.5rem;
-            color: white;
+            color: var(--text);
             font-weight: 600;
           "
         >
@@ -76,10 +77,10 @@
           style="
             width: 100%;
             padding: 0.75rem;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid #475569;
+            background: var(--bg);
+            border: 1px solid var(--border);
             border-radius: 8px;
-            color: white;
+            color: var(--text);
             font-size: 1rem;
           "
         >
@@ -98,7 +99,7 @@
             style="
               display: block;
               margin-bottom: 0.5rem;
-              color: white;
+              color: var(--text);
               font-weight: 600;
             "
           >
@@ -112,10 +113,10 @@
             style="
               width: 100%;
               padding: 0.75rem;
-              background: rgba(0, 0, 0, 0.3);
-              border: 1px solid #475569;
+              background: var(--bg);
+              border: 1px solid var(--border);
               border-radius: 8px;
-              color: white;
+              color: var(--text);
               font-size: 1rem;
             "
           />
@@ -127,7 +128,7 @@
             style="
               display: block;
               margin-bottom: 0.5rem;
-              color: white;
+              color: var(--text);
               font-weight: 600;
             "
           >
@@ -142,10 +143,10 @@
             style="
               width: 100%;
               padding: 0.75rem;
-              background: rgba(0, 0, 0, 0.3);
-              border: 1px solid #475569;
+              background: var(--bg);
+              border: 1px solid var(--border);
               border-radius: 8px;
-              color: white;
+              color: var(--text);
               font-size: 1rem;
             "
             placeholder="0.00"
@@ -159,7 +160,7 @@
           style="
             display: block;
             margin-bottom: 0.5rem;
-            color: white;
+            color: var(--text);
             font-weight: 600;
           "
         >
@@ -172,15 +173,15 @@
           style="
             width: 100%;
             padding: 0.75rem;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid #475569;
+            background: var(--bg);
+            border: 1px solid var(--border);
             border-radius: 8px;
-            color: white;
+            color: var(--text);
             font-size: 1rem;
           "
           placeholder="e.g., 1000.00"
         />
-        <div style="margin-top: 0.5rem; font-size: 0.875rem; color: #9ca3af">
+        <div style="margin-top: 0.5rem; font-size: 0.875rem; color: var(--text-muted)">
           Optional: Get alerted when balance falls below this amount
         </div>
       </div>
@@ -191,7 +192,7 @@
           style="
             display: block;
             margin-bottom: 0.5rem;
-            color: white;
+            color: var(--text);
             font-weight: 600;
           "
         >
@@ -205,15 +206,15 @@
           style="
             width: 100%;
             padding: 0.75rem;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid #475569;
+            background: var(--bg);
+            border: 1px solid var(--border);
             border-radius: 8px;
-            color: white;
+            color: var(--text);
             font-size: 1rem;
           "
           placeholder="e.g., 1234"
         />
-        <div style="margin-top: 0.5rem; font-size: 0.875rem; color: #9ca3af">
+        <div style="margin-top: 0.5rem; font-size: 0.875rem; color: var(--text-muted)">
           Optional: For reference only
         </div>
       </div>
@@ -224,7 +225,7 @@
           style="
             display: block;
             margin-bottom: 0.5rem;
-            color: white;
+            color: var(--text);
             font-weight: 600;
           "
         >
@@ -236,10 +237,10 @@
           style="
             width: 100%;
             padding: 0.75rem;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid #475569;
+            background: var(--bg);
+            border: 1px solid var(--border);
             border-radius: 8px;
-            color: white;
+            color: var(--text);
             font-size: 1rem;
           "
           placeholder="Optional notes about this account"
