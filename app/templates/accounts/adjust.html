@@ -36,7 +36,7 @@ TrackTok{% endblock %} {% block content %}
       Current Balance
     </div>
     <div style="font-size: 2.5rem; font-weight: 700; color: white">
-      {{ account.currency }} ${{ "%.2f"|format(account.current_balance) }}
+      {{ account.currency }} {{ "%.2f"|format(account.current_balance) }}
     </div>
   </div>
 
@@ -134,17 +134,21 @@ TrackTok{% endblock %} {% block content %}
         </label>
         <div style="position: relative">
           <span
+            aria-hidden="true"
             style="
               position: absolute;
-              left: 1rem;
+              left: 12px;
               top: 50%;
               transform: translateY(-50%);
               color: #9ca3af;
-              font-size: 1.25rem;
+              font-size: 1rem;
+              font-weight: 600;
+              pointer-events: none;
             "
-            >$</span
+            >{{ account.currency }}</span
           >
           <input
+            inputmode="decimal"
             type="number"
             name="amount"
             step="0.01"
@@ -152,7 +156,7 @@ TrackTok{% endblock %} {% block content %}
             required
             style="
               width: 100%;
-              padding: 0.75rem 1rem 0.75rem 2.5rem;
+              padding: 0.75rem 1rem 0.75rem 3.75rem;
               background: rgba(0, 0, 0, 0.3);
               border: 1px solid #475569;
               border-radius: 8px;
@@ -211,7 +215,7 @@ TrackTok{% endblock %} {% block content %}
           id="newBalance"
           style="color: white; font-size: 1.5rem; font-weight: 600"
         >
-          $0.00
+          {{ account.currency }} 0.00
         </div>
       </div>
 
@@ -285,6 +289,7 @@ TrackTok{% endblock %} {% block content %}
 </style>
 
 <script>
+  const currencyCode = "{{ account.currency }}";
   const currentBalance = {{ account.current_balance }};
   const amountInput = document.querySelector('input[name="amount"]');
   const typeInputs = document.querySelectorAll('input[name="adjustment_type"]');
@@ -304,7 +309,7 @@ TrackTok{% endblock %} {% block content %}
       }
 
       preview.style.display = 'block';
-      newBalanceEl.textContent = '$' + newBalance.toFixed(2);
+      newBalanceEl.textContent = `${currencyCode} ${newBalance.toFixed(2)}`;
       newBalanceEl.style.color = newBalance < 0 ? '#ef4444' : '#10b981';
     } else {
       preview.style.display = 'none';

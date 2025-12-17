@@ -79,6 +79,25 @@ def get_tenant_preferences():
     return currency, timezone
 
 
+def ensure_accounts_use_tenant_currency(accounts, tenant_currency: str):
+    """
+    Force all provided accounts to use the tenant currency.
+
+    This is useful for older accounts that were created before tenant currency
+    was introduced or updated.
+    """
+    changed = False
+    for account in accounts or []:
+        if account.currency != tenant_currency:
+            account.currency = tenant_currency
+            changed = True
+
+    if changed:
+        db.session.commit()
+
+    return accounts
+
+
 def _prepare_image_attachments(files):
     """
     Convert uploaded image files to attachment dicts stored in the DB.
@@ -455,6 +474,7 @@ def project_allowed_accounts(project_id):
     """Return allowed accounts for a project."""
     from app.models.account import Account
 
+    tenant_currency, _ = get_tenant_preferences()
     tenant_id = current_user.tenant_id
     allowed_str = current_app.redis.get(f"project:{project_id}:accounts")
     allowed_ids = []
@@ -465,7 +485,10 @@ def project_allowed_accounts(project_id):
     if allowed_ids:
         query = query.filter(Account.id.in_(allowed_ids))
 
-    accounts = query.order_by(Account.name).all()
+    accounts = ensure_accounts_use_tenant_currency(
+        query.order_by(Account.name).all(),
+        tenant_currency,
+    )
     return jsonify(
         [
             {
@@ -1038,7 +1061,10 @@ def expense_new():
             if allowed_account_ids:
                 accounts_query = accounts_query.filter(Account.id.in_(allowed_account_ids))
 
-    accounts = accounts_query.order_by(Account.name).all()
+    accounts = ensure_accounts_use_tenant_currency(
+        accounts_query.order_by(Account.name).all(),
+        tenant_currency,
+    )
 
     if request.method == "POST":
         try:
@@ -1104,7 +1130,10 @@ def expense_new():
             allowed_account_ids = [aid for aid in allowed_str.split(",") if aid]
             if allowed_account_ids:
                 accounts_query = accounts_query.filter(Account.id.in_(allowed_account_ids))
-    accounts = accounts_query.order_by(Account.name).all()
+    accounts = ensure_accounts_use_tenant_currency(
+        accounts_query.order_by(Account.name).all(),
+        tenant_currency,
+    )
 
     if selected_project_id:
         categories = categories_query.filter_by(project_id=selected_project_id).order_by(Category.name).all()
@@ -1170,7 +1199,10 @@ def expense_edit(expense_id):
             allowed_ids = [aid for aid in allowed_str.split(",") if aid]
             if allowed_ids:
                 accounts_query = accounts_query.filter(Account.id.in_(allowed_ids))
-    accounts = accounts_query.order_by(Account.name).all()
+    accounts = ensure_accounts_use_tenant_currency(
+        accounts_query.order_by(Account.name).all(),
+        tenant_currency,
+    )
 
     if request.method == "POST":
         try:
@@ -1187,7 +1219,10 @@ def expense_edit(expense_id):
                     allowed_ids = [aid for aid in allowed_str.split(",") if aid]
                     if allowed_ids:
                         accounts_query = accounts_query.filter(Account.id.in_(allowed_ids))
-            accounts = accounts_query.order_by(Account.name).all()
+            accounts = ensure_accounts_use_tenant_currency(
+                accounts_query.order_by(Account.name).all(),
+                tenant_currency,
+            )
 
             expense.vendor = request.form.get("vendor") or None
             expense.note = request.form.get("note") or None
@@ -1404,6 +1439,8 @@ def account_adjust(account_id):
     """Adjust account balance (add/withdraw funds)."""
     from app.models.account import Account
 
+    tenant_currency, _ = get_tenant_preferences()
+
     account = Account.query.filter_by(
         id=account_id,
         tenant_id=current_user.tenant_id,
@@ -1414,6 +1451,11 @@ def account_adjust(account_id):
         flash("Account not found.", "error")
         return redirect(url_for("web.accounts"))
 
+    # Normalize any legacy account currencies to the tenant currency
+    if account.currency != tenant_currency:
+        account.currency = tenant_currency
+        db.session.commit()
+
     if request.method == "POST":
         try:
             adjustment_type = request.form.get("adjustment_type")
@@ -1422,10 +1464,10 @@ def account_adjust(account_id):
 
             if adjustment_type == "add":
                 account.credit(amount, commit=False)
-                flash_msg = f"Added ${amount} to {account.name}"
+                flash_msg = f"Added {account.currency} {amount} to {account.name}"
             elif adjustment_type == "withdraw":
                 account.debit(amount, commit=False)
-                flash_msg = f"Withdrew ${amount} from {account.name}"
+                flash_msg = f"Withdrew {account.currency} {amount} from {account.name}"
             else:
                 raise ValueError("Invalid adjustment type")
 

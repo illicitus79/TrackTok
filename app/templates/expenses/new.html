@@ -101,13 +101,20 @@
   const projectSelect = document.getElementById("project_id");
   const accountSelect = document.getElementById("account_id");
   const categorySelect = document.getElementById("category_id");
+  const currencyInput = document.getElementById("currency");
+  const tenantCurrency = "{{ tenant_currency }}";
   let accountMeta = {{ account_meta|tojson }};
+
+  function setCurrencyForAccount(accountId) {
+    const selected = accountMeta.find((a) => String(a.id) === String(accountId));
+    currencyInput.value = selected && selected.currency ? selected.currency : tenantCurrency;
+  }
 
   async function loadAccountsForProject(projectId) {
     if (!projectId) {
       accountSelect.innerHTML = '<option value="">Select a project first</option>';
       accountSelect.disabled = true;
-      document.getElementById("currency").value = "";
+      currencyInput.value = tenantCurrency;
       return;
     }
     accountSelect.disabled = true;
@@ -131,6 +138,7 @@
       accountSelect.disabled = false;
     } catch (e) {
       accountSelect.innerHTML = '<option value="">Error loading accounts</option>';
+      currencyInput.value = tenantCurrency;
     }
   }
 
@@ -167,8 +175,7 @@
   document.addEventListener("DOMContentLoaded", () => {
     // Update currency on account change
     accountSelect.addEventListener("change", (e) => {
-      const selected = accountMeta.find((a) => a.id === e.target.value);
-      document.getElementById("currency").value = selected ? selected.currency : "";
+      setCurrencyForAccount(e.target.value);
     });
 
     const onlyOneProject = projectSelect.options.length === 2 && !projectSelect.value;
@@ -181,6 +188,7 @@
     } else {
       accountSelect.disabled = true;
       categorySelect.disabled = true;
+      currencyInput.value = tenantCurrency;
     }
     projectSelect.addEventListener("change", (e) => {
       loadAccountsForProject(e.target.value);
