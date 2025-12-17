@@ -4,6 +4,57 @@ block content %}
 {% set total_active_budget = active_projects|sum(attribute='starting_budget') if active_projects else 0 %}
 {% set latest_expense = recent_expenses[0] if recent_expenses else None %}
 
+{% if show_onboarding %}
+<div class="container page-section onboarding-page">
+  <div class="onboarding-card">
+    <p class="eyebrow">Getting started</p>
+    <h1 class="hero-title">Set up your workspace</h1>
+    <p class="hero-subtitle">
+      Follow the flow below to get TrackTok ready. Once your first account is created, the full dashboard will appear.
+    </p>
+
+    <div class="flow-steps">
+      <div class="flow-step">
+        <div class="step-icon">1</div>
+        <div class="step-body">
+          <div class="step-heading">Create an account</div>
+          <p class="step-text">
+            Accounts hold balances and fund every project and expense. Set your default currency under
+            <a href="{{ url_for('web.settings') }}">Settings</a> before creating accounts.
+          </p>
+          <a href="{{ url_for('web.account_new') }}" class="btn btn-primary">Create Account</a>
+        </div>
+      </div>
+      <div class="flow-connector">
+        <span class="connector-line"></span>
+        <span class="connector-arrow">&darr;</span>
+      </div>
+      <div class="flow-step muted">
+        <div class="step-icon">2</div>
+        <div class="step-body">
+          <div class="step-heading">Create a project</div>
+          <p class="step-text">
+            Projects group expenses and budgets. Pick the account you just created as the source of spend for the project.
+          </p>
+        </div>
+      </div>
+      <div class="flow-connector">
+        <span class="connector-line"></span>
+        <span class="connector-arrow">&darr;</span>
+      </div>
+      <div class="flow-step muted">
+        <div class="step-icon">3</div>
+        <div class="step-body">
+          <div class="step-heading">Log your first expenses</div>
+          <p class="step-text">
+            Add expenses to the project to start tracking utilization, velocity, and alerts.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% else %}
 <div class="container page-section dashboard-page">
   <div class="dashboard-hero">
     <div class="hero-content">
@@ -202,4 +253,5 @@ block content %}
     </div>
   </div>
 </div>
+{% endif %}
 {% endblock %}

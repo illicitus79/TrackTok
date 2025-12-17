@@ -142,6 +142,11 @@ def landing():
     """Landing page."""
     return render_template("landing.html")
 
+@bp.route("/how-to-use")
+def how_to_use():
+    """How to use / product guide page."""
+    return render_template("how_to_use.html")
+
 
 @bp.route("/dashboard")
 @login_required
@@ -151,6 +156,7 @@ def dashboard():
     from sqlalchemy import func
     from app.models.expense import Expense
     from app.models.project import Project
+    from app.models.account import Account
     
     # Get current user's tenant
     tenant_id = current_user.tenant_id
@@ -172,6 +178,16 @@ def dashboard():
         Expense.expense_date >= month_start_date,
         Expense.is_deleted == False
     ).scalar() or 0
+
+    total_expense_count = db.session.query(func.count(Expense.id)).filter(
+        Expense.tenant_id == tenant_id,
+        Expense.is_deleted == False
+    ).scalar() or 0
+
+    account_count = Account.query.filter_by(
+        tenant_id=tenant_id,
+        is_deleted=False
+    ).count()
     
     # Get active projects count
     project_count = Project.query.filter_by(
@@ -191,13 +207,18 @@ def dashboard():
         is_deleted=False,
         status='active'
     ).limit(5).all()
+
+    show_onboarding = account_count == 0 and project_count == 0 and total_expense_count == 0
     
     return render_template("dashboard.html",
                          monthly_expenses=monthly_expenses,
                          expense_count=expense_count,
+                         total_expense_count=total_expense_count,
                          project_count=project_count,
+                         account_count=account_count,
                          recent_expenses=recent_expenses,
-                         active_projects=active_projects)
+                         active_projects=active_projects,
+                         show_onboarding=show_onboarding)
 
 
 @bp.route("/login", methods=["GET", "POST"])

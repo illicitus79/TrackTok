@@ -327,6 +327,26 @@ a:hover {
   gap: var(--spacing-lg);
 }
 
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  color: var(--text);
+  background: none;
+  border: 1px solid transparent;
+  transition: all var(--transition-fast);
+  text-decoration: none;
+}
+
+.icon-button:hover {
+  background-color: var(--panel-hover);
+  color: var(--text-bright);
+  border-color: var(--border);
+}
+
 .nav-link {
   color: var(--text);
   text-decoration: none;
@@ -1774,6 +1794,88 @@ a:hover {
   gap: var(--spacing-xl);
 }
 
+.onboarding-page {
+  padding: var(--spacing-2xl) 0;
+}
+
+.onboarding-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-2xl);
+  box-shadow: var(--shadow-lg);
+}
+
+.flow-steps {
+  margin-top: var(--spacing-xl);
+  display: grid;
+  gap: var(--spacing-lg);
+}
+
+.flow-step {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--spacing-md);
+  align-items: flex-start;
+  padding: var(--spacing-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-secondary);
+}
+
+.flow-step.muted {
+  opacity: 0.85;
+}
+
+.step-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--gradient-indigo);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 1.1rem;
+  box-shadow: var(--shadow-md);
+}
+
+.step-body {
+  display: grid;
+  gap: var(--spacing-xs);
+}
+
+.step-heading {
+  font-weight: 700;
+  font-size: 1.125rem;
+}
+
+.step-text {
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.flow-connector {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  color: var(--text-muted);
+  justify-content: flex-start;
+  padding-left: 8px;
+}
+
+.connector-line {
+  display: inline-block;
+  width: 28px;
+  height: 1px;
+  background: var(--border);
+}
+
+.connector-arrow {
+  font-size: 1.1rem;
+}
+
 .dashboard-main,
 .dashboard-side {
   display: flex;
@@ -2743,6 +2845,10 @@ a:hover {
     flex-direction: column;
     width: 100%;
     gap: var(--spacing-sm);
+  }
+
+  .flow-step {
+    grid-template-columns: auto 1fr;
   }
 
   /* Projects page */

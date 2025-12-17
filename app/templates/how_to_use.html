@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}How to Use - TrackTok{% endblock %}
+
+{% block content %}
+<div class="container page-section onboarding-page">
+  <div class="onboarding-card">
+    <p class="eyebrow">Guide</p>
+    <h1 class="hero-title">How to use TrackTok</h1>
+    <p class="hero-subtitle">
+      A quick walkthrough of the core flow and how to read the analytics on your dashboard.
+    </p>
+
+    <div class="flow-steps">
+      <div class="flow-step">
+        <div class="step-icon">1</div>
+        <div class="step-body">
+          <div class="step-heading">Set your default currency</div>
+          <p class="step-text">
+            Visit <a href="{{ url_for('web.settings') }}">Settings</a> and pick the tenant currency. All accounts, projects, and expenses will use it.
+          </p>
+        </div>
+      </div>
+      <div class="flow-connector">
+        <span class="connector-line"></span>
+        <span class="connector-arrow">&darr;</span>
+      </div>
+      <div class="flow-step">
+        <div class="step-icon">2</div>
+        <div class="step-body">
+          <div class="step-heading">Create an account</div>
+          <p class="step-text">
+            Accounts hold balances (cash, card, bank). Create your first account to fund projects and expenses.
+          </p>
+          <a class="btn btn-primary" href="{{ url_for('web.account_new') }}">Create Account</a>
+        </div>
+      </div>
+      <div class="flow-connector">
+        <span class="connector-line"></span>
+        <span class="connector-arrow">&darr;</span>
+      </div>
+      <div class="flow-step">
+        <div class="step-icon">3</div>
+        <div class="step-body">
+          <div class="step-heading">Create a project</div>
+          <p class="step-text">
+            Define the workstream, choose the source account, and (optionally) set a budget. Projects group related expenses.
+          </p>
+          <a class="btn btn-secondary" href="{{ url_for('web.projects') }}">Go to Projects</a>
+        </div>
+      </div>
+      <div class="flow-connector">
+        <span class="connector-line"></span>
+        <span class="connector-arrow">&darr;</span>
+      </div>
+      <div class="flow-step">
+        <div class="step-icon">4</div>
+        <div class="step-body">
+          <div class="step-heading">Log expenses</div>
+          <p class="step-text">
+            Add expenses to the project. Attach receipts, choose categories, and keep amounts consistent with your project currency.
+          </p>
+          <a class="btn btn-primary" href="{{ url_for('web.expense_new') }}">Add Expense</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="flow-steps" style="margin-top: var(--spacing-2xl);">
+      <div class="flow-step">
+        <div class="step-icon">A</div>
+        <div class="step-body">
+          <div class="step-heading">Reading your analytics</div>
+          <p class="step-text">
+            <strong>Dashboard hero</strong>: Month-to-date spend, active projects, and the latest expense give you a fast pulse.
+          </p>
+          <p class="step-text">
+            <strong>Health by budget</strong>: For each active project, see utilization and remaining budget to avoid overspend.
+          </p>
+          <p class="step-text">
+            <strong>Expense velocity</strong>: Tracks how many expenses you’re logging and average ticket size.
+          </p>
+          <p class="step-text">
+            <strong>Activity feed</strong>: Shows recent vendors, notes, and categories so you can spot anomalies quickly.
+          </p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-icon">T</div>
+        <div class="step-body">
+          <div class="step-heading">Tips</div>
+          <p class="step-text">
+            - Keep one account per real funding source.<br>
+            - Use projects to isolate budgets; the same account can fund multiple projects if needed.<br>
+            - Categories make analytics richer; add them as you go.<br>
+            - Attach receipts for faster reviews and audits.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
