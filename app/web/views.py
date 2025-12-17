@@ -325,19 +325,75 @@ def profile():
     return render_template("profile.html")
 
 
+DATE_FORMAT_OPTIONS = [
+    "dd/mm/yyyy",
+    "mm/dd/yyyy",
+    "yyyy-mm-dd",
+    "dd-mm-yyyy",
+    "mm-dd-yyyy",
+    "yyyy/mm/dd",
+    "dd.mm.yyyy",
+    "mm.dd.yyyy",
+]
+
+DATE_PATTERN_MAP = {
+    "dd/mm/yyyy": "%d/%m/%Y",
+    "mm/dd/yyyy": "%m/%d/%Y",
+    "yyyy-mm-dd": "%Y-%m-%d",
+    "dd-mm-yyyy": "%d-%m-%Y",
+    "mm-dd-yyyy": "%m-%d-%Y",
+    "yyyy/mm/dd": "%Y/%m/%d",
+    "dd.mm.yyyy": "%d.%m.%Y",
+    "mm.dd.yyyy": "%m.%d.%Y",
+}
+
+
+def _get_date_pattern(fmt: str) -> str:
+    return DATE_PATTERN_MAP.get(fmt, "%d/%m/%Y")
+
+
+def format_for_input(date_obj, date_format: str) -> str:
+    if not date_obj:
+        return ""
+    try:
+        return date_obj.strftime(_get_date_pattern(date_format))
+    except Exception:
+        return ""
+
+
+def parse_date_input(value: str, date_format: str):
+    if not value:
+        return None
+    patterns = [_get_date_pattern(date_format)] + list(DATE_PATTERN_MAP.values()) + ["%Y-%m-%d"]
+    for pattern in patterns:
+        try:
+            return datetime.strptime(value, pattern).date()
+        except Exception:
+            continue
+    return None
+
+
 @bp.route("/settings", methods=["GET", "POST"])
 @login_required
 def settings():
     """User settings page."""
     tenant = current_user.tenant
     currency, timezone = get_tenant_preferences()
+    date_format = (tenant.settings or {}).get("date_format", "dd/mm/yyyy")
 
     if request.method == "POST":
         try:
             new_currency = request.form.get("currency") or currency
             new_timezone = request.form.get("timezone") or timezone
+            new_date_format = request.form.get("date_format") or date_format
             tenant.settings = tenant.settings or {}
-            tenant.settings.update({"currency": new_currency, "timezone": new_timezone})
+            tenant.settings.update(
+                {
+                    "currency": new_currency,
+                    "timezone": new_timezone,
+                    "date_format": new_date_format,
+                }
+            )
             db.session.commit()
             flash("Settings updated.", "success")
             return redirect(url_for("web.settings"))
@@ -349,8 +405,10 @@ def settings():
         "settings.html",
         currency=currency,
         timezone=timezone,
+        date_format=date_format,
         currency_options=get_currency_options(),
         timezone_options=TIMEZONE_OPTIONS,
+        date_format_options=DATE_FORMAT_OPTIONS,
     )
 
 
@@ -377,6 +435,9 @@ def project_new():
 
     tenant_id = current_user.tenant_id
     tenant_currency, _ = get_tenant_preferences()
+    date_format = (current_user.tenant.settings or {}).get("date_format", "dd/mm/yyyy")
+    date_format = (current_user.tenant.settings or {}).get("date_format", "dd/mm/yyyy")
+    date_format = (current_user.tenant.settings or {}).get("date_format", "dd/mm/yyyy")
     accounts = Account.query.filter_by(tenant_id=tenant_id, is_deleted=False).order_by(Account.name).all()
 
     if request.method == "POST":
@@ -387,8 +448,8 @@ def project_new():
 
             starting_budget = Decimal(request.form.get("starting_budget", "0") or "0")
             projected_estimate = Decimal(request.form.get("projected_estimate", starting_budget))
-            start_date = request.form.get("start_date")
-            end_date = request.form.get("end_date")
+            start_date = parse_date_input(request.form.get("start_date"), date_format)
+            end_date = parse_date_input(request.form.get("end_date"), date_format)
 
             project = Project(
                 tenant_id=tenant_id,
@@ -397,8 +458,8 @@ def project_new():
                 starting_budget=starting_budget,
                 projected_estimate=projected_estimate,
                 currency=tenant_currency,
-                start_date=datetime.strptime(start_date, "%Y-%m-%d").date() if start_date else None,
-                end_date=datetime.strptime(end_date, "%Y-%m-%d").date() if end_date else None,
+                start_date=start_date,
+                end_date=end_date,
                 status=request.form.get("status", "active"),
                 created_by=current_user.id,
             )
@@ -428,8 +489,9 @@ def project_new():
     return render_template(
         "projects/new.html",
         accounts=accounts,
-        today=date.today().isoformat(),
+        today=format_for_input(date.today(), date_format),
         tenant_currency=tenant_currency,
+        date_format=date_format,
     )
 
 
@@ -442,6 +504,7 @@ def project_edit(project_id):
 
     tenant_id = current_user.tenant_id
     tenant_currency, _ = get_tenant_preferences()
+    date_format = (current_user.tenant.settings or {}).get("date_format", "dd/mm/yyyy")
     project = Project.query.filter_by(id=project_id, tenant_id=tenant_id, is_deleted=False).first()
     if not project:
         flash("Project not found.", "error")
@@ -458,10 +521,10 @@ def project_edit(project_id):
             project.starting_budget = Decimal(request.form.get("starting_budget", project.starting_budget))
             project.projected_estimate = Decimal(request.form.get("projected_estimate", project.projected_estimate))
             project.currency = tenant_currency
-            start_date = request.form.get("start_date")
-            end_date = request.form.get("end_date")
-            project.start_date = datetime.strptime(start_date, "%Y-%m-%d").date() if start_date else None
-            project.end_date = datetime.strptime(end_date, "%Y-%m-%d").date() if end_date else None
+            start_date = parse_date_input(request.form.get("start_date"), date_format)
+            end_date = parse_date_input(request.form.get("end_date"), date_format)
+            project.start_date = start_date
+            project.end_date = end_date
             project.status = request.form.get("status", project.status)
 
             new_allowed = request.form.getlist("account_ids")
@@ -486,6 +549,7 @@ def project_edit(project_id):
         allowed_account_ids=allowed_account_ids,
         currency_options=get_currency_options(),
         tenant_currency=tenant_currency,
+        date_format=date_format,
     )
 
 
@@ -984,6 +1048,7 @@ def expenses():
     max_amount = request.args.get("max_amount") or None
     start_date = request.args.get("start_date") or None
     end_date = request.args.get("end_date") or None
+    date_format = (current_user.tenant.settings or {}).get("date_format", "dd/mm/yyyy")
 
     if project_id:
         query = query.filter(Expense.project_id == project_id)
@@ -1001,16 +1066,16 @@ def expenses():
             query = query.filter(Expense.amount <= Decimal(max_amount))
         except Exception:
             flash("Invalid maximum amount", "error")
-    if start_date:
-        try:
-            query = query.filter(Expense.expense_date >= datetime.strptime(start_date, "%Y-%m-%d").date())
-        except Exception:
-            flash("Invalid start date", "error")
-    if end_date:
-        try:
-            query = query.filter(Expense.expense_date <= datetime.strptime(end_date, "%Y-%m-%d").date())
-        except Exception:
-            flash("Invalid end date", "error")
+    parsed_start = parse_date_input(start_date, date_format)
+    parsed_end = parse_date_input(end_date, date_format)
+    if start_date and not parsed_start:
+        flash("Invalid start date", "error")
+    if end_date and not parsed_end:
+        flash("Invalid end date", "error")
+    if parsed_start:
+        query = query.filter(Expense.expense_date >= parsed_start)
+    if parsed_end:
+        query = query.filter(Expense.expense_date <= parsed_end)
 
     # Pagination
     try:
@@ -1050,6 +1115,7 @@ def expenses():
             "end_date": end_date or "",
             "per_page": per_page,
         },
+        date_format=date_format,
     )
 
 
@@ -1064,6 +1130,7 @@ def expense_new():
 
     tenant_id = current_user.tenant_id
     tenant_currency, _ = get_tenant_preferences()
+    date_format = (current_user.tenant.settings or {}).get("date_format", "dd/mm/yyyy")
     accounts_query = Account.query.filter_by(tenant_id=tenant_id, is_deleted=False)
     projects = Project.query.filter_by(tenant_id=tenant_id, is_deleted=False).order_by(Project.name).all()
     categories_query = Category.query.filter_by(tenant_id=tenant_id, is_deleted=False)
@@ -1096,7 +1163,9 @@ def expense_new():
             expense_date_str = request.form.get("expense_date")
             if not expense_date_str:
                 raise ValueError("Date is required.")
-            expense_date_val = datetime.strptime(expense_date_str, "%Y-%m-%d").date()
+            expense_date_val = parse_date_input(expense_date_str, date_format)
+            if not expense_date_val:
+                raise ValueError("Invalid date format.")
 
             account_id = request.form.get("account_id")
             if not account_id:
@@ -1167,9 +1236,11 @@ def expense_new():
         categories=categories,
         projects=projects,
         today=date.today().isoformat(),
+        today_display=format_for_input(date.today(), date_format),
         initial_project_id=initial_project_id,
         account_meta=[{"id": a.id, "currency": a.currency, "name": a.name, "type": a.account_type} for a in accounts],
         tenant_currency=tenant_currency,
+        date_format=date_format,
     )
 
 
@@ -1200,6 +1271,7 @@ def expense_edit(expense_id):
 
     tenant_id = current_user.tenant_id
     tenant_currency, _ = get_tenant_preferences()
+    date_format = (current_user.tenant.settings or {}).get("date_format", "dd/mm/yyyy")
     expense = Expense.query.filter_by(id=expense_id, tenant_id=tenant_id, is_deleted=False).first()
     if not expense:
         flash("Expense not found.", "error")
@@ -1249,7 +1321,10 @@ def expense_edit(expense_id):
             expense.note = request.form.get("note") or None
             expense.amount = Decimal(request.form.get("amount", expense.amount))
             expense.currency = request.form.get("currency", expense.currency)
-            expense.expense_date = datetime.strptime(request.form["expense_date"], "%Y-%m-%d").date()
+            parsed_date = parse_date_input(request.form.get("expense_date"), date_format)
+            if not parsed_date:
+                raise ValueError("Invalid date format.")
+            expense.expense_date = parsed_date
             category_id = request.form.get("category_id") or None
             if category_id and not project_id:
                 raise ValueError("Select a project before assigning a category.")
@@ -1308,6 +1383,7 @@ def expense_edit(expense_id):
         projects=projects,
         account_meta=[{"id": a.id, "currency": a.currency, "name": a.name, "type": a.account_type} for a in accounts],
         tenant_currency=tenant_currency,
+        date_format=date_format,
     )
 
 

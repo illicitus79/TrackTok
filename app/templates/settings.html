@@ -19,6 +19,15 @@
           <div class="form-hint">Applied across accounts, projects, budgets, and expenses.</div>
         </div>
         <div class="form-group">
+          <label class="form-label" for="date_format">Date Format</label>
+          <select class="form-input" id="date_format" name="date_format">
+            {% for option in date_format_options %}
+            <option value="{{ option }}" {% if date_format == option %}selected{% endif %}>{{ option }}</option>
+            {% endfor %}
+          </select>
+          <div class="form-hint">Displayed on dashboards, expenses, projects, and alerts. Defaults to dd/mm/yyyy.</div>
+        </div>
+        <div class="form-group">
           <label class="form-label" for="timezone">Timezone</label>
           <select class="form-input" id="timezone" name="timezone">
             {% for tz in timezone_options %}

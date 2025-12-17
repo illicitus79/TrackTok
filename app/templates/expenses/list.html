@@ -60,11 +60,13 @@
       <div class="expenses-grid narrow">
         <div>
           <label class="form-label" for="start_date">Start Date</label>
-          <input class="form-input" type="date" name="start_date" id="start_date" value="{{ filters.start_date }}">
+          <input class="form-input" type="text" inputmode="numeric" name="start_date" id="start_date" value="{{ filters.start_date }}" placeholder="{{ date_format }}">
+          <div class="form-hint">Format: {{ date_format }}</div>
         </div>
         <div>
           <label class="form-label" for="end_date">End Date</label>
-          <input class="form-input" type="date" name="end_date" id="end_date" value="{{ filters.end_date }}">
+          <input class="form-input" type="text" inputmode="numeric" name="end_date" id="end_date" value="{{ filters.end_date }}" placeholder="{{ date_format }}">
+          <div class="form-hint">Format: {{ date_format }}</div>
         </div>
         <div class="field-small">
           <label class="form-label" for="per_page">Per Page</label>
@@ -104,7 +106,7 @@
             <tr>
               <td data-label="Vendor" style="font-weight: 500;">{{ expense.vendor or expense.note or 'Expense' }}</td>
               <td data-label="Project">{{ expense.project.name if expense.project else '-' }}</td>
-              <td data-label="Date">{{ expense.expense_date.strftime('%b %d, %Y') }}</td>
+              <td data-label="Date">{{ format_date(expense.expense_date) }}</td>
               <td data-label="Category">{{ expense.category.name if expense.category else 'Uncategorized' }}</td>
               <td data-label="Account">{{ expense.account.name if expense.account else '-' }}</td>
               <td data-label="Amount" style="font-weight: 600;">{{ format_money(expense.amount|float) }}</td>
@@ -157,7 +159,7 @@
   <div class="card">
     <div class="card-body" style="text-align: center;">
       <p style="color: var(--text-muted); margin-bottom: 1rem;">No expenses yet.</p>
-      <a href="{{ url_for('web.dashboard') }}" class="btn btn-primary">Add your first expense</a>
+      <a href="{{ url_for('web.expense_new') }}" class="btn btn-primary">Add your first expense</a>
     </div>
   </div>
   {% endif %}

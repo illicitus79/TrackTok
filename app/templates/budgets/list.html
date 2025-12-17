@@ -35,7 +35,7 @@
             <td style="padding: 0.75rem 0.5rem; font-weight: 600;">{{ budget.name }}</td>
             <td style="padding: 0.75rem 0.5rem;">{{ budget.period|capitalize }}</td>
             <td style="padding: 0.75rem 0.5rem;">{{ format_money(budget.amount|float) }}</td>
-            <td style="padding: 0.75rem 0.5rem;">{{ budget.start_date.strftime('%b %d, %Y') }} - {{ budget.end_date.strftime('%b %d, %Y') }}</td>
+            <td style="padding: 0.75rem 0.5rem;">{{ format_date(budget.start_date) }} - {{ format_date(budget.end_date) }}</td>
             <td style="padding: 0.75rem 0.5rem;">
               {% if budget.is_active %}
               <span class="badge badge-success">Active</span>

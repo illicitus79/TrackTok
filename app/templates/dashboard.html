@@ -85,7 +85,7 @@ block content %}
         <div class="chip-value">{{ format_money(latest_expense.amount|float) }}</div>
         <div class="chip-meta">
           {{ latest_expense.vendor or latest_expense.note or 'Expense' }} &bull;
-          {{ latest_expense.expense_date.strftime('%b %d') }}
+          {{ format_date(latest_expense.expense_date, show_year=False) }}
         </div>
       </div>
       {% endif %}
@@ -152,7 +152,7 @@ block content %}
       </div>
       <p class="insight-hint">
         {% if latest_expense %}
-        {{ latest_expense.expense_date.strftime('%b %d, %Y') }} • {{ format_money(latest_expense.amount|float) }} {% if latest_expense.category %}• {{ latest_expense.category.name }}{% endif %}
+        {{ format_date(latest_expense.expense_date) }} • {{ format_money(latest_expense.amount|float) }} {% if latest_expense.category %}• {{ latest_expense.category.name }}{% endif %}
         {% else %}
         Recent activity will appear here after you add expenses.
         {% endif %}
@@ -232,7 +232,7 @@ block content %}
             <div class="list-main">
               <p class="list-title">{{ expense.vendor or expense.note or 'Expense' }}</p>
               <p class="list-subtitle">
-                {{ expense.expense_date.strftime('%b %d, %Y') }}
+                {{ format_date(expense.expense_date) }}
                 {% if expense.category %} • {{ expense.category.name }}{% endif %}
               </p>
             </div>

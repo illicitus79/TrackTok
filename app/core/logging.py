@@ -3,13 +3,20 @@ import sys
 from typing import Dict
 
 from flask import Flask, g, has_request_context, request
-from loguru import logger
+from loguru import logger as loguru_logger
 
 
 def setup_logging(app: Flask) -> None:
     """Configure loguru for structured logging."""
+    log = loguru_logger
     # Remove default logger
-    logger.remove()
+    log.remove()
+
+    def add_timestamp(record: Dict):
+        """Ensure a 'timestamp' field exists for any custom formats."""
+        record["timestamp"] = record["time"].isoformat()
+
+    log = log.patch(add_timestamp)
 
     # Determine log format based on config
     log_format = app.config.get("LOG_FORMAT", "json")
@@ -49,7 +56,7 @@ def setup_logging(app: Flask) -> None:
 
             return json.dumps(base) + "\n"
 
-        logger.add(
+        log.add(
             sys.stdout,
             format=format_record,
             level=log_level,
@@ -63,11 +70,11 @@ def setup_logging(app: Flask) -> None:
             "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | "
             "<level>{message}</level>"
         )
-        logger.add(sys.stdout, format=log_format_str, level=log_level, colorize=True)
+        log.add(sys.stdout, format=log_format_str, level=log_level, colorize=True)
 
     # Log to file in production (only if not in production, to avoid scope issues)
     if not app.debug and log_format == "json":
-        logger.add(
+        log.add(
             "logs/tracktok_{time:YYYY-MM-DD}.log",
             rotation="1 day",
             retention="30 days",
@@ -76,7 +83,7 @@ def setup_logging(app: Flask) -> None:
             format=format_record,
         )
     elif not app.debug:
-        logger.add(
+        log.add(
             "logs/tracktok_{time:YYYY-MM-DD}.log",
             rotation="1 day",
             retention="30 days",
@@ -93,7 +100,7 @@ def setup_logging(app: Flask) -> None:
 
         def emit(self, record):
             try:
-                level = logger.level(record.levelname).name
+                level = log.level(record.levelname).name
             except ValueError:
                 level = record.levelno
 
@@ -102,7 +109,7 @@ def setup_logging(app: Flask) -> None:
                 frame = frame.f_back
                 depth += 1
 
-            logger.opt(depth=depth, exception=record.exc_info).log(
+            log.opt(depth=depth, exception=record.exc_info).log(
                 level, record.getMessage()
             )
 
@@ -119,4 +126,4 @@ def setup_logging(app: Flask) -> None:
         logging.getLogger("sqlalchemy.engine").handlers = [InterceptHandler()]
         logging.getLogger("sqlalchemy.engine").setLevel("INFO")
 
-    logger.info("Logging configured", log_format=log_format, log_level=log_level)
+    log.info("Logging configured", log_format=log_format, log_level=log_level)

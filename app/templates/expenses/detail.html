@@ -65,7 +65,7 @@
         <div class="form-group">
           <div class="form-label">Date</div>
           <div class="form-value">
-            {{ expense.expense_date.strftime('%b %d, %Y') }}
+            {{ format_date(expense.expense_date) }}
           </div>
         </div>
         <div class="form-group">

@@ -21,7 +21,7 @@
       </div>
       <div>
         <div style="color: var(--text-muted); font-size: 0.85rem;">Last Login</div>
-        <div style="font-weight: 600;">{{ current_user.last_login_at.strftime('%b %d, %Y %H:%M') if current_user.last_login_at else '—' }}</div>
+        <div style="font-weight: 600;">{{ format_date(current_user.last_login_at, include_time=True) if current_user.last_login_at else '—' }}</div>
       </div>
     </div>
   </div>

@@ -40,11 +40,13 @@
         <div class="form-grid">
           <div class="form-group">
             <label class="form-label" for="start_date">Start Date</label>
-            <input class="form-input" type="date" id="start_date" name="start_date" value="{{ today }}" />
+            <input class="form-input" type="text" inputmode="numeric" id="start_date" name="start_date" value="{{ today }}" placeholder="{{ date_format }}" />
+            <div class="form-hint">Format: {{ date_format }}</div>
           </div>
           <div class="form-group">
             <label class="form-label" for="end_date">End Date</label>
-            <input class="form-input" type="date" id="end_date" name="end_date" />
+            <input class="form-input" type="text" inputmode="numeric" id="end_date" name="end_date" placeholder="{{ date_format }}" />
+            <div class="form-hint">Format: {{ date_format }}</div>
           </div>
           <div class="form-group">
             <label class="form-label" for="status">Status</label>

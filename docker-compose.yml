@@ -101,12 +101,21 @@ services:
     container_name: tracktok-flower
     command: celery -A app.tasks.celery_app flower --port=5555
     environment:
+      - DATABASE_URL=postgresql://tracktok:tracktok@db:5432/tracktok
+      - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    env_file:
+      - .env
     ports:
       - "5555:5555"
+    volumes:
+      - .:/app
     depends_on:
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     restart: unless-stopped
 
   adminer:

@@ -44,11 +44,13 @@
         <div class="form-grid">
           <div class="form-group">
             <label class="form-label" for="start_date">Start Date</label>
-            <input class="form-input" type="date" id="start_date" name="start_date" value="{{ project.start_date.isoformat() if project.start_date else '' }}" />
+            <input class="form-input" type="text" inputmode="numeric" id="start_date" name="start_date" value="{{ format_date(project.start_date) if project.start_date else '' }}" placeholder="{{ date_format }}" />
+            <div class="form-hint">Format: {{ date_format }}</div>
           </div>
           <div class="form-group">
             <label class="form-label" for="end_date">End Date</label>
-            <input class="form-input" type="date" id="end_date" name="end_date" value="{{ project.end_date.isoformat() if project.end_date else '' }}" />
+            <input class="form-input" type="text" inputmode="numeric" id="end_date" name="end_date" value="{{ format_date(project.end_date) if project.end_date else '' }}" placeholder="{{ date_format }}" />
+            <div class="form-hint">Format: {{ date_format }}</div>
           </div>
           <div class="form-group">
             <label class="form-label" for="status">Status</label>

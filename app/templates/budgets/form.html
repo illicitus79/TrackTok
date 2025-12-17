@@ -49,11 +49,31 @@
         <div class="form-grid">
           <div class="form-group">
             <label class="form-label" for="start_date">Start Date</label>
-            <input class="form-input" type="date" id="start_date" name="start_date" required value="{{ (budget.start_date.isoformat() if budget and budget.start_date else today) }}" />
+            <input
+              class="form-input"
+              type="text"
+              inputmode="numeric"
+              id="start_date"
+              name="start_date"
+              required
+              value="{{ format_date(budget.start_date) if budget and budget.start_date else '' }}"
+              placeholder="{{ date_format }}"
+            />
+            <div class="form-hint">Format: {{ date_format }}</div>
           </div>
           <div class="form-group">
             <label class="form-label" for="end_date">End Date</label>
-            <input class="form-input" type="date" id="end_date" name="end_date" required value="{{ (budget.end_date.isoformat() if budget and budget.end_date else today) }}" />
+            <input
+              class="form-input"
+              type="text"
+              inputmode="numeric"
+              id="end_date"
+              name="end_date"
+              required
+              value="{{ format_date(budget.end_date) if budget and budget.end_date else '' }}"
+              placeholder="{{ date_format }}"
+            />
+            <div class="form-hint">Format: {{ date_format }}</div>
           </div>
           <div class="form-group">
             <label class="form-label" for="category_id">Category</label>

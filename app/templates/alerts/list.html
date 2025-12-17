@@ -23,7 +23,7 @@
               <div style="font-weight: 600;">{{ alert.title }}</div>
               <div style="color: var(--text-muted); font-size: 0.9rem;">{{ alert.message }}</div>
               <div style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.25rem;">
-                {{ alert.created_at.strftime('%b %d, %Y %H:%M') }} &bull; {{ alert.severity|capitalize }}
+                {{ format_date(alert.created_at, include_time=True) }} &bull; {{ alert.severity|capitalize }}
               </div>
             </div>
             <span class="badge {% if alert.severity in ['error','critical'] %}badge-error{% elif alert.severity == 'warning' %}badge-warning{% else %}badge-success{% endif %}">

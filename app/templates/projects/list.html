@@ -69,13 +69,13 @@ block content %}
           <div class="meta-item">
             <span class="meta-label">Start</span>
             <span class="meta-value">
-              {% if project.start_date %}{{ project.start_date.strftime('%b %d, %Y') }}{% else %}N/A{% endif %}
+              {% if project.start_date %}{{ format_date(project.start_date) }}{% else %}N/A{% endif %}
             </span>
           </div>
           <div class="meta-item">
             <span class="meta-label">End</span>
             <span class="meta-value">
-              {% if project.end_date %}{{ project.end_date.strftime('%b %d, %Y') }}{% else %}—{% endif %}
+              {% if project.end_date %}{{ format_date(project.end_date) }}{% else %}—{% endif %}
             </span>
           </div>
           <div class="meta-item">

@@ -125,6 +125,7 @@ def create_app(config_name: str = None) -> Flask:
     def inject_currency():
         """Inject tenant currency helpers into templates."""
         code = "USD"
+        date_format = "dd/mm/yyyy"
         symbol_map = {
             "USD": "$",
             "EUR": "€",
@@ -132,13 +133,25 @@ def create_app(config_name: str = None) -> Flask:
             "JPY": "¥",
             "THB": "฿",
         }
+        date_pattern_map = {
+            "dd/mm/yyyy": "%d/%m/%Y",
+            "mm/dd/yyyy": "%m/%d/%Y",
+            "yyyy-mm-dd": "%Y-%m-%d",
+            "dd-mm-yyyy": "%d-%m-%Y",
+            "mm-dd-yyyy": "%m-%d-%Y",
+            "yyyy/mm/dd": "%Y/%m/%d",
+            "dd.mm.yyyy": "%d.%m.%Y",
+            "mm.dd.yyyy": "%m.%d.%Y",
+        }
         try:
             tenant = getattr(current_user, "tenant", None)
             if tenant and tenant.settings:
                 code = tenant.settings.get("currency", code)
+                date_format = tenant.settings.get("date_format", date_format)
         except Exception:
             pass
         symbol = symbol_map.get(code, f"{code} ")
+        base_pattern = date_pattern_map.get(date_format, "%d/%m/%Y")
 
         def format_money(amount):
             try:
@@ -146,7 +159,42 @@ def create_app(config_name: str = None) -> Flask:
             except Exception:
                 return f"{symbol}{amount}"
 
-        return {"currency_code": code, "currency_symbol": symbol, "format_money": format_money}
+        def format_date(value, show_year=True, include_time=False):
+            import datetime
+
+            if value is None:
+                return ""
+
+            dt_obj = value
+            if isinstance(value, str):
+                try:
+                    dt_obj = datetime.datetime.fromisoformat(value)
+                except Exception:
+                    return value
+
+            pattern = base_pattern
+            if not show_year:
+                pattern = pattern.replace("/%Y", "").replace("-%Y", "").replace(".%Y", "").replace(" %Y", "")
+            if include_time:
+                pattern = f"{pattern} %H:%M"
+
+            try:
+                return dt_obj.strftime(pattern)
+            except Exception:
+                try:
+                    if include_time and hasattr(dt_obj, "date"):
+                        dt_obj = datetime.datetime.combine(getattr(dt_obj, "date")(), datetime.time.min)
+                    return dt_obj.strftime(pattern)
+                except Exception:
+                    return str(value)
+
+        return {
+            "currency_code": code,
+            "currency_symbol": symbol,
+            "format_money": format_money,
+            "format_date": format_date,
+            "date_format": date_format,
+        }
 
     return app
 
