@@ -35,7 +35,14 @@
         <nav class="main-nav">
           <div class="nav-brand">
             <a href="{{ url_for('web.landing') }}" class="logo">
-              <span class="gradient-text">TrackTok</span>
+              <img
+                src="{{ url_for('static', filename='images/TracktokLogo.png') }}"
+                alt="TrackTok logo"
+                class="logo-mark"
+                width="36"
+                height="36"
+              />
+              <span class="logo-text gradient-text">TrackTok</span>
             </a>
           </div>
 

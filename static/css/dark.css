@@ -295,10 +295,30 @@ a:hover {
   padding: var(--spacing-md) 0;
 }
 
+.nav-brand {
+  display: flex;
+  align-items: center;
+}
+
 .nav-brand .logo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
   font-size: 1.5rem;
   font-weight: 700;
   text-decoration: none;
+}
+
+.logo-mark {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.28));
+}
+
+.logo-text {
+  line-height: 1;
 }
 
 .nav-links {
@@ -1072,6 +1092,43 @@ a:hover {
   font-size: 3.5rem;
   line-height: 1.1;
   margin-bottom: var(--spacing-lg);
+}
+
+.hero-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  margin-bottom: var(--spacing-lg);
+  backdrop-filter: blur(6px);
+}
+
+.hero-logo-mark {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  display: block;
+}
+
+.hero-logo-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hero-logo-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-bright);
+}
+
+.hero-logo-tagline {
+  font-size: 0.95rem;
+  color: var(--text-muted);
 }
 
 .hero-description {
@@ -2624,6 +2681,16 @@ a:hover {
 
   .hero-title {
     font-size: 2rem;
+  }
+
+  .hero-logo {
+    gap: var(--spacing-sm);
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+
+  .hero-logo-mark {
+    width: 48px;
+    height: 48px;
   }
 
   .hero-cta {

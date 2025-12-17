@@ -7,6 +7,19 @@ multi-tenant platform.{% endblock %} {% block content %}
   <div class="hero-gradient"></div>
   <div class="container hero-content">
     <div class="hero-text">
+      <div class="hero-logo">
+        <img
+          src="{{ url_for('static', filename='images/TracktokLogo.png') }}"
+          alt="TrackTok logo"
+          class="hero-logo-mark"
+          width="56"
+          height="56"
+        />
+        <div class="hero-logo-copy">
+          <div class="hero-logo-name">TrackTok</div>
+          <div class="hero-logo-tagline">Expense intelligence for modern teams</div>
+        </div>
+      </div>
       <h1 class="hero-title">
         Expense Tracking
         <span class="gradient-text">Reimagined</span>
