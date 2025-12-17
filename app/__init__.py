@@ -5,6 +5,7 @@ import uuid
 from flask import Flask, g, jsonify, request
 from flask_login import current_user
 from loguru import logger
+from flask_migrate import upgrade
 from redis import Redis
 
 from app.core import api, cors, csrf, db, get_config, jwt, limiter, login_manager, mail, migrate, setup_logging
@@ -84,6 +85,21 @@ def create_app(config_name: str = None) -> Flask:
 
     # Register error handlers
     register_error_handlers(app)
+
+    # Optional: auto-run migrations or create tables on startup
+    auto_migrate = os.environ.get("AUTO_MIGRATE_ON_START") == "1"
+    auto_create = os.environ.get("AUTO_CREATE_TABLES_ON_START") == "1"
+    if auto_migrate or auto_create:
+        with app.app_context():
+            try:
+                if auto_migrate:
+                    upgrade()
+                    logger.info("AUTO_MIGRATE_ON_START completed successfully")
+                elif auto_create:
+                    db.create_all()
+                    logger.info("AUTO_CREATE_TABLES_ON_START completed successfully")
+            except Exception as exc:
+                logger.error(f"Startup database initialization failed: {exc}")
 
     # Register CLI commands
     register_cli_commands(app)
