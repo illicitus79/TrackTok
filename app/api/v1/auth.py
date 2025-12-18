@@ -26,6 +26,7 @@ from app.services.password_reset import (
     complete_password_reset,
     request_password_reset,
 )
+from app.services.tenant import generate_unique_subdomain
 
 blp = Blueprint("auth", __name__, url_prefix="/auth", description="Authentication operations")
 
@@ -50,8 +51,12 @@ class TenantRegistration(MethodView):
 
             # Map form field names from the web form to API schema fields
             mapped = {}
-            mapped["name"] = incoming.get("tenant_name", "")
-            mapped["subdomain"] = incoming.get("tenant_slug", "").lower()
+            mapped["name"] = incoming.get("tenant_name", "") or incoming.get("name", "")
+            requested_slug = (
+                incoming.get("tenant_slug")
+                or incoming.get("subdomain")
+                or ""
+            ).lower()
             mapped["owner_email"] = incoming.get("email", "")
             mapped["owner_password"] = incoming.get("password", "")
             
@@ -64,6 +69,12 @@ class TenantRegistration(MethodView):
                 owner_last = "Owner"
             mapped["owner_first_name"] = owner_first
             mapped["owner_last_name"] = owner_last
+
+            if requested_slug:
+                mapped["subdomain"] = requested_slug
+            else:
+                fallback_source = mapped["name"] or mapped["owner_email"]
+                mapped["subdomain"] = generate_unique_subdomain(fallback_source)
 
             data = TenantCreateSchema().load(mapped)
 

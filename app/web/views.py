@@ -21,6 +21,7 @@ from app.models.alert import Alert
 from app.core.extensions import db
 from app.core.security import verify_password_reset_token
 from app.services.password_reset import complete_password_reset, request_password_reset
+from app.services.tenant import generate_unique_subdomain
 
 
 def get_currency_options():
@@ -156,6 +157,24 @@ def how_to_use():
     return render_template("how_to_use.html")
 
 
+@bp.route("/legal/terms")
+def terms():
+    """Terms of Service page."""
+    return render_template(
+        "legal/terms.html",
+        last_updated=datetime.utcnow().strftime("%B %d, %Y"),
+    )
+
+
+@bp.route("/legal/privacy")
+def privacy():
+    """Privacy Policy page."""
+    return render_template(
+        "legal/privacy.html",
+        last_updated=datetime.utcnow().strftime("%B %d, %Y"),
+    )
+
+
 @bp.route("/dashboard")
 @login_required
 def dashboard():
@@ -275,16 +294,12 @@ def register():
         from app.models.user import User, UserRole
         
         try:
-            # Check if subdomain already exists
-            existing_tenant = Tenant.query.filter_by(subdomain=form.tenant_slug.data.lower()).first()
-            if existing_tenant:
-                flash("Subdomain already taken. Please choose another.", "error")
-                return render_template("auth/register.html", form=form)
+            subdomain = generate_unique_subdomain(form.tenant_name.data)
             
             # Create tenant
             tenant = Tenant(
                 name=form.tenant_name.data,
-                subdomain=form.tenant_slug.data.lower()
+                subdomain=subdomain
             )
             db.session.add(tenant)
             db.session.flush()  # Get tenant ID
@@ -669,14 +684,22 @@ def project_detail(project_id):
     ).order_by(Account.name).all()
 
     # Category breakdown
+    category_colors = []
     category_breakdown = db.session.query(
+        Category.id,
         Category.name,
+        Category.color,
         func.sum(Expense.amount)
     ).join(Expense, Expense.category_id == Category.id).filter(
         Expense.tenant_id == tenant_id,
         Expense.project_id == project.id,
         Expense.is_deleted == False
-    ).group_by(Category.name).all()
+    ).group_by(Category.id, Category.name, Category.color).all()
+    category_colors = [row[2] or "#6366F1" for row in category_breakdown]
+
+    if not category_breakdown and total_spend:
+        category_breakdown = [("uncategorized", "Uncategorized", "#9ca3af", float(total_spend))]
+        category_colors = ["#9ca3af"]
 
     # Monthly trend
     month_rows = db.session.query(
@@ -863,7 +886,7 @@ def project_detail(project_id):
     top_category_name = None
     top_category_share = None
     if category_breakdown and total_spend_float > 0:
-        top_category_name, top_category_total = max(category_breakdown, key=lambda x: float(x[1] or 0))
+        _, top_category_name, _, top_category_total = max(category_breakdown, key=lambda x: float(x[3] or 0))
         top_category_share = (float(top_category_total or 0) / total_spend_float) * 100.0
 
     # Projected end spend (if project has an end date / duration)
@@ -920,8 +943,9 @@ def project_detail(project_id):
             'currency': a.currency or 'USD'
         } for a in accounts],
         'category_breakdown': {
-            'labels': [row[0] for row in category_breakdown],
-            'data': [float(row[1]) for row in category_breakdown]
+            'labels': [row[1] for row in category_breakdown],
+            'data': [float(row[3]) for row in category_breakdown],
+            'colors': category_colors,
         },
         'monthly_trend': {
             'labels': sorted_months,

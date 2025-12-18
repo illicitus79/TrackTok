@@ -167,7 +167,11 @@ class DashboardApp {
     }
 
     const theme = this.getTheme();
-    const { labels, data } = this.data.category_breakdown;
+    const { labels, data, colors } = this.data.category_breakdown;
+    const palette =
+      Array.isArray(colors) && colors.length
+        ? colors
+        : this.generateColors(labels.length);
 
     this.charts.category = new Chart(ctx, {
       type: "doughnut",
@@ -176,7 +180,7 @@ class DashboardApp {
         datasets: [
           {
             data: data,
-            backgroundColor: this.generateColors(labels.length),
+            backgroundColor: palette,
             borderColor: "rgba(18, 24, 38, 1)",
             borderWidth: 2,
           },
@@ -210,7 +214,10 @@ class DashboardApp {
                 const value = context.parsed || 0;
                 const total = context.dataset.data.reduce((a, b) => a + b, 0);
                 const percentage = ((value / total) * 100).toFixed(1);
-                return `${label}: $${value.toFixed(2)} (${percentage}%)`;
+                const formatted = window.TrackTok
+                  ? window.TrackTok.formatCurrency(value)
+                  : `$${value.toFixed(2)}`;
+                return `${label}: ${formatted} (${percentage}%)`;
               },
             },
           },

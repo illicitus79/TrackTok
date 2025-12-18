@@ -86,24 +86,28 @@ class ProjectDashboard(MethodView):
         )
 
         # Category breakdown
+        category_colors = []
         category_rows = (
-            db.session.query(Category.name, func.sum(Expense.amount))
+            db.session.query(Category.id, Category.name, Category.color, func.sum(Expense.amount))
             .join(Expense, Expense.category_id == Category.id)
             .filter(
                 Expense.tenant_id == tenant_id,
                 Expense.project_id == project.id,
                 Expense.is_deleted == False,
             )
-            .group_by(Category.name)
+            .group_by(Category.id, Category.name, Category.color)
             .all()
         )
-        category_labels = [row[0] for row in category_rows]
-        category_data = [float(row[1]) for row in category_rows]
+        category_labels = [row[1] for row in category_rows]
+        category_data = [float(row[3]) for row in category_rows]
+        category_colors = [row[2] or "#6366F1" for row in category_rows]
 
         # Fallback so charts render even if there are no categories
         if not category_labels and total_spend:
             category_labels = ["Uncategorized"]
             category_data = [float(total_spend)]
+            category_colors = ["#9ca3af"]
+            category_rows = [(None, "Uncategorized", "#9ca3af", float(total_spend))]
 
         # Monthly trend grouped by account
         month_rows = (
@@ -315,7 +319,7 @@ class ProjectDashboard(MethodView):
         top_category_name = None
         top_category_share = None
         if category_rows and total_spend_float > 0:
-            top_category_name, top_category_total = max(category_rows, key=lambda x: float(x[1] or 0))
+            _, top_category_name, _, top_category_total = max(category_rows, key=lambda x: float(x[3] or 0))
             top_category_share = (float(top_category_total or 0) / total_spend_float) * 100.0
 
         projected_end_total = None
@@ -390,6 +394,7 @@ class ProjectDashboard(MethodView):
             "category_breakdown": {
                 "labels": category_labels,
                 "data": category_data,
+                "colors": category_colors,
             },
             "monthly_trend": {
                 "labels": forecast_labels,

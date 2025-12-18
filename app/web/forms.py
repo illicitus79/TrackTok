@@ -42,7 +42,6 @@ class RegistrationForm(FlaskForm):
     """Tenant registration form."""
     
     tenant_name = StringField("Organization Name", validators=[DataRequired(), Length(max=255)])
-    tenant_slug = StringField("Subdomain", validators=[DataRequired(), Length(max=63)])
     email = EmailField("Email", validators=[DataRequired(), Email()])
     password = PasswordField("Password", validators=[DataRequired(), Length(min=8)])
     password_confirm = PasswordField("Confirm Password", validators=[DataRequired(), EqualTo("password")])
