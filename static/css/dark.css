@@ -441,6 +441,7 @@ a:hover {
 
 /* Show dropdown on hover of either the menu container or the dropdown itself */
 .user-menu:hover .dropdown-menu,
+.user-menu:focus-within .dropdown-menu,
 .dropdown-menu:hover {
   display: block;
   animation: dropdownIn 140ms ease-out;

@@ -327,6 +327,9 @@ document.addEventListener("DOMContentLoaded", function () {
   // Initialize mobile menu
   const mobileMenu = new MobileMenu();
 
+  // User menu hover delay
+  initUserMenuHover();
+
   // Initialize alerts (only if user is authenticated)
   if (document.querySelector(".alert-bell")) {
     const alertManager = new AlertManager();
@@ -345,6 +348,7 @@ window.TrackTok = {
   formatNumber,
   debounce,
   initDatePickers,
+  initUserMenuHover,
 };
 
 // Date picker initialization using flatpickr
@@ -383,4 +387,30 @@ function initDatePickers() {
       },
     });
   });
+}
+
+function initUserMenuHover() {
+  const menu = document.querySelector(".user-menu");
+  const dropdown = document.querySelector(".dropdown-menu");
+  if (!menu || !dropdown) return;
+
+  let hideTimer = null;
+  const hideDelay = 800;
+
+  const show = () => {
+    clearTimeout(hideTimer);
+    dropdown.style.display = "block";
+  };
+
+  const scheduleHide = () => {
+    clearTimeout(hideTimer);
+    hideTimer = setTimeout(() => {
+      dropdown.style.display = "none";
+    }, hideDelay);
+  };
+
+  menu.addEventListener("mouseenter", show);
+  menu.addEventListener("mouseleave", scheduleHide);
+  dropdown.addEventListener("mouseenter", show);
+  dropdown.addEventListener("mouseleave", scheduleHide);
 }
