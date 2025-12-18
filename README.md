@@ -16,7 +16,7 @@ A production-ready, API-first multi-tenant expense tracking platform built with 
 - **Budget Management**: Set budgets with automated alert system
 - **Real-time Analytics**: Interactive charts powered by Chart.js
 - **Background Jobs**: Celery-based async task processing
-- **Dark Mode**: Accessible UI with Tailwind CSS
+- **Themeable UI**: Light/dark mode using CSS variables
 - **Audit Trail**: Immutable financial record tracking
 - **Rate Limiting**: Redis-powered API rate limiting
 - **Production-Ready**: Docker, CI/CD, comprehensive test coverage
@@ -24,7 +24,7 @@ A production-ready, API-first multi-tenant expense tracking platform built with 
 ## Plan tiers (current defaults)
 
 - **Basic (default)**: 1 user, 3 projects, 3 accounts, up to 100 expenses per project (soft cap), total expense safety cap 100,000.
-- **Professional**: 1 user (multi-user coming later), higher limits (projects/accounts up to 500, expenses per project up to 1,000,000), total expense cap 1,000,000.
+- **Professional**: Higher limits (multi-user coming later). Pricing coming soon.
 - Tier changes are managed from the Tenants admin screen (restricted to the tier admin account).
 
 ## 📋 Tech Stack
@@ -44,8 +44,7 @@ A production-ready, API-first multi-tenant expense tracking platform built with 
 **Frontend:**
 
 - Jinja2 templates
-- Tailwind CSS 3.x
-- Alpine.js 3.x
+- Custom CSS (theme variables)
 - Chart.js 4.x
 
 **DevOps:**
@@ -317,8 +316,6 @@ This project is licensed under the MIT License.
 ## 🙏 Acknowledgments
 
 - Flask ecosystem
-- Tailwind CSS
-- Alpine.js
 - Chart.js
 - PostgreSQL & Redis teams
 

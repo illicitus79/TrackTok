@@ -65,6 +65,12 @@ X-Tenant-Id: <tenant-id>
 - The top nav includes a book icon that links to the in-app “How to use” guide for onboarding and dashboard tips.
 - Settings (currency, timezone, date format) should be configured early so budgets, alerts, and analytics render consistently across the tenant.
 
+## Plan tiers (current defaults)
+
+- **Basic (default)**: 1 user, 3 projects, 3 accounts, up to 100 expenses per project (soft cap), total expense safety cap 100,000.
+- **Professional**: Higher limits (multi-user coming later). Pricing coming soon.
+- Tier changes are managed from the Tenants admin screen (restricted to the tier admin account).
+
 ## Architecture Decisions
 
 ### Multi-Tenancy Strategy
@@ -243,8 +249,7 @@ DEBUG=False
 - [Flask Documentation](https://flask.palletsprojects.com/)
 - [SQLAlchemy 2.0 Documentation](https://docs.sqlalchemy.org/)
 - [Celery Documentation](https://docs.celeryq.dev/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [Alpine.js](https://alpinejs.dev/)
+- [Chart.js](https://www.chartjs.org/)
 
 ---
 Last updated: 2025-01-15
