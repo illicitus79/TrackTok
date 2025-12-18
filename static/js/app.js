@@ -329,6 +329,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const alertManager = new AlertManager();
   }
 
+  // Initialize date pickers
+  initDatePickers();
+
   console.log("TrackTok initialized");
 });
 
@@ -338,4 +341,43 @@ window.TrackTok = {
   formatDate,
   formatNumber,
   debounce,
+  initDatePickers,
 };
+
+// Date picker initialization using flatpickr
+function initDatePickers() {
+  if (!window.flatpickr) return;
+  const dateInputs = document.querySelectorAll("input.date-input");
+  if (!dateInputs.length) return;
+
+  const formatMap = {
+    "dd/mm/yyyy": "d/m/Y",
+    "mm/dd/yyyy": "m/d/Y",
+    "yyyy-mm-dd": "Y-m-d",
+    "dd-mm-yyyy": "d-m-Y",
+    "mm-dd-yyyy": "m-d-Y",
+    "yyyy/mm/dd": "Y/m/d",
+    "dd.mm.yyyy": "d.m.Y",
+    "mm.dd.yyyy": "m.d.Y",
+  };
+  const df = window.TENANT_DATE_FORMAT || "dd/mm/yyyy";
+  const fpFormat = formatMap[df] || "d/m/Y";
+
+  dateInputs.forEach((input) => {
+    window.flatpickr(input, {
+      dateFormat: fpFormat,
+      allowInput: true,
+      clickOpens: true,
+      disableMobile: true,
+      altInput: true,
+      altFormat: fpFormat,
+      theme: document.documentElement.classList.contains("dark")
+        ? "material_blue"
+        : "material_blue",
+      onOpen: (selectedDates, dateStr, instance) => {
+        instance.set("altFormat", fpFormat);
+        instance.set("dateFormat", fpFormat);
+      },
+    });
+  });
+}

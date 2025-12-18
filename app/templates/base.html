@@ -19,9 +19,15 @@
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/regular/style.css"
     />
+    <!-- Flatpickr for custom date picker -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/themes/material_blue.css"
+    />
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
 
     {% block extra_head %}{% endblock %}
   </head>
@@ -278,6 +284,7 @@
     <!-- Base JavaScript -->
     <script>
       window.TENANT_CURRENCY = "{{ currency_code }}";
+      window.TENANT_DATE_FORMAT = "{{ date_format }}";
     </script>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     {% block extra_scripts %}{% endblock %}
