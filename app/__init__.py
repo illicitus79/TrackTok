@@ -140,6 +140,9 @@ def create_app(config_name: str = None) -> Flask:
     @app.context_processor
     def inject_currency():
         """Inject tenant currency helpers into templates."""
+        from datetime import datetime, date, time, timezone
+        from zoneinfo import ZoneInfo
+
         code = "USD"
         date_format = "dd/mm/yyyy"
         symbol_map = {
@@ -168,6 +171,7 @@ def create_app(config_name: str = None) -> Flask:
                 timezone_name = tenant.settings.get("timezone", timezone_name)
         except Exception:
             pass
+
         symbol = symbol_map.get(code, f"{code} ")
         base_pattern = date_pattern_map.get(date_format, "%d/%m/%Y")
 
@@ -178,9 +182,6 @@ def create_app(config_name: str = None) -> Flask:
                 return f"{symbol}{amount}"
 
         def format_date(value, show_year=True, include_time=False):
-            from datetime import datetime, time, timezone
-            from zoneinfo import ZoneInfo
-
             if value is None:
                 return ""
 
@@ -200,7 +201,7 @@ def create_app(config_name: str = None) -> Flask:
                 dt_obj = dt_obj.replace(tzinfo=timezone.utc)
             if isinstance(dt_obj, datetime):
                 dt_obj = dt_obj.astimezone(tz)
-            elif isinstance(dt_obj, datetime.date):
+            elif isinstance(dt_obj, date):
                 dt_obj = datetime.combine(dt_obj, time.min, tzinfo=timezone.utc).astimezone(tz)
 
             pattern = base_pattern
@@ -226,68 +227,6 @@ def create_app(config_name: str = None) -> Flask:
             "format_date": format_date,
             "date_format": date_format,
             "timezone_name": timezone_name,
-        }
-        date_pattern_map = {
-            "dd/mm/yyyy": "%d/%m/%Y",
-            "mm/dd/yyyy": "%m/%d/%Y",
-            "yyyy-mm-dd": "%Y-%m-%d",
-            "dd-mm-yyyy": "%d-%m-%Y",
-            "mm-dd-yyyy": "%m-%d-%Y",
-            "yyyy/mm/dd": "%Y/%m/%d",
-            "dd.mm.yyyy": "%d.%m.%Y",
-            "mm.dd.yyyy": "%m.%d.%Y",
-        }
-        try:
-            tenant = getattr(current_user, "tenant", None)
-            if tenant and tenant.settings:
-                code = tenant.settings.get("currency", code)
-                date_format = tenant.settings.get("date_format", date_format)
-        except Exception:
-            pass
-        symbol = symbol_map.get(code, f"{code} ")
-        base_pattern = date_pattern_map.get(date_format, "%d/%m/%Y")
-
-        def format_money(amount):
-            try:
-                return f"{symbol}{float(amount):,.2f}"
-            except Exception:
-                return f"{symbol}{amount}"
-
-        def format_date(value, show_year=True, include_time=False):
-            import datetime
-
-            if value is None:
-                return ""
-
-            dt_obj = value
-            if isinstance(value, str):
-                try:
-                    dt_obj = datetime.datetime.fromisoformat(value)
-                except Exception:
-                    return value
-
-            pattern = base_pattern
-            if not show_year:
-                pattern = pattern.replace("/%Y", "").replace("-%Y", "").replace(".%Y", "").replace(" %Y", "")
-            if include_time:
-                pattern = f"{pattern} %H:%M"
-
-            try:
-                return dt_obj.strftime(pattern)
-            except Exception:
-                try:
-                    if include_time and hasattr(dt_obj, "date"):
-                        dt_obj = datetime.datetime.combine(getattr(dt_obj, "date")(), datetime.time.min)
-                    return dt_obj.strftime(pattern)
-                except Exception:
-                    return str(value)
-
-        return {
-            "currency_code": code,
-            "currency_symbol": symbol,
-            "format_money": format_money,
-            "format_date": format_date,
-            "date_format": date_format,
         }
 
     @app.context_processor

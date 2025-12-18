@@ -43,6 +43,9 @@ USER tracktok
 # Copy application code
 COPY --chown=tracktok:tracktok . .
 
+# Entrypoint to run migrations (controlled via AUTO_MIGRATE_ON_START)
+RUN chmod +x docker/entrypoint.sh
+
 # Expose port
 EXPOSE 5000
 
@@ -51,4 +54,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:5000/api/v1/health || exit 1
 
 # Default command
+ENTRYPOINT ["docker/entrypoint.sh"]
 CMD ["flask", "run", "--host=0.0.0.0", "--port=5000"]

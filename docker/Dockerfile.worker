@@ -27,5 +27,9 @@ USER tracktok
 # Copy application code
 COPY --chown=tracktok:tracktok . .
 
+# Entrypoint to run migrations (controlled via AUTO_MIGRATE_ON_START)
+RUN chmod +x docker/entrypoint.sh
+
 # Default command (overridden in docker-compose)
+ENTRYPOINT ["docker/entrypoint.sh"]
 CMD ["celery", "-A", "app.tasks.celery_app", "worker", "--loglevel=info"]

@@ -1261,6 +1261,7 @@ def expense_new():
         accounts_query.order_by(Account.name).all(),
         tenant_currency,
     )
+    current_time_display = ""
     try:
         from zoneinfo import ZoneInfo
 

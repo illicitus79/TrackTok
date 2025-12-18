@@ -45,7 +45,7 @@
       <div class="container">
         <nav class="main-nav">
           <div class="nav-brand">
-            <a href="{{ url_for('web.landing') }}" class="logo">
+            <a href="{% if current_user.is_authenticated %}{{ url_for('web.dashboard') }}{% else %}{{ url_for('web.landing') }}{% endif %}" class="logo">
               <img
                 src="{{ url_for('static', filename='images/TracktokLogo.png') }}"
                 alt="TrackTok logo"
