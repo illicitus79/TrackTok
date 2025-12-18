@@ -18,6 +18,8 @@ RUN pip config set global.trusted-host "pypi.org files.pythonhosted.org pypi.pyt
     pip install --no-cache-dir -r requirements.txt || \
     (pip config set global.cert "" && pip install --no-cache-dir -r requirements.txt)
 
+ENV AUTO_MIGRATE_ON_START=1
+
 # Create non-root user
 RUN useradd -m -u 1000 tracktok && chown -R tracktok:tracktok /app
 USER tracktok

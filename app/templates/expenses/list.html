@@ -106,7 +106,7 @@
             <tr>
               <td data-label="Vendor" style="font-weight: 500;">{{ expense.vendor or expense.note or 'Expense' }}</td>
               <td data-label="Project">{{ expense.project.name if expense.project else '-' }}</td>
-              <td data-label="Date">{{ format_date(expense.expense_date) }}</td>
+              <td data-label="Date">{{ format_date(expense.expense_date, include_time=True) }}</td>
               <td data-label="Category">{{ expense.category.name if expense.category else 'Uncategorized' }}</td>
               <td data-label="Account">{{ expense.account.name if expense.account else '-' }}</td>
               <td data-label="Amount" style="font-weight: 600;">{{ format_money(expense.amount|float) }}</td>

@@ -1,6 +1,5 @@
-{% extends "base.html" %}
-{% block title %}Expense Details - TrackTok{% endblock %}
-{% block content %}
+{% extends "base.html" %} {% block title %}Expense Details - TrackTok{% endblock
+%} {% block content %}
 <div class="container expense-detail-page">
   <div class="expense-detail-header">
     <div>
@@ -57,15 +56,17 @@
         </div>
         <div class="form-group">
           <div class="form-label">Date</div>
-          <div class="form-value">
-            {{ format_date(expense.expense_date) }}
-          </div>
+          <div class="form-value">{{ format_date(expense.expense_date, include_time=True) }}</div>
         </div>
         <div class="form-group">
           <div class="form-label">Payment Method</div>
           <div class="form-value">
             {{ expense.payment_method.replace('_',' ')|title }}
           </div>
+        </div>
+        <div class="form-group">
+          <div class="form-label">Logged At</div>
+          <div class="form-value">{{ format_date(expense.created_at, include_time=True) }}</div>
         </div>
         <div class="form-group">
           <div class="form-label">Status</div>
@@ -95,22 +96,22 @@
       </div>
       {% if expense.attachments %}
       <div class="expense-attachments">
-      <div class="gallery-grid">
-        {% for attachment in expense.attachments %}
-        <button type="button" class="thumb" data-index="{{ loop.index0 }}">
-          <img
-            data-src="data:{{ attachment.content_type or 'image/png' }};base64,{{ attachment.data }}"
-            src="data:{{ attachment.content_type or 'image/png' }};base64,{{ attachment.data }}"
-            alt="{{ attachment.filename or 'Attachment' }}"
-            loading="lazy"
-          />
-          <div class="thumb-meta">
-            <div class="name">{{ attachment.filename or 'Image' }}</div>
-            <div class="size">{{ (attachment.size / 1024)|round(1) }} KB</div>
-          </div>
-        </button>
-        {% endfor %}
-      </div>
+        <div class="gallery-grid">
+          {% for attachment in expense.attachments %}
+          <button type="button" class="thumb" data-index="{{ loop.index0 }}">
+            <img
+              data-src="data:{{ attachment.content_type or 'image/png' }};base64,{{ attachment.data }}"
+              src="data:{{ attachment.content_type or 'image/png' }};base64,{{ attachment.data }}"
+              alt="{{ attachment.filename or 'Attachment' }}"
+              loading="lazy"
+            />
+            <div class="thumb-meta">
+              <div class="name">{{ attachment.filename or 'Image' }}</div>
+              <div class="size">{{ (attachment.size / 1024)|round(1) }} KB</div>
+            </div>
+          </button>
+          {% endfor %}
+        </div>
       </div>
 
       <!-- Modal viewer -->
@@ -122,14 +123,18 @@
           aria-label="Image viewer"
         >
           <div class="viewer-nav">
-            <button id="prevBtn" title="Previous" aria-label="Previous image">‹</button>
+            <button id="prevBtn" title="Previous" aria-label="Previous image">
+              ‹
+            </button>
             <button id="nextBtn" title="Next" aria-label="Next image">›</button>
           </div>
           <div class="viewer-controls">
             <button id="zoomOut" title="Zoom out">−</button>
             <button id="fitBtn" title="Fit">Fit</button>
             <button id="zoomIn" title="Zoom in">+</button>
-            <button id="closeModal" title="Close" aria-label="Close viewer">×</button>
+            <button id="closeModal" title="Close" aria-label="Close viewer">
+              ×
+            </button>
           </div>
           <div class="img-wrap">
             <img id="modalImage" src="" alt="Attachment full" />

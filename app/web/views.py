@@ -1,5 +1,5 @@
 """Web views for server-rendered pages."""
-from datetime import datetime, date
+from datetime import datetime, date, timezone, time as dt_time
 from decimal import Decimal
 import base64
 from uuid import uuid4
@@ -172,18 +172,18 @@ def dashboard():
     # Calculate current month date range
     now = datetime.utcnow()
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    month_start_date = month_start.date()
+    month_start_dt = month_start.replace(tzinfo=timezone.utc)
     
     # Get stats for current month
     monthly_expenses = db.session.query(func.sum(Expense.amount)).filter(
         Expense.tenant_id == tenant_id,
-        Expense.expense_date >= month_start_date,
+        Expense.expense_date >= month_start_dt,
         Expense.is_deleted == False
     ).scalar() or 0
     
     expense_count = db.session.query(func.count(Expense.id)).filter(
         Expense.tenant_id == tenant_id,
-        Expense.expense_date >= month_start_date,
+        Expense.expense_date >= month_start_dt,
         Expense.is_deleted == False
     ).scalar() or 0
 
@@ -381,6 +381,38 @@ def parse_date_input(value: str, date_format: str):
     return None
 
 
+def parse_time_input(value: str):
+    """Parse HH:MM time input."""
+    if not value:
+        return None
+    for pattern in ["%H:%M", "%H:%M:%S"]:
+        try:
+            return datetime.strptime(value, pattern).time()
+        except Exception:
+            continue
+    return None
+
+
+def combine_local_datetime(date_obj, time_obj, timezone_name: str):
+    """Combine date and time into a UTC naive datetime based on tenant timezone."""
+    from zoneinfo import ZoneInfo
+
+    if not date_obj:
+        return None
+    time_part = time_obj or datetime.utcnow().time().replace(second=0, microsecond=0)
+    dt_local = datetime.combine(date_obj, time_part)
+    try:
+        tz = ZoneInfo(timezone_name or "UTC")
+    except Exception:
+        tz = None
+
+    if tz:
+        dt_local = dt_local.replace(tzinfo=tz)
+        dt_utc = dt_local.astimezone(datetime.timezone.utc)
+        return dt_utc.replace(tzinfo=None)
+    return dt_local
+
+
 @bp.route("/settings", methods=["GET", "POST"])
 @login_required
 def settings():
@@ -442,7 +474,7 @@ def project_new():
     from app.models.account import Account
 
     tenant_id = current_user.tenant_id
-    tenant_currency, _ = get_tenant_preferences()
+    tenant_currency, tz_name = get_tenant_preferences()
     date_format = (current_user.tenant.settings or {}).get("date_format", "dd/mm/yyyy")
     date_format = (current_user.tenant.settings or {}).get("date_format", "dd/mm/yyyy")
     date_format = (current_user.tenant.settings or {}).get("date_format", "dd/mm/yyyy")
@@ -511,7 +543,7 @@ def project_edit(project_id):
     from app.models.account import Account
 
     tenant_id = current_user.tenant_id
-    tenant_currency, _ = get_tenant_preferences()
+    tenant_currency, tz_name = get_tenant_preferences()
     date_format = (current_user.tenant.settings or {}).get("date_format", "dd/mm/yyyy")
     project = Project.query.filter_by(id=project_id, tenant_id=tenant_id, is_deleted=False).first()
     if not project:
@@ -691,6 +723,8 @@ def project_detail(project_id):
 
     today = date.today()
     start_30d = today - timedelta(days=29)
+    start_dt = datetime.combine(start_30d, dt_time.min, tzinfo=timezone.utc)
+    end_dt = datetime.combine(today, dt_time.max, tzinfo=timezone.utc)
 
     # Daily spend series (last 30 days)
     daily_rows = (
@@ -699,8 +733,8 @@ def project_detail(project_id):
             Expense.tenant_id == tenant_id,
             Expense.project_id == project.id,
             Expense.is_deleted == False,
-            Expense.expense_date >= start_30d,
-            Expense.expense_date <= today,
+            Expense.expense_date >= start_dt,
+            Expense.expense_date <= end_dt,
         )
         .group_by(Expense.expense_date)
         .order_by(Expense.expense_date)
@@ -1147,9 +1181,9 @@ def expenses():
     if end_date and not parsed_end:
         flash("Invalid end date", "error")
     if parsed_start:
-        query = query.filter(Expense.expense_date >= parsed_start)
+        query = query.filter(Expense.expense_date >= datetime.combine(parsed_start, dt_time.min))
     if parsed_end:
-        query = query.filter(Expense.expense_date <= parsed_end)
+        query = query.filter(Expense.expense_date <= datetime.combine(parsed_end, dt_time.max))
 
     # Pagination
     try:
@@ -1203,7 +1237,7 @@ def expense_new():
     from app.models.project import Project
 
     tenant_id = current_user.tenant_id
-    tenant_currency, _ = get_tenant_preferences()
+    tenant_currency, tz_name = get_tenant_preferences()
     date_format = (current_user.tenant.settings or {}).get("date_format", "dd/mm/yyyy")
     accounts_query = Account.query.filter_by(tenant_id=tenant_id, is_deleted=False)
     projects = Project.query.filter_by(tenant_id=tenant_id, is_deleted=False).order_by(Project.name).all()
@@ -1227,6 +1261,13 @@ def expense_new():
         accounts_query.order_by(Account.name).all(),
         tenant_currency,
     )
+    try:
+        from zoneinfo import ZoneInfo
+
+        now_local = datetime.now(ZoneInfo(tz_name))
+    except Exception:
+        now_local = datetime.utcnow()
+    current_time_display = request.form.get("expense_time") or now_local.strftime("%H:%M")
 
     if request.method == "POST":
         try:
@@ -1235,11 +1276,14 @@ def expense_new():
                 raise ValueError("Amount is required.")
             amount = Decimal(amount_raw)
             expense_date_str = request.form.get("expense_date")
+            expense_time_str = request.form.get("expense_time")
             if not expense_date_str:
                 raise ValueError("Date is required.")
             expense_date_val = parse_date_input(expense_date_str, date_format)
             if not expense_date_val:
                 raise ValueError("Invalid date format.")
+            expense_time_val = parse_time_input(expense_time_str)
+            expense_dt_utc = combine_local_datetime(expense_date_val, expense_time_val, get_tenant_preferences()[1])
 
             account_id = request.form.get("account_id")
             if not account_id:
@@ -1270,7 +1314,7 @@ def expense_new():
                 project_id=project_id,
                 is_project_related=bool(project_id),
                 account_id=account_id,
-                expense_date=expense_date_val,
+                expense_date=expense_dt_utc or expense_date_val,
                 payment_method=request.form.get("payment_method", "cash"),
                 status="submitted",
                 created_by=current_user.id,
@@ -1315,6 +1359,7 @@ def expense_new():
         account_meta=[{"id": a.id, "currency": a.currency, "name": a.name, "type": a.account_type} for a in accounts],
         tenant_currency=tenant_currency,
         date_format=date_format,
+        current_time_display=current_time_display,
     )
 
 
@@ -1398,7 +1443,10 @@ def expense_edit(expense_id):
             parsed_date = parse_date_input(request.form.get("expense_date"), date_format)
             if not parsed_date:
                 raise ValueError("Invalid date format.")
-            expense.expense_date = parsed_date
+            time_str = request.form.get("expense_time")
+            time_val = parse_time_input(time_str)
+            expense_dt_utc = combine_local_datetime(parsed_date, time_val, tz_name)
+            expense.expense_date = expense_dt_utc or parsed_date
             category_id = request.form.get("category_id") or None
             if category_id and not project_id:
                 raise ValueError("Select a project before assigning a category.")
@@ -1458,6 +1506,7 @@ def expense_edit(expense_id):
         account_meta=[{"id": a.id, "currency": a.currency, "name": a.name, "type": a.account_type} for a in accounts],
         tenant_currency=tenant_currency,
         date_format=date_format,
+        expense_time_display=expense_time_display,
     )
 
 

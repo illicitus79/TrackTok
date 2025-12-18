@@ -31,6 +31,7 @@ RUN apt-get update && apt-get install -y \
 # Copy virtual environment from builder
 COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
+ENV AUTO_MIGRATE_ON_START=1
 
 # Set working directory
 WORKDIR /app

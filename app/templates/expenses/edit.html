@@ -45,6 +45,11 @@
             <input class="form-input date-input" type="text" inputmode="numeric" name="expense_date" id="expense_date" value="{{ format_date(expense.expense_date) }}" required placeholder="{{ date_format }}" />
             <div class="form-hint">Format: {{ date_format }}</div>
           </div>
+          <div class="form-group">
+            <label class="form-label" for="expense_time">Time</label>
+            <input class="form-input" type="time" name="expense_time" id="expense_time" value="{{ expense_time_display }}" />
+            <div class="form-hint">Uses your workspace timezone ({{ timezone_name or 'UTC' }}).</div>
+          </div>
         </div>
 
         <div class="form-grid">

@@ -1,5 +1,5 @@
 """Expense tracking models."""
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from decimal import Decimal
 from enum import Enum
 
@@ -71,8 +71,8 @@ class Expense(BaseModel, TenantMixin, AuditMixin):
         db.String(36), db.ForeignKey("expenses.id"), nullable=True
     )
     
-    # Date tracking
-    expense_date: Mapped[date] = mapped_column(db.Date, nullable=False, index=True)
+    # Date tracking (stored in UTC)
+    expense_date: Mapped[datetime] = mapped_column(db.DateTime, nullable=False, index=True)
     
     # Payment details (kept for compatibility)
     payment_method: Mapped[str] = mapped_column(
