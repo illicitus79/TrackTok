@@ -1,6 +1,5 @@
-{% extends "base.html" %}
-{% block title %}Create Tenant - TrackTok{% endblock %}
-{% block content %}
+{% extends "base.html" %} {% block title %}Create Tenant - TrackTok{% endblock
+%} {% block content %}
 <div class="auth-container">
   <div class="auth-card">
     <div class="auth-header">
@@ -21,15 +20,17 @@
           Tenant Name
           <span class="required">*</span>
         </label>
-        {{ form.tenant_name(class="form-input", placeholder="Acme Inc.", autofocus=True) }}
-        {% if form.tenant_name.errors %}
+        {{ form.tenant_name(class="form-input", placeholder="Acme Inc.",
+        autofocus=True) }} {% if form.tenant_name.errors %}
         <div class="form-error">
           {% for error in form.tenant_name.errors %}
           <span>{{ error }}</span>
           {% endfor %}
         </div>
         {% endif %}
-        <div class="form-hint">Give your workspace a clear name (e.g., company or team).</div>
+        <div class="form-hint">
+          Give your workspace a clear name (e.g., company or team).
+        </div>
       </div>
 
       <div class="form-group">
@@ -37,8 +38,8 @@
           Email address
           <span class="required">*</span>
         </label>
-        {{ form.email(class="form-input", placeholder="you@example.com", autocomplete="email") }}
-        {% if form.email.errors %}
+        {{ form.email(class="form-input", placeholder="you@example.com",
+        autocomplete="email") }} {% if form.email.errors %}
         <div class="form-error">
           {% for error in form.email.errors %}
           <span>{{ error }}</span>
@@ -52,8 +53,8 @@
           Password
           <span class="required">*</span>
         </label>
-        {{ form.password(class="form-input", placeholder="••••••••", autocomplete="new-password") }}
-        {% if form.password.errors %}
+        {{ form.password(class="form-input", placeholder="••••••••",
+        autocomplete="new-password") }} {% if form.password.errors %}
         <div class="form-error">
           {% for error in form.password.errors %}
           <span>{{ error }}</span>
@@ -68,8 +69,8 @@
           Confirm Password
           <span class="required">*</span>
         </label>
-        {{ form.password_confirm(class="form-input", placeholder="••••••••", autocomplete="new-password") }}
-        {% if form.password_confirm.errors %}
+        {{ form.password_confirm(class="form-input", placeholder="••••••••",
+        autocomplete="new-password") }} {% if form.password_confirm.errors %}
         <div class="form-error">
           {% for error in form.password_confirm.errors %}
           <span>{{ error }}</span>
@@ -82,8 +83,13 @@
         {{ form.accept_terms(class="form-checkbox") }}
         <label for="accept_terms" class="form-check-label">
           I agree to the
-          <a href="{{ url_for('web.terms') }}" class="form-link">Terms of Service</a> and
-          <a href="{{ url_for('web.privacy') }}" class="form-link">Privacy Policy</a>
+          <a href="{{ url_for('web.terms') }}" class="form-link"
+            >Terms of Service</a
+          >
+          and
+          <a href="{{ url_for('web.privacy') }}" class="form-link"
+            >Privacy Policy</a
+          >
         </label>
         {% if form.accept_terms.errors %}
         <div class="form-error">
@@ -97,7 +103,9 @@
       <button type="submit" class="btn btn-primary btn-block">
         Create Tenant
       </button>
-      <p class="form-hint register-upgrade-hint">Professional tier pricing is coming soon.</p>
+      <p class="form-hint register-upgrade-hint">
+        Professional tier pricing is coming soon.
+      </p>
     </form>
 
     <div class="auth-footer">
@@ -123,6 +131,4 @@
   <!-- Decorative gradient -->
   <div class="auth-gradient gradient-bg-emerald"></div>
 </div>
-{% endblock %}
-{% block extra_scripts %}
-{% endblock %}
+{% endblock %} {% block extra_scripts %} {% endblock %}
