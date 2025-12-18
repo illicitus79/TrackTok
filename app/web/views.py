@@ -454,14 +454,15 @@ def settings():
             new_currency = request.form.get("currency") or currency
             new_timezone = request.form.get("timezone") or timezone
             new_date_format = request.form.get("date_format") or date_format
-            tenant.settings = tenant.settings or {}
-            tenant.settings.update(
-                {
-                    "currency": new_currency,
-                    "timezone": new_timezone,
-                    "date_format": new_date_format,
-                }
-            )
+
+            # Reassign the JSON field so SQLAlchemy marks it dirty and persists.
+            tenant.settings = {
+                **(tenant.settings or {}),
+                "currency": new_currency,
+                "timezone": new_timezone,
+                "date_format": new_date_format,
+            }
+
             db.session.commit()
             flash("Settings updated.", "success")
             return redirect(url_for("web.settings"))
