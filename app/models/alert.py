@@ -17,6 +17,8 @@ class AlertType(str, Enum):
     BUDGET_EXCEEDED = "budget_exceeded"
     BUDGET_WARNING = "budget_warning"
     FORECAST_OVERSPEND = "forecast_overspend"
+    PROJECT_DEADLINE = "project_deadline"
+    DEADLINE_OVERDUE = "deadline_overdue"
     EXPENSE_REJECTED = "expense_rejected"
     EXPENSE_APPROVED = "expense_approved"
     UNUSUAL_SPENDING = "unusual_spending"
@@ -136,6 +138,7 @@ class Alert(BaseModel):
         return db.session.query(cls).filter_by(
             tenant_id=tenant_id,
             is_read=False,
+            is_dismissed=False,
             is_deleted=False
         ).count()
 
@@ -144,6 +147,7 @@ class Alert(BaseModel):
         """Get recent alerts for tenant."""
         return db.session.query(cls).filter_by(
             tenant_id=tenant_id,
+            is_dismissed=False,
             is_deleted=False
         ).order_by(cls.created_at.desc()).limit(limit).all()
 

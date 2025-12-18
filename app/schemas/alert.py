@@ -11,12 +11,16 @@ class AlertSchema(Schema):
     alert_type = fields.Str(
         required=True,
         validate=validate.OneOf([
-            "LOW_BALANCE",
-            "FORECAST_OVERSPEND",
-            "BUDGET_EXCEEDED",
-            "PROJECT_DEADLINE",
-            "ACCOUNT_INACTIVE"
-        ])
+            "low_balance",
+            "forecast_overspend",
+            "budget_exceeded",
+            "budget_warning",
+            "project_deadline",
+            "deadline_overdue",
+            "expense_rejected",
+            "expense_approved",
+            "unusual_spending",
+        ]),
     )
     severity = fields.Str(
         validate=validate.OneOf(["info", "warning", "error", "critical"]),
@@ -32,7 +36,7 @@ class AlertSchema(Schema):
     title = fields.Str(required=True, validate=validate.Length(min=1, max=255))
     message = fields.Str(required=True)
     
-    metadata = fields.Dict(allow_none=True)
+    metadata = fields.Dict(attribute="alert_metadata", data_key="metadata", allow_none=True)
     
     is_read = fields.Bool(dump_only=True)
     read_at = fields.DateTime(dump_only=True)
@@ -55,12 +59,16 @@ class AlertCreateSchema(Schema):
     alert_type = fields.Str(
         required=True,
         validate=validate.OneOf([
-            "LOW_BALANCE",
-            "FORECAST_OVERSPEND",
-            "BUDGET_EXCEEDED",
-            "PROJECT_DEADLINE",
-            "ACCOUNT_INACTIVE"
-        ])
+            "low_balance",
+            "forecast_overspend",
+            "budget_exceeded",
+            "budget_warning",
+            "project_deadline",
+            "deadline_overdue",
+            "expense_rejected",
+            "expense_approved",
+            "unusual_spending",
+        ]),
     )
     severity = fields.Str(
         validate=validate.OneOf(["info", "warning", "error", "critical"]),
@@ -73,7 +81,7 @@ class AlertCreateSchema(Schema):
     entity_id = fields.Str(required=True)
     title = fields.Str(required=True, validate=validate.Length(min=1, max=255))
     message = fields.Str(required=True)
-    metadata = fields.Dict(allow_none=True)
+    metadata = fields.Dict(attribute="alert_metadata", data_key="metadata", allow_none=True)
 
 
 class AlertUpdateSchema(Schema):
@@ -90,11 +98,15 @@ class AlertListQuerySchema(Schema):
     per_page = fields.Int(load_default=20, validate=validate.Range(min=1, max=100))
     alert_type = fields.Str(
         validate=validate.OneOf([
-            "LOW_BALANCE",
-            "FORECAST_OVERSPEND",
-            "BUDGET_EXCEEDED",
-            "PROJECT_DEADLINE",
-            "ACCOUNT_INACTIVE"
+            "low_balance",
+            "forecast_overspend",
+            "budget_exceeded",
+            "budget_warning",
+            "project_deadline",
+            "deadline_overdue",
+            "expense_rejected",
+            "expense_approved",
+            "unusual_spending",
         ])
     )
     severity = fields.Str(validate=validate.OneOf(["info", "warning", "error", "critical"]))

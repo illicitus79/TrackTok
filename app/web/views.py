@@ -17,6 +17,7 @@ from app.web.forms import (
     ResetPasswordForm,
 )
 from app.models.user import User
+from app.models.alert import Alert
 from app.core.extensions import db
 from app.core.security import verify_password_reset_token
 from app.services.password_reset import complete_password_reset, request_password_reset
@@ -1655,14 +1656,78 @@ def account_adjust(account_id):
 @login_required
 def alerts():
     """Alert center page."""
-    from app.models.alert import Alert
+    alerts = (
+        Alert.query.filter_by(
+            tenant_id=current_user.tenant_id,
+            is_deleted=False,
+        )
+        .order_by(Alert.is_read.asc(), Alert.severity.desc(), Alert.created_at.desc())
+        .limit(50)
+        .all()
+    )
+    unread_count = Alert.get_unread_count(current_user.tenant_id)
 
-    alerts = Alert.query.filter_by(
+    return render_template("alerts/list.html", alerts=alerts, unread_count=unread_count)
+
+
+@bp.route("/alerts/<alert_id>/read", methods=["POST"])
+@login_required
+def mark_alert_read(alert_id):
+    """Mark a single alert as read."""
+    alert = Alert.query.filter_by(
+        id=alert_id,
         tenant_id=current_user.tenant_id,
         is_deleted=False,
-    ).order_by(Alert.created_at.desc()).limit(20).all()
+    ).first()
+    if not alert:
+        flash("Alert not found.", "error")
+        return redirect(url_for("web.alerts"))
 
-    return render_template("alerts/list.html", alerts=alerts)
+    alert.mark_as_read(user_id=current_user.id, commit=True)
+    flash("Alert marked as read.", "success")
+    return redirect(url_for("web.alerts"))
+
+
+@bp.route("/alerts/<alert_id>/dismiss", methods=["POST"])
+@login_required
+def dismiss_alert(alert_id):
+    """Dismiss a single alert."""
+    alert = Alert.query.filter_by(
+        id=alert_id,
+        tenant_id=current_user.tenant_id,
+        is_deleted=False,
+    ).first()
+    if not alert:
+        flash("Alert not found.", "error")
+        return redirect(url_for("web.alerts"))
+
+    alert.dismiss(commit=True)
+    flash("Alert dismissed.", "success")
+    return redirect(url_for("web.alerts"))
+
+
+@bp.route("/alerts/mark-all-read", methods=["POST"])
+@login_required
+def mark_all_alerts_read():
+    """Mark all unread alerts as read."""
+    unread_alerts = Alert.query.filter_by(
+        tenant_id=current_user.tenant_id,
+        is_read=False,
+        is_deleted=False,
+    ).all()
+    for alert in unread_alerts:
+        alert.mark_as_read(user_id=current_user.id, commit=False)
+    db.session.commit()
+    flash(f"Marked {len(unread_alerts)} alert(s) as read.", "success")
+    return redirect(url_for("web.alerts"))
+
+
+@bp.route("/alerts/unread-count")
+@login_required
+def alert_unread_count():
+    """Return unread alert count for nav badge polling."""
+    unread = Alert.get_unread_count(current_user.tenant_id)
+    return jsonify({"unread": unread})
 
 
 @bp.route("/reports/project/<project_id>/summary")

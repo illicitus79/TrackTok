@@ -212,6 +212,19 @@ def create_app(config_name: str = None) -> Flask:
             "date_format": date_format,
         }
 
+    @app.context_processor
+    def inject_alert_counts():
+        """Provide unread alert count for nav badge."""
+        try:
+            if current_user and getattr(current_user, "is_authenticated", False):
+                from app.models.alert import Alert
+
+                count = Alert.get_unread_count(current_user.tenant_id)
+                return {"alert_unread_count": count}
+        except Exception:
+            pass
+        return {"alert_unread_count": 0}
+
     return app
 
 

@@ -73,24 +73,27 @@ class AlertManager {
   }
 
   init() {
+    this.applyInitialCount();
     this.fetchAlertCount();
-    this.timerId = setInterval(
-      () => this.fetchAlertCount(),
-      this.checkInterval
-    );
+    this.timerId = setInterval(() => this.fetchAlertCount(), this.checkInterval);
     this.bindEvents();
+  }
+
+  applyInitialCount() {
+    const initial = parseInt(this.alertBell?.dataset.alertCount || "0", 10);
+    this.updateBadge(isNaN(initial) ? 0 : initial);
   }
 
   async fetchAlertCount() {
     try {
-      const response = await fetch("/api/v1/dashboards/tenant", {
+      const response = await fetch("/alerts/unread-count", {
         headers: {
           "X-Requested-With": "XMLHttpRequest",
         },
       });
       if (response.ok) {
         const data = await response.json();
-        const count = data.alerts?.total || 0;
+        const count = data.unread || 0;
         this.updateBadge(count);
       }
     } catch (error) {
@@ -111,7 +114,7 @@ class AlertManager {
   bindEvents() {
     if (this.alertBell) {
       this.alertBell.addEventListener("click", () => {
-        window.location.href = "/dashboard";
+        window.location.href = "/alerts";
       });
     }
   }

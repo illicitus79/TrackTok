@@ -4,32 +4,23 @@ TrackTok Alert: {{ alert.title }}
 
 {{ alert.message }}
 
-{% if alert.metadata %}
+{% set meta = alert.alert_metadata or {} %}
+{% if meta %}
 Details:
-{% if alert.metadata.account_name %}
-Account: {{ alert.metadata.account_name }}
-{% endif %}
-{% if alert.metadata.current_balance is defined %}
-Current Balance: ${{ "%.2f"|format(alert.metadata.current_balance) }}
-{% endif %}
-{% if alert.metadata.threshold is defined %}
-Threshold: ${{ "%.2f"|format(alert.metadata.threshold) }}
-{% endif %}
-{% if alert.metadata.project_name %}
-Project: {{ alert.metadata.project_name }}
-{% endif %}
-{% if alert.metadata.budget is defined %}
-Budget: ${{ "%.2f"|format(alert.metadata.budget) }}
-{% endif %}
-{% if alert.metadata.projected_total is defined %}
-Projected Total: ${{ "%.2f"|format(alert.metadata.projected_total) }}
-{% endif %}
-{% if alert.metadata.confidence is defined %}
-Confidence: {{ alert.metadata.confidence }}%
-{% endif %}
+{% if meta.account_name %}Account: {{ meta.account_name }}{% endif %}
+{% if meta.project_name %}Project: {{ meta.project_name }}{% endif %}
+{% if meta.utilization is defined %}Utilization: {{ "%.1f"|format(meta.utilization) }}%{% endif %}
+{% if meta.current_balance is defined %}Current Balance: {{ meta.current_balance }} {{ meta.currency or "" }}{% endif %}
+{% if meta.threshold is defined %}Threshold: {{ meta.threshold }} {{ meta.currency or "" }}{% endif %}
+{% if meta.projected_overage is defined %}Projected Overage: {{ meta.projected_overage }} {{ meta.currency or "" }}{% endif %}
+{% if meta.days_remaining is defined %}Days Remaining: {{ meta.days_remaining }}{% endif %}
 {% endif %}
 
-View Dashboard: {{ dashboard_url }}
+{% if meta.suggestions %}Suggested next steps:
+{% for suggestion in meta.suggestions[:3] %}- {{ suggestion }}
+{% endfor %}{% endif %}
+
+Open alert: {{ primary_action or dashboard_url }}
 
 ---
 This alert was sent because you have notifications enabled for {{ alert.alert_type|replace('_', ' ')|lower }}.

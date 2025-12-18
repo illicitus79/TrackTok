@@ -27,13 +27,7 @@ def check_low_balance_accounts():
         try:
             alerts = AlertService.check_low_balance_accounts(tenant.id)
             total_alerts += len(alerts)
-            
-            # Send notifications for new alerts
-            for alert in alerts:
-                if not alert.notification_sent_at:
-                    # TODO: Get tenant admins/owners emails
-                    # AlertService.send_alert_notification(alert.id, recipients)
-                    pass
+            AlertService.dispatch_notifications(alerts, tenant.id)
                     
         except Exception as e:
             logger.error(f"Error checking low balance for tenant {tenant.id}: {e}")
@@ -84,13 +78,16 @@ def update_forecast_and_generate_alerts():
                 if forecast['will_exceed'] and forecast['confidence'] >= 90:
                     alerts = AlertService.check_forecast_overspend(tenant.id, project.id)
                     total_alerts += len(alerts)
-                    
-                    # Send notifications
-                    for alert in alerts:
-                        if not alert.notification_sent_at:
-                            # TODO: Get project stakeholders emails
-                            # AlertService.send_alert_notification(alert.id, recipients)
-                            pass
+                    AlertService.dispatch_notifications(alerts, tenant.id)
+            
+            # Budget thresholds and deadlines per tenant
+            budget_alerts = AlertService.check_budget_thresholds(tenant.id)
+            total_alerts += len(budget_alerts)
+            AlertService.dispatch_notifications(budget_alerts, tenant.id)
+
+            deadline_alerts = AlertService.check_project_deadlines(tenant.id)
+            total_alerts += len(deadline_alerts)
+            AlertService.dispatch_notifications(deadline_alerts, tenant.id)
                             
         except Exception as e:
             logger.error(f"Error forecasting for tenant {tenant.id}: {e}")
