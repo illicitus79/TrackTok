@@ -129,6 +129,11 @@ celery -A app.tasks.celery_app worker --loglevel=info
 celery -A app.tasks.celery_app beat --loglevel=info
 ```
 
+## Navigation & help
+
+- The top nav now uses a book icon that links to the “How to use” guide covering onboarding steps, analytics, and tips.
+- Use the Settings page to set tenant currency, timezone, and date format so dashboards, budgets, and alerts stay consistent across the workspace.
+
 ## 📝 API Documentation
 
 ### Interactive Documentation

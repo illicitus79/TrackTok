@@ -8,6 +8,11 @@
       content="{% block meta_description %}TrackTok - Multi-tenant expense tracker{% endblock %}"
     />
     <title>{% block title %}TrackTok{% endblock %}</title>
+    <link
+      rel="icon"
+      type="image/png"
+      href="{{ url_for('static', filename='images/favicon.png') }}"
+    />
 
     <!-- CSS -->
     <link
@@ -98,7 +103,7 @@
               title="How to use"
               aria-label="How to use"
             >
-              <i class="ph ph-question"></i>
+              <i class="ph ph-book-open"></i>
             </a>
 
             <!-- Dark mode toggle -->
@@ -168,7 +173,7 @@
               title="How to use"
               aria-label="How to use"
             >
-              <i class="ph ph-question"></i>
+              <i class="ph ph-book-open"></i>
             </a>
             <!-- Dark mode toggle -->
             <button class="theme-toggle" aria-label="Toggle dark mode">

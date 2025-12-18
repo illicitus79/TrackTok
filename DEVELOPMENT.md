@@ -60,6 +60,11 @@ Authorization: Bearer <token>
 X-Tenant-Id: <tenant-id>
 ```
 
+## Navigation & help
+
+- The top nav includes a book icon that links to the in-app “How to use” guide for onboarding and dashboard tips.
+- Settings (currency, timezone, date format) should be configured early so budgets, alerts, and analytics render consistently across the tenant.
+
 ## Architecture Decisions
 
 ### Multi-Tenancy Strategy
