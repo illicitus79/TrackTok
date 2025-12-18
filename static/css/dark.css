@@ -3265,6 +3265,56 @@ a:hover {
 /* ==========================================================================
    Expenses Attachments Gallery + Modal
    ========================================================================== */
+.expense-detail-page {
+  padding: 2rem 0;
+  max-width: 960px;
+}
+.expense-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+.expense-detail-title {
+  margin: 0;
+  font-size: 2rem;
+}
+.expense-detail-subtitle {
+  margin: 0.35rem 0 0;
+  color: var(--text-muted);
+}
+.expense-detail-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.form-value-strong {
+  font-weight: 700;
+}
+.form-value-pre {
+  white-space: pre-line;
+}
+.expense-attachments-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+.expense-attachments-title {
+  font-weight: 700;
+}
+.expense-attachments-count {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+.expense-empty-attachments {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 1rem 0;
+}
+
 .gallery-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -3278,6 +3328,8 @@ a:hover {
   display: flex;
   flex-direction: column;
   cursor: zoom-in;
+  padding: 0;
+  text-align: left;
 }
 .thumb-meta {
   padding: 0.55rem 0.6rem;
@@ -3294,6 +3346,21 @@ a:hover {
   object-fit: cover;
   display: block;
   transition: transform 150ms ease;
+}
+.expense-attachments .thumb img {
+  object-fit: contain;
+  background: var(--panel);
+}
+.thumb-meta .name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.thumb-meta .size {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  white-space: nowrap;
 }
 .thumb:hover img {
   transform: scale(1.03);

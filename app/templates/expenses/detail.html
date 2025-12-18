@@ -1,22 +1,15 @@
-{% extends "base.html" %} {% block title %}Expense Details - TrackTok{% endblock
-%} {% block content %}
-<div class="container" style="padding: 2rem 0; max-width: 960px">
-  <div
-    style="
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 1rem;
-      flex-wrap: wrap;
-    "
-  >
+{% extends "base.html" %}
+{% block title %}Expense Details - TrackTok{% endblock %}
+{% block content %}
+<div class="container expense-detail-page">
+  <div class="expense-detail-header">
     <div>
-      <h1 style="margin: 0; font-size: 2rem">Expense Details</h1>
-      <p style="margin: 0.35rem 0 0; color: var(--text-muted)">
+      <h1 class="expense-detail-title">Expense Details</h1>
+      <p class="expense-detail-subtitle">
         Review the expense and its uploaded images.
       </p>
     </div>
-    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap">
+    <div class="expense-detail-actions">
       <a class="btn btn-secondary" href="{{ url_for('web.expenses') }}"
         >Back to Expenses</a
       >
@@ -28,7 +21,7 @@
     </div>
   </div>
 
-  <div class="card" style="margin-top: 1.25rem">
+  <div class="card">
     <div class="card-body">
       <div class="form-grid">
         <div class="form-group">
@@ -58,7 +51,7 @@
       <div class="form-grid">
         <div class="form-group">
           <div class="form-label">Amount</div>
-          <div class="form-value" style="font-weight: 700">
+          <div class="form-value form-value-strong">
             {{ format_money(expense.amount|float) }} {{ expense.currency }}
           </div>
         </div>
@@ -82,61 +75,42 @@
 
       <div class="form-group">
         <div class="form-label">Note</div>
-        <div class="form-value" style="white-space: pre-line">
+        <div class="form-value form-value-pre">
           {{ expense.note or 'No note provided.' }}
         </div>
       </div>
     </div>
   </div>
 
-  <div class="card" style="margin-top: 1.25rem">
+  <div class="card">
     <div class="card-body">
-      <div
-        style="
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 0.75rem;
-        "
-      >
-        <div style="font-weight: 700">Attachments</div>
+      <div class="expense-attachments-header">
+        <div class="expense-attachments-title">Attachments</div>
         {% if expense.attachments %}
-        <div style="color: var(--text-muted); font-size: 0.9rem">
+        <div class="expense-attachments-count">
           {{ expense.attachments|length }} image{{ 's' if
           expense.attachments|length != 1 else '' }}
         </div>
         {% endif %}
       </div>
       {% if expense.attachments %}
-
+      <div class="expense-attachments">
       <div class="gallery-grid">
         {% for attachment in expense.attachments %}
-        <div class="thumb" data-index="{{ loop.index0 }}">
-          <div style="position: relative">
-            <img
-              data-src="data:{{ attachment.content_type or 'image/png' }};base64,{{ attachment.data }}"
-              src="data:{{ attachment.content_type or 'image/png' }};base64,{{ attachment.data }}"
-              alt="{{ attachment.filename or 'Attachment' }}"
-              loading="lazy"
-            />
-          </div>
+        <button type="button" class="thumb" data-index="{{ loop.index0 }}">
+          <img
+            data-src="data:{{ attachment.content_type or 'image/png' }};base64,{{ attachment.data }}"
+            src="data:{{ attachment.content_type or 'image/png' }};base64,{{ attachment.data }}"
+            alt="{{ attachment.filename or 'Attachment' }}"
+            loading="lazy"
+          />
           <div class="thumb-meta">
-            <div
-              style="
-                font-weight: 600;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-              "
-            >
-              {{ attachment.filename or 'Image' }}
-            </div>
-            <div style="font-size: 0.8rem; color: var(--text-muted)">
-              {{ (attachment.size / 1024)|round(1) }} KB
-            </div>
+            <div class="name">{{ attachment.filename or 'Image' }}</div>
+            <div class="size">{{ (attachment.size / 1024)|round(1) }} KB</div>
           </div>
-        </div>
+        </button>
         {% endfor %}
+      </div>
       </div>
 
       <!-- Modal viewer -->
@@ -148,14 +122,14 @@
           aria-label="Image viewer"
         >
           <div class="viewer-nav">
-            <button id="prevBtn" title="Previous">◀</button>
-            <button id="nextBtn" title="Next">▶</button>
+            <button id="prevBtn" title="Previous" aria-label="Previous image">‹</button>
+            <button id="nextBtn" title="Next" aria-label="Next image">›</button>
           </div>
           <div class="viewer-controls">
             <button id="zoomOut" title="Zoom out">−</button>
             <button id="fitBtn" title="Fit">Fit</button>
             <button id="zoomIn" title="Zoom in">+</button>
-            <button id="closeModal" title="Close">✕</button>
+            <button id="closeModal" title="Close" aria-label="Close viewer">×</button>
           </div>
           <div class="img-wrap">
             <img id="modalImage" src="" alt="Attachment full" />
@@ -164,9 +138,7 @@
       </div>
 
       {% else %}
-      <div
-        style="text-align: center; color: var(--text-muted); padding: 1rem 0"
-      >
+      <div class="expense-empty-attachments">
         No attachments for this expense.
       </div>
       {% endif %}
@@ -284,7 +256,7 @@
         dragging = false;
         try {
           modalImg.releasePointerCapture(e.pointerId);
-        } catch (e) {}
+        } catch (err) {}
         modalImg.style.cursor = "grab";
       });
       modalImg.addEventListener("pointercancel", () => {
