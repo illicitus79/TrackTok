@@ -119,29 +119,29 @@ def generate_password_reset_token(user: User) -> str:
     return token
 
 
-def verify_password_reset_token(token: str) -> Optional[User]:
+def verify_password_reset_token(token: str) -> Optional["PasswordResetToken"]:
     """
-    Verify password reset token and return associated user.
+    Verify password reset token and return token record.
     
     Args:
         token: Reset token string
         
     Returns:
-        User instance if token is valid, None otherwise
+        PasswordResetToken instance if token is valid, None otherwise
     """
     from app.core.extensions import db
     from app.models.user import PasswordResetToken
 
     reset_token = (
-        db.session.query(PasswordResetToken).filter_by(token=token, used_at=None).first()
+        db.session.query(PasswordResetToken)
+        .filter_by(token=token, used_at=None, is_deleted=False)
+        .first()
     )
 
     if not reset_token or not reset_token.is_valid():
         return None
 
-    user = db.session.query(User).filter_by(id=reset_token.user_id).first()
-
-    return user
+    return reset_token
 
 
 def check_rate_limit(user_id: str, action: str, limit: int, window: int = 3600) -> bool:

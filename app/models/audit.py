@@ -19,6 +19,8 @@ class AuditAction(str, Enum):
     LOGIN = "login"
     LOGOUT = "logout"
     PASSWORD_CHANGE = "password_change"
+    PASSWORD_RESET_REQUEST = "password_reset_request"
+    PASSWORD_RESET = "password_reset"
     USER_INVITED = "user_invited"
     ROLE_CHANGE = "role_change"
     APPROVE = "approve"

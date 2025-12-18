@@ -15,11 +15,17 @@ from app.schemas.tenant import TenantCreateSchema
 from app.schemas.user import (
     LoginSchema,
     PasswordChangeSchema,
+    PasswordResetRequestSchema,
+    PasswordResetSchema,
     UserCreateSchema,
     UserInviteSchema,
     UserSchema,
 )
 from app.utils.decorators import roles_required
+from app.services.password_reset import (
+    complete_password_reset,
+    request_password_reset,
+)
 
 blp = Blueprint("auth", __name__, url_prefix="/auth", description="Authentication operations")
 
@@ -294,6 +300,77 @@ class ChangePassword(MethodView):
         logger.info(f"Password changed", user_id=user.id)
 
         return jsonify({"message": "Password changed successfully"})
+
+
+@blp.route("/password-reset/request")
+class PasswordResetRequest(MethodView):
+    """Password reset request endpoint."""
+
+    @limiter.limit("5 per hour")
+    @blp.arguments(PasswordResetRequestSchema)
+    @blp.response(200)
+    def post(self, data):
+        """Generate reset token and send email."""
+        tenant_id = g.get("tenant_id")
+        if not tenant_id:
+            return (
+                jsonify(
+                    {
+                        "error": "Tenant context required",
+                        "code": "TENANT_REQUIRED",
+                    }
+                ),
+                400,
+            )
+
+        user = (
+            User.query.filter_by(
+                email=data["email"],
+                tenant_id=tenant_id,
+                is_deleted=False,
+            )
+            .first()
+        )
+
+        if user and user.is_active:
+            try:
+                request_password_reset(user)
+                logger.info("Password reset email dispatched", user_id=user.id, tenant_id=tenant_id)
+            except Exception as exc:
+                logger.error(f"Failed to process password reset request: {exc}")
+
+        # Always return success to avoid account enumeration
+        return jsonify(
+            {
+                "message": "If an account exists for that email, a reset link has been sent.",
+                "code": "PASSWORD_RESET_EMAIL_SENT",
+            }
+        )
+
+
+@blp.route("/password-reset/confirm")
+class PasswordResetConfirm(MethodView):
+    """Password reset confirmation endpoint."""
+
+    @limiter.limit("10 per hour")
+    @blp.arguments(PasswordResetSchema)
+    @blp.response(200)
+    def post(self, data):
+        """Reset password using token."""
+        tenant_id = g.get("tenant_id")
+        success, message = complete_password_reset(
+            data["token"], data["new_password"], expected_tenant_id=tenant_id
+        )
+
+        if not success:
+            return jsonify({"error": message, "code": "INVALID_TOKEN"}), 400
+
+        logger.info(
+            "Password reset completed",
+            tenant_id=g.get("tenant_id"),
+            user_id=g.get("user_id"),
+        )
+        return jsonify({"message": "Password reset successfully"})
 
 
 @blp.route("/invite")

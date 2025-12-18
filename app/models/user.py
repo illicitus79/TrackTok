@@ -159,7 +159,8 @@ class PasswordResetToken(BaseModel):
         """Check if token is still valid."""
         return not self.used_at and datetime.utcnow() < self.expires_at
 
-    def mark_used(self):
+    def mark_used(self, commit: bool = True):
         """Mark token as used."""
         self.used_at = datetime.utcnow()
-        db.session.commit()
+        if commit:
+            db.session.commit()

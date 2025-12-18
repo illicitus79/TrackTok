@@ -4,15 +4,22 @@ from decimal import Decimal
 import base64
 from uuid import uuid4
 
-from flask import render_template, redirect, url_for, request, flash, session, current_app, jsonify
+from flask import render_template, redirect, url_for, request, flash, session, current_app, jsonify, g
 from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token, set_access_cookies
 from flask_login import logout_user, login_user, login_required, current_user
 from werkzeug.utils import secure_filename
 
 from app.web import bp
-from app.web.forms import LoginForm, RegistrationForm
+from app.web.forms import (
+    ForgotPasswordForm,
+    LoginForm,
+    RegistrationForm,
+    ResetPasswordForm,
+)
 from app.models.user import User
 from app.core.extensions import db
+from app.core.security import verify_password_reset_token
+from app.services.password_reset import complete_password_reset, request_password_reset
 
 
 def get_currency_options():
@@ -1017,10 +1024,76 @@ def project_categories_json(project_id):
     )
 
 
-@bp.route("/forgot-password")
+@bp.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():
     """Forgot password page."""
-    return render_template("auth/forgot_password.html")
+    form = ForgotPasswordForm()
+
+    if form.validate_on_submit():
+        tenant_id = g.get("tenant_id")
+        email = (form.email.data or "").strip().lower()
+
+        user = None
+        if tenant_id:
+            user = (
+                User.query.filter_by(
+                    email=email,
+                    tenant_id=tenant_id,
+                    is_deleted=False,
+                )
+                .first()
+            )
+        else:
+            matches = User.query.filter_by(email=email, is_deleted=False).all()
+            if len(matches) == 1:
+                user = matches[0]
+                g.tenant_id = user.tenant_id
+            elif len(matches) > 1:
+                flash(
+                    "We found this email in multiple workspaces. Please use your tenant subdomain or contact an admin.",
+                    "error",
+                )
+                return render_template("auth/forgot_password.html", form=form)
+
+        if user and user.is_active:
+            request_password_reset(user)
+
+        flash(
+            "If an account exists for that email, we've sent password reset instructions.",
+            "success",
+        )
+        return redirect(url_for("web.forgot_password"))
+
+    return render_template("auth/forgot_password.html", form=form)
+
+
+@bp.route("/reset-password/<token>", methods=["GET", "POST"])
+def reset_password(token):
+    """Reset password with a valid token."""
+    reset_token = verify_password_reset_token(token)
+    if not reset_token:
+        flash("This password reset link is invalid or has expired. Please request a new one.", "error")
+        return redirect(url_for("web.forgot_password"))
+
+    user = User.query.filter_by(id=reset_token.user_id, is_deleted=False).first()
+    if user and not g.get("tenant_id"):
+        g.tenant_id = user.tenant_id
+
+    form = ResetPasswordForm(token=token)
+
+    if form.validate_on_submit():
+        success, message = complete_password_reset(
+            form.token.data,
+            form.password.data,
+            expected_tenant_id=g.get("tenant_id"),
+        )
+        if success:
+            flash("Your password has been reset. You can sign in with your new credentials.", "success")
+            return redirect(url_for("web.login"))
+
+        flash(message or "Unable to reset password.", "error")
+
+    return render_template("auth/reset_password.html", form=form)
 
 
 @bp.route("/expenses")
