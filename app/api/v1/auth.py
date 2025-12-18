@@ -26,7 +26,7 @@ from app.services.password_reset import (
     complete_password_reset,
     request_password_reset,
 )
-from app.services.tenant import generate_unique_subdomain
+from app.services.tenant import generate_unique_subdomain, apply_plan_tier
 
 blp = Blueprint("auth", __name__, url_prefix="/auth", description="Authentication operations")
 
@@ -93,6 +93,7 @@ class TenantRegistration(MethodView):
 
             # Create tenant
             tenant = Tenant(name=data["name"], subdomain=data["subdomain"])
+            apply_plan_tier(tenant, "basic")
             db.session.add(tenant)
             db.session.flush()  # Get tenant ID
 

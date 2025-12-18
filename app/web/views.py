@@ -4,7 +4,7 @@ from decimal import Decimal
 import base64
 from uuid import uuid4
 
-from flask import render_template, redirect, url_for, request, flash, session, current_app, jsonify, g
+from flask import render_template, redirect, url_for, request, flash, session, current_app, jsonify, g, abort
 from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token, set_access_cookies
 from flask_login import logout_user, login_user, login_required, current_user
 from werkzeug.utils import secure_filename
@@ -16,12 +16,17 @@ from app.web.forms import (
     RegistrationForm,
     ResetPasswordForm,
 )
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.models.alert import Alert
 from app.core.extensions import db
 from app.core.security import verify_password_reset_token
 from app.services.password_reset import complete_password_reset, request_password_reset
-from app.services.tenant import generate_unique_subdomain
+from app.services.tenant import (
+    generate_unique_subdomain,
+    PLAN_TIERS,
+    apply_plan_tier,
+    get_plan_limits,
+)
 
 
 def get_currency_options():
@@ -77,6 +82,13 @@ TIMEZONE_OPTIONS = [
     "Asia/Kolkata",
     "Australia/Sydney",
 ]
+
+TIER_ADMIN_EMAIL = "illicitusp@gmail.com"
+
+
+def _is_tier_admin(user) -> bool:
+    """Return True if the current user has tier admin privileges."""
+    return bool(user and getattr(user, "email", "").lower() == TIER_ADMIN_EMAIL)
 
 
 def get_tenant_preferences():
@@ -301,6 +313,7 @@ def register():
                 name=form.tenant_name.data,
                 subdomain=subdomain
             )
+            apply_plan_tier(tenant, "basic")
             db.session.add(tenant)
             db.session.flush()  # Get tenant ID
             
@@ -467,6 +480,48 @@ def settings():
     )
 
 
+@bp.route("/admin/tenants", methods=["GET", "POST"])
+@login_required
+def admin_tenants():
+    """View and update tenant plan tiers (restricted to tier admin)."""
+    if not _is_tier_admin(current_user):
+        abort(403)
+
+    from app.models.tenant import Tenant
+
+    if request.method == "POST":
+        tenant_id = request.form.get("tenant_id")
+        tier_key = request.form.get("plan")
+        tenant = Tenant.query.filter_by(id=tenant_id).first()
+        if not tenant:
+            flash("Tenant not found.", "error")
+            return redirect(url_for("web.admin_tenants"))
+        try:
+            apply_plan_tier(tenant, tier_key)
+            db.session.commit()
+            flash(f"Updated '{tenant.name}' to {PLAN_TIERS[tier_key]['label']} tier.", "success")
+        except Exception as exc:
+            db.session.rollback()
+            flash(f"Could not update tier: {exc}", "error")
+        return redirect(url_for("web.admin_tenants"))
+
+    tenants = (
+        db.session.query(Tenant, User.email.label("owner_email"))
+        .join(User, User.tenant_id == Tenant.id)
+        .filter(User.role == UserRole.OWNER.value, User.is_deleted == False)
+        .order_by(Tenant.created_at.desc())
+        .all()
+    )
+    # Flatten results: list of tuples (tenant, owner_email)
+    tenant_limits = {t.id: get_plan_limits(t) for t, _ in tenants}
+    return render_template(
+        "admin/tenants.html",
+        tenants=tenants,
+        plan_tiers=PLAN_TIERS,
+        tenant_limits=tenant_limits,
+    )
+
+
 @bp.route("/projects")
 @login_required
 def projects():
@@ -494,9 +549,17 @@ def project_new():
     date_format = (current_user.tenant.settings or {}).get("date_format", "dd/mm/yyyy")
     date_format = (current_user.tenant.settings or {}).get("date_format", "dd/mm/yyyy")
     accounts = Account.query.filter_by(tenant_id=tenant_id, is_deleted=False).order_by(Account.name).all()
+    limits = get_plan_limits(current_user.tenant)
 
     if request.method == "POST":
         try:
+            existing_projects = Project.query.filter_by(
+                tenant_id=tenant_id,
+                is_deleted=False
+            ).count()
+            if existing_projects >= limits.get("max_projects", 999999):
+                raise ValueError(f"Project limit reached for your plan ({limits.get('max_projects')} max).")
+
             name = request.form.get("name", "").strip()
             if not name:
                 raise ValueError("Project name is required.")
@@ -1263,6 +1326,7 @@ def expense_new():
     tenant_id = current_user.tenant_id
     tenant_currency, tz_name = get_tenant_preferences()
     date_format = (current_user.tenant.settings or {}).get("date_format", "dd/mm/yyyy")
+    limits = get_plan_limits(current_user.tenant)
     accounts_query = Account.query.filter_by(tenant_id=tenant_id, is_deleted=False)
     projects = Project.query.filter_by(tenant_id=tenant_id, is_deleted=False).order_by(Project.name).all()
     categories_query = Category.query.filter_by(tenant_id=tenant_id, is_deleted=False)
@@ -1316,6 +1380,18 @@ def expense_new():
 
             project_id = request.form.get("project_id") or None
             selected_project_id = project_id
+            if project_id:
+                project_expense_count = (
+                    Expense.query.filter_by(
+                        tenant_id=tenant_id,
+                        project_id=project_id,
+                        is_deleted=False,
+                    ).count()
+                )
+                if project_expense_count >= limits.get("max_project_expenses", 999999):
+                    raise ValueError(
+                        f"Expense limit reached for this project ({limits.get('max_project_expenses')} max)."
+                    )
             category_id = request.form.get("category_id") or None
             if category_id and not project_id:
                 raise ValueError("Select a project before assigning a category.")
@@ -1649,9 +1725,17 @@ def account_new():
     from app.models.account import Account
 
     tenant_currency, _ = get_tenant_preferences()
+    limits = get_plan_limits(current_user.tenant)
 
     if request.method == "POST":
         try:
+            existing_accounts = Account.query.filter_by(
+                tenant_id=current_user.tenant_id,
+                is_deleted=False
+            ).count()
+            if existing_accounts >= limits.get("max_accounts", 999999):
+                raise ValueError(f"Account limit reached for your plan ({limits.get('max_accounts')} max).")
+
             opening_balance = Decimal(request.form.get("opening_balance", "0") or "0")
             threshold = request.form.get("low_balance_threshold")
             

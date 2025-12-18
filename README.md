@@ -21,6 +21,12 @@ A production-ready, API-first multi-tenant expense tracking platform built with 
 - **Rate Limiting**: Redis-powered API rate limiting
 - **Production-Ready**: Docker, CI/CD, comprehensive test coverage
 
+## Plan tiers (current defaults)
+
+- **Basic (default)**: 1 user, 3 projects, 3 accounts, up to 100 expenses per project (soft cap), total expense safety cap 100,000.
+- **Professional**: 1 user (multi-user coming later), higher limits (projects/accounts up to 500, expenses per project up to 1,000,000), total expense cap 1,000,000.
+- Tier changes are managed from the Tenants admin screen (restricted to the tier admin account).
+
 ## 📋 Tech Stack
 
 **Backend:**

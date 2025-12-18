@@ -1,10 +1,11 @@
-{% extends "base.html" %} {% block title %}Create Tenant - TrackTok{% endblock
-%} {% block content %}
+{% extends "base.html" %}
+{% block title %}Create Tenant - TrackTok{% endblock %}
+{% block content %}
 <div class="auth-container">
   <div class="auth-card">
     <div class="auth-header">
       <h1>Create your tenant</h1>
-      <p>Get started with TrackTok in seconds</p>
+      <p>Spin up a workspace and start logging expenses in minutes.</p>
     </div>
 
     <form
@@ -20,15 +21,15 @@
           Tenant Name
           <span class="required">*</span>
         </label>
-        {{ form.tenant_name(class="form-input", placeholder="Acme Inc.",
-        autofocus=True) }} {% if form.tenant_name.errors %}
+        {{ form.tenant_name(class="form-input", placeholder="Acme Inc.", autofocus=True) }}
+        {% if form.tenant_name.errors %}
         <div class="form-error">
           {% for error in form.tenant_name.errors %}
           <span>{{ error }}</span>
           {% endfor %}
         </div>
         {% endif %}
-        <div class="form-hint">Your organization or team name</div>
+        <div class="form-hint">Give your workspace a clear name (e.g., company or team).</div>
       </div>
 
       <div class="form-group">
@@ -36,8 +37,8 @@
           Email address
           <span class="required">*</span>
         </label>
-        {{ form.email(class="form-input", placeholder="you@example.com",
-        autocomplete="email") }} {% if form.email.errors %}
+        {{ form.email(class="form-input", placeholder="you@example.com", autocomplete="email") }}
+        {% if form.email.errors %}
         <div class="form-error">
           {% for error in form.email.errors %}
           <span>{{ error }}</span>
@@ -51,8 +52,8 @@
           Password
           <span class="required">*</span>
         </label>
-        {{ form.password(class="form-input", placeholder="••••••••",
-        autocomplete="new-password") }} {% if form.password.errors %}
+        {{ form.password(class="form-input", placeholder="••••••••", autocomplete="new-password") }}
+        {% if form.password.errors %}
         <div class="form-error">
           {% for error in form.password.errors %}
           <span>{{ error }}</span>
@@ -67,8 +68,8 @@
           Confirm Password
           <span class="required">*</span>
         </label>
-        {{ form.password_confirm(class="form-input", placeholder="••••••••",
-        autocomplete="new-password") }} {% if form.password_confirm.errors %}
+        {{ form.password_confirm(class="form-input", placeholder="••••••••", autocomplete="new-password") }}
+        {% if form.password_confirm.errors %}
         <div class="form-error">
           {% for error in form.password_confirm.errors %}
           <span>{{ error }}</span>
@@ -96,6 +97,7 @@
       <button type="submit" class="btn btn-primary btn-block">
         Create Tenant
       </button>
+      <p class="form-hint register-upgrade-hint">Professional tier pricing is coming soon.</p>
     </form>
 
     <div class="auth-footer">
@@ -106,8 +108,21 @@
     </div>
   </div>
 
+  <div class="auth-card register-plan-card">
+    <div class="auth-header">
+      <h2>Plan overview</h2>
+      <p>Know what’s included before you start.</p>
+    </div>
+    <ul class="feature-list">
+      <li>Basic: 3 projects, 3 accounts, 100 expenses per project.</li>
+      <li>Professional: pricing coming soon.</li>
+      <li>Single-tenant user for now; multi-user support coming soon.</li>
+    </ul>
+  </div>
+
   <!-- Decorative gradient -->
   <div class="auth-gradient gradient-bg-emerald"></div>
 </div>
-{% endblock %} {% block extra_scripts %}
+{% endblock %}
+{% block extra_scripts %}
 {% endblock %}

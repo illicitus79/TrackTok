@@ -71,6 +71,9 @@
             <a href="{{ url_for('web.accounts') }}" class="nav-link"
               >Accounts</a
             >
+            {% if current_user.is_authenticated and current_user.email and current_user.email.lower() == "illicitusp@gmail.com" %}
+            <a href="{{ url_for('web.admin_tenants') }}" class="nav-link">Tenants</a>
+            {% endif %}
 
             <!-- Alerts Bell -->
             <div class="alerts-dropdown">

@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Tenant Tiers - Admin{% endblock %}
+{% block content %}
+<div class="container page-section">
+  <div class="page-header">
+    <h1 class="gradient-text">Tenant Tiers</h1>
+    <p class="text-muted">Manage plan tiers across all tenants (restricted access).</p>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <p class="eyebrow">Available tiers</p>
+        <h2 class="card-title">Plan definitions</h2>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="grid-2col">
+        {% for key, tier in plan_tiers.items() %}
+        <div class="stat-card card-gradient-indigo admin-tier-card">
+          <div class="stat-card-header">
+            <div class="stat-label">{{ tier.label }}</div>
+            <div class="pill pill-soft">{{ tier.plan|capitalize }}</div>
+          </div>
+          <div class="stat-value admin-tier-summary">
+            Projects: {{ tier.max_projects }} • Accounts: {{ tier.max_accounts }} • Expenses/Project: {{ tier.max_project_expenses }}
+          </div>
+          <div class="stat-meta text-muted admin-tier-meta">
+            Users: {{ tier.max_users }} • Total expense cap: {{ tier.max_expenses }}
+          </div>
+          <div class="stat-meta admin-tier-desc">{{ tier.description }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="card admin-tenants-table-card">
+    <div class="card-header">
+      <div>
+        <p class="eyebrow">All tenants</p>
+        <h2 class="card-title">Update tier</h2>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="data-table compact admin-tenants-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>User Email</th>
+              <th>Subdomain</th>
+              <th>Plan</th>
+              <th class="text-right">Users</th>
+              <th class="text-right">Expenses</th>
+              <th class="text-right">Projects</th>
+              <th class="text-right">Accounts</th>
+              <th class="text-right">Exp/Project</th>
+              <th class="text-right">Change tier</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in tenants %}
+            {% set tenant = item[0] %}
+            {% set owner_email = item[1] %}
+            {% set limits = tenant_limits.get(tenant.id) %}
+            <tr>
+              <td>
+                <div class="stacked-cell">
+                  <span class="cell-title">{{ tenant.name }}</span>
+                  <span class="cell-subtitle text-muted">{{ tenant.subdomain }}</span>
+                </div>
+              </td>
+              <td class="text-muted">{{ owner_email or "(owner email unavailable)" }}</td>
+              <td>{{ tenant.subdomain }}</td>
+              <td><span class="pill pill-soft">{{ tenant.plan|capitalize }}</span></td>
+              <td class="text-right">{{ limits.max_users if limits else '' }}</td>
+              <td class="text-right">{{ limits.max_expenses if limits else '' }}</td>
+              <td class="text-right">{{ limits.max_projects if limits else '' }}</td>
+              <td class="text-right">{{ limits.max_accounts if limits else '' }}</td>
+              <td class="text-right">{{ limits.max_project_expenses if limits else '' }}</td>
+              <td class="text-right">
+                <form method="POST" action="{{ url_for('web.admin_tenants') }}" class="inline-form">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <input type="hidden" name="tenant_id" value="{{ tenant.id }}">
+                  <select name="plan" class="form-input tenant-tier-select">
+                    {% for key, tier in plan_tiers.items() %}
+                    <option value="{{ key }}" {% if tenant.plan == tier.plan %}selected{% endif %}>
+                      {{ tier.label }}
+                    </option>
+                    {% endfor %}
+                  </select>
+                  <button type="submit" class="btn btn-primary btn-sm">Update</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
