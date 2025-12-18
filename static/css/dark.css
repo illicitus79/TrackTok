@@ -3600,3 +3600,84 @@ a:hover {
     height: 110px;
   }
 }
+
+/* ========================================================================== */
+/* Categories table (responsive)                                              */
+/* ========================================================================== */
+.category-table-wrap {
+  overflow-x: auto;
+}
+
+@media (max-width: 900px) {
+  .category-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+  }
+
+  .category-table thead {
+    display: none;
+  }
+
+  .category-table tbody tr {
+    display: block;
+    margin-bottom: var(--spacing-md);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--panel);
+    box-shadow: var(--shadow-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  .category-table tbody tr:last-child {
+    margin-bottom: 0;
+  }
+
+  .category-table tbody tr form {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+  }
+
+  .category-table tbody td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: var(--spacing-xs) 0;
+    border: 0;
+  }
+
+  .category-table tbody td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-right: var(--spacing-sm);
+    flex: 0 0 120px;
+  }
+
+  .category-table .form-input,
+  .category-table .color-row,
+  .category-table .input-with-action,
+  .category-table .form-check {
+    width: 100%;
+  }
+
+  .category-table .input-with-action {
+    gap: var(--spacing-xs);
+  }
+
+  .category-table .input-with-action .btn {
+    white-space: nowrap;
+  }
+
+  .category-table .color-row {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--spacing-sm);
+  }
+
+  .category-table td[data-label="Actions"] {
+    justify-content: flex-end;
+  }
+}
