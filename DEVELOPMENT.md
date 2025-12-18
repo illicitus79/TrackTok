@@ -5,30 +5,33 @@
 ### First Time Setup
 
 1. **Install Dependencies**
+
    ```powershell
    pip install -r requirements.txt
    ```
 
 2. **Set Up Database**
+
    ```powershell
    # Start PostgreSQL (via Docker or local)
    docker-compose up -d db
-   
+
    # Initialize database
    python scripts/init_db.py
-   
+
    # Seed demo data
    python scripts/seed.py
    ```
 
 3. **Run Application**
+
    ```powershell
    # Terminal 1: Web server
    flask run
-   
+
    # Terminal 2: Celery worker
    celery -A app.tasks.celery_app worker --loglevel=info
-   
+
    # Terminal 3: Celery beat (scheduler)
    celery -A app.tasks.celery_app beat --loglevel=info
    ```
@@ -45,7 +48,9 @@ After seeding, use these credentials:
 ### Testing Multi-Tenancy
 
 #### Via Subdomain (Development)
+
 Add to your hosts file (`C:\Windows\System32\drivers\etc\hosts`):
+
 ```
 127.0.0.1 acme.localhost
 127.0.0.1 demo.localhost
@@ -54,6 +59,7 @@ Add to your hosts file (`C:\Windows\System32\drivers\etc\hosts`):
 Then access: `http://acme.localhost:5000`
 
 #### Via Header
+
 ```http
 GET /api/v1/expenses
 Authorization: Bearer <token>
@@ -74,6 +80,7 @@ X-Tenant-Id: <tenant-id>
 ## Architecture Decisions
 
 ### Multi-Tenancy Strategy
+
 - **Single database, single schema** with `tenant_id` discriminator
 - Auto-filtering via custom Query class
 - Enforced at middleware level
@@ -81,6 +88,7 @@ X-Tenant-Id: <tenant-id>
 - Trade-offs: Requires careful query auditing
 
 ### Security
+
 - JWT access tokens (1 hour expiry)
 - JWT refresh tokens (30 days expiry)
 - Bcrypt password hashing
@@ -88,6 +96,7 @@ X-Tenant-Id: <tenant-id>
 - RBAC with 4 roles (Owner > Admin > Analyst > Member)
 
 ### Background Jobs
+
 - Celery for async task processing
 - Daily budget alert checks (9 AM)
 - Monthly report generation (1st of month)
@@ -96,6 +105,7 @@ X-Tenant-Id: <tenant-id>
 ## API Examples
 
 ### Register New Tenant
+
 ```http
 POST /api/v1/auth/register
 Content-Type: application/json
@@ -111,6 +121,7 @@ Content-Type: application/json
 ```
 
 ### Create Expense
+
 ```http
 POST /api/v1/expenses/
 Authorization: Bearer <token>
@@ -129,6 +140,7 @@ Content-Type: application/json
 ```
 
 ### Create Budget
+
 ```http
 POST /api/v1/budgets/
 Authorization: Bearer <token>
@@ -149,6 +161,7 @@ Content-Type: application/json
 ## Development Tips
 
 ### Database Migrations
+
 ```powershell
 # Create migration after model changes
 flask db migrate -m "Add new field"
@@ -163,6 +176,7 @@ flask db downgrade
 ```
 
 ### Testing
+
 ```powershell
 # Run all tests
 pytest
@@ -177,6 +191,7 @@ pytest -m integration
 ```
 
 ### Debugging
+
 ```powershell
 # Enable SQL query logging
 $env:SQLALCHEMY_ECHO="True"
@@ -195,7 +210,9 @@ celery -A app.tasks.celery_app flower
 ## Production Deployment
 
 ### Environment Variables
+
 Ensure these are set in production:
+
 ```env
 SECRET_KEY=<strong-random-key>
 JWT_SECRET_KEY=<strong-random-key>
@@ -206,6 +223,7 @@ DEBUG=False
 ```
 
 ### Security Checklist
+
 - [ ] Generate strong secrets
 - [ ] Enable HTTPS/SSL
 - [ ] Configure CORS properly
@@ -220,15 +238,19 @@ DEBUG=False
 ### Common Issues
 
 **Issue**: "Tenant not found" errors
+
 - Solution: Ensure X-Tenant-Id header is set or using correct subdomain
 
 **Issue**: JWT token expired
+
 - Solution: Use refresh endpoint `/api/v1/auth/refresh`
 
 **Issue**: Database connection errors
+
 - Solution: Check PostgreSQL is running, verify DATABASE_URL
 
 **Issue**: Celery tasks not running
+
 - Solution: Ensure Redis is running, check worker logs
 
 ## Next Steps / Roadmap
@@ -252,4 +274,5 @@ DEBUG=False
 - [Chart.js](https://www.chartjs.org/)
 
 ---
+
 Last updated: 2025-01-15
