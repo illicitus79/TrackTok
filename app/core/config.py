@@ -136,6 +136,21 @@ class ProductionConfig(Config):
     DEBUG = False
     TESTING = False
 
+    def __init__(self) -> None:
+        insecure_defaults = {
+            "SECRET_KEY": "dev-secret-key-change-in-production",
+            "JWT_SECRET_KEY": "jwt-secret-key-change-in-production",
+        }
+        errors = [
+            f"{key} must be set to a non-default value in production"
+            for key, default in insecure_defaults.items()
+            if os.getenv(key, default) == default
+        ]
+        if errors:
+            raise RuntimeError(
+                "Refusing to start with insecure configuration:\n" + "\n".join(errors)
+            )
+
     # Override with stricter production settings
     @property
     def SQLALCHEMY_ENGINE_OPTIONS(self) -> Dict[str, Any]:

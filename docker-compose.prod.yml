@@ -10,6 +10,20 @@ services:
       - DEBUG=False
     command: gunicorn -w 4 -b 0.0.0.0:5000 --timeout 120 --access-logfile - --error-logfile - 'app:create_app("production")'
     restart: always
+    environment:
+      - DATABASE_URL=postgresql://tracktok:tracktok@db:5432/tracktok
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    env_file:
+      - .env
+    volumes:
+      - uploads-data:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     deploy:
       resources:
         limits:
@@ -20,9 +34,19 @@ services:
           memory: 512M
 
   db:
+    image: postgres:16-alpine
     restart: always
+    environment:
+      - POSTGRES_USER=tracktok
+      - POSTGRES_PASSWORD=tracktok
+      - POSTGRES_DB=tracktok
     volumes:
       - postgres-data-prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tracktok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     deploy:
       resources:
         limits:
@@ -33,10 +57,16 @@ services:
           memory: 512M
 
   redis:
+    image: redis:7-alpine
     restart: always
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-changeme}
     volumes:
       - redis-data-prod:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     deploy:
       resources:
         limits:
@@ -49,6 +79,18 @@ services:
   worker:
     restart: always
     command: celery -A app.tasks.celery_app worker --loglevel=info --concurrency=4
+    environment:
+      - DATABASE_URL=postgresql://tracktok:tracktok@db:5432/tracktok
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     deploy:
       resources:
         limits:
@@ -60,6 +102,19 @@ services:
 
   beat:
     restart: always
+    volumes:
+      - celerybeat-data:/app/celerybeat
+    environment:
+      - DATABASE_URL=postgresql://tracktok:tracktok@db:5432/tracktok
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    env_file:
+      - .env
+    command: celery -A app.tasks.celery_app beat --loglevel=info --schedule=/app/celerybeat/celerybeat-schedule
+    depends_on:
+      redis:
+        condition: service_healthy
     deploy:
       resources:
         limits:
@@ -81,3 +136,5 @@ services:
 volumes:
   postgres-data-prod:
   redis-data-prod:
+  uploads-data:
+  celerybeat-data:

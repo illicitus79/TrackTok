@@ -40,6 +40,14 @@ def create_app(config_name: str = None) -> Flask:
     setup_logging(app)
     logger.info("Starting TrackTok application", env=app.config.get("FLASK_ENV"))
 
+    # Resolve UPLOAD_FOLDER to an absolute path so it works regardless of CWD,
+    # then create it (and any parents) if it doesn't already exist.
+    upload_folder = app.config.get("UPLOAD_FOLDER", "uploads")
+    if not os.path.isabs(upload_folder):
+        upload_folder = os.path.join(root_dir, upload_folder)
+    app.config["UPLOAD_FOLDER"] = upload_folder
+    os.makedirs(upload_folder, exist_ok=True)
+
     # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db)
