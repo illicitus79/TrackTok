@@ -113,6 +113,8 @@ services:
       - .env
     command: celery -A app.tasks.celery_app beat --loglevel=info --schedule=/app/celerybeat/celerybeat-schedule
     depends_on:
+      db:
+        condition: service_healthy
       redis:
         condition: service_healthy
     deploy:
