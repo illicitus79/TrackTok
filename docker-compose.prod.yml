@@ -5,12 +5,11 @@ version: "3.8"
 
 services:
   web:
-    environment:
-      - FLASK_ENV=production
-      - DEBUG=False
     command: gunicorn -w 4 -b 0.0.0.0:5000 --timeout 120 --access-logfile - --error-logfile - 'app:create_app("production")'
     restart: always
     environment:
+      - FLASK_ENV=production
+      - DEBUG=False
       - DATABASE_URL=postgresql://tracktok:tracktok@db:5432/tracktok
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/0
