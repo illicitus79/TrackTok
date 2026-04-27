@@ -5,6 +5,7 @@ version: "3.8"
 
 services:
   web:
+    entrypoint: ["bash", "docker/entrypoint.sh"]
     command: gunicorn -w 4 -b 0.0.0.0:5000 --timeout 120 --access-logfile - --error-logfile - 'app:create_app("production")'
     restart: always
     environment:
@@ -78,6 +79,7 @@ services:
 
   worker:
     restart: always
+    entrypoint: ["bash", "docker/entrypoint.sh"]
     command: celery -A app.tasks.celery_app worker --loglevel=info --concurrency=4
     environment:
       - DATABASE_URL=postgresql://tracktok:tracktok@db:5432/tracktok
@@ -103,6 +105,7 @@ services:
 
   beat:
     restart: always
+    entrypoint: ["bash", "docker/entrypoint.sh"]
     volumes:
       - celerybeat-data:/app/celerybeat
     environment:

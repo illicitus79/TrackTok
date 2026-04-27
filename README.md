@@ -182,11 +182,12 @@ docker compose logs -f web
 If Docker reports `exec: "docker/entrypoint.sh": permission denied`, rebuild after pulling the latest Dockerfile changes:
 
 ```powershell
+chmod +x docker/entrypoint.sh
 docker compose down
-docker compose up -d --build
+docker compose up -d --build --force-recreate
 ```
 
-The Docker images invoke the entrypoint through `bash`, so the container no longer depends on host executable-bit handling.
+The Docker images and Compose services invoke the entrypoint through `bash`, so the container no longer depends on host executable-bit handling. `--force-recreate` is useful when an old container still has the previous entrypoint cached.
 
 See [docs/DOCKER_GUIDE.md](docs/DOCKER_GUIDE.md) for Docker-specific notes.
 
