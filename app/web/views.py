@@ -119,6 +119,18 @@ def ensure_accounts_use_tenant_currency(accounts, tenant_currency: str):
     return accounts
 
 
+def get_project_allowed_account_ids(project_id: str) -> list[str]:
+    """Return cached allowed account IDs for a project, or an empty list if unavailable."""
+    if not project_id or not hasattr(current_app, "redis"):
+        return []
+    try:
+        allowed_str = current_app.redis.get(f"project:{project_id}:accounts")
+    except Exception as exc:
+        current_app.logger.warning(f"Could not read project account cache: {exc}")
+        return []
+    return [account_id for account_id in (allowed_str or "").split(",") if account_id]
+
+
 def _prepare_image_attachments(files):
     """
     Convert uploaded image files to attachment dicts stored in the DB.
@@ -1338,13 +1350,10 @@ def expense_new():
         categories = categories_query.filter_by(project_id=selected_project_id).order_by(Category.name).all()
 
     # If the expense is tied to a project, restrict accounts based on allowed list from Redis
-    allowed_account_ids = None
     if initial_project_id:
-        allowed_str = current_app.redis.get(f"project:{initial_project_id}:accounts")
-        if allowed_str:
-            allowed_account_ids = [aid for aid in allowed_str.split(",") if aid]
-            if allowed_account_ids:
-                accounts_query = accounts_query.filter(Account.id.in_(allowed_account_ids))
+        allowed_account_ids = get_project_allowed_account_ids(initial_project_id)
+        if allowed_account_ids:
+            accounts_query = accounts_query.filter(Account.id.in_(allowed_account_ids))
 
     accounts = ensure_accounts_use_tenant_currency(
         accounts_query.order_by(Account.name).all(),
@@ -1435,11 +1444,9 @@ def expense_new():
 
     accounts_query = Account.query.filter_by(tenant_id=tenant_id, is_deleted=False)
     if selected_project_id:
-        allowed_str = current_app.redis.get(f"project:{selected_project_id}:accounts")
-        if allowed_str:
-            allowed_account_ids = [aid for aid in allowed_str.split(",") if aid]
-            if allowed_account_ids:
-                accounts_query = accounts_query.filter(Account.id.in_(allowed_account_ids))
+        allowed_account_ids = get_project_allowed_account_ids(selected_project_id)
+        if allowed_account_ids:
+            accounts_query = accounts_query.filter(Account.id.in_(allowed_account_ids))
     accounts = ensure_accounts_use_tenant_currency(
         accounts_query.order_by(Account.name).all(),
         tenant_currency,
@@ -1491,12 +1498,24 @@ def expense_edit(expense_id):
     from app.models.user import User
 
     tenant_id = current_user.tenant_id
-    tenant_currency, _ = get_tenant_preferences()
+    tenant_currency, tz_name = get_tenant_preferences()
     date_format = (current_user.tenant.settings or {}).get("date_format", "dd/mm/yyyy")
     expense = Expense.query.filter_by(id=expense_id, tenant_id=tenant_id, is_deleted=False).first()
     if not expense:
         flash("Expense not found.", "error")
         return redirect(url_for("web.expenses"))
+
+    expense_time_display = ""
+    if expense.expense_date:
+        try:
+            from zoneinfo import ZoneInfo
+
+            expense_dt = expense.expense_date
+            if expense_dt.tzinfo is None:
+                expense_dt = expense_dt.replace(tzinfo=timezone.utc)
+            expense_time_display = expense_dt.astimezone(ZoneInfo(tz_name or "UTC")).strftime("%H:%M")
+        except Exception:
+            expense_time_display = expense.expense_date.strftime("%H:%M")
 
     projects = Project.query.filter_by(tenant_id=tenant_id, is_deleted=False).order_by(Project.name).all()
     categories_query = Category.query.filter_by(tenant_id=tenant_id, is_deleted=False)
@@ -1508,11 +1527,9 @@ def expense_edit(expense_id):
     # Determine allowed accounts based on selected project
     accounts_query = Account.query.filter_by(tenant_id=tenant_id, is_deleted=False)
     if selected_project_id:
-        allowed_str = current_app.redis.get(f"project:{selected_project_id}:accounts")
-        if allowed_str:
-            allowed_ids = [aid for aid in allowed_str.split(",") if aid]
-            if allowed_ids:
-                accounts_query = accounts_query.filter(Account.id.in_(allowed_ids))
+        allowed_ids = get_project_allowed_account_ids(selected_project_id)
+        if allowed_ids:
+            accounts_query = accounts_query.filter(Account.id.in_(allowed_ids))
     accounts = ensure_accounts_use_tenant_currency(
         accounts_query.order_by(Account.name).all(),
         tenant_currency,
@@ -1528,11 +1545,9 @@ def expense_edit(expense_id):
             # Refresh allowed accounts when project changed
             accounts_query = Account.query.filter_by(tenant_id=tenant_id, is_deleted=False)
             if project_id:
-                allowed_str = current_app.redis.get(f"project:{project_id}:accounts")
-                if allowed_str:
-                    allowed_ids = [aid for aid in allowed_str.split(",") if aid]
-                    if allowed_ids:
-                        accounts_query = accounts_query.filter(Account.id.in_(allowed_ids))
+                allowed_ids = get_project_allowed_account_ids(project_id)
+                if allowed_ids:
+                    accounts_query = accounts_query.filter(Account.id.in_(allowed_ids))
             accounts = ensure_accounts_use_tenant_currency(
                 accounts_query.order_by(Account.name).all(),
                 tenant_currency,

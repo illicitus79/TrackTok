@@ -148,10 +148,19 @@ class ExpenseDetail(MethodView):
 
         old_values = ExpenseSchema().dump(expense)
 
+        field_map = {
+            "title": "vendor",
+            "description": "note",
+            "notes": "note",
+            "metadata": "expense_metadata",
+        }
         changed = False
         for key, value in data.items():
-            if getattr(expense, key) != value:
-                setattr(expense, key, value)
+            model_key = field_map.get(key, key)
+            if not hasattr(expense, model_key):
+                continue
+            if getattr(expense, model_key) != value:
+                setattr(expense, model_key, value)
                 changed = True
 
         if changed:
