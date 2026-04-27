@@ -49,5 +49,5 @@ COPY --chown=tracktok:tracktok . .
 RUN chmod +x docker/entrypoint.sh
 
 # Default command (overridden in docker-compose)
-ENTRYPOINT ["docker/entrypoint.sh"]
+ENTRYPOINT ["bash", "docker/entrypoint.sh"]
 CMD ["celery", "-A", "app.tasks.celery_app", "worker", "--loglevel=info"]

@@ -179,6 +179,15 @@ Check the web container logs if the app does not start or a request fails:
 docker compose logs -f web
 ```
 
+If Docker reports `exec: "docker/entrypoint.sh": permission denied`, rebuild after pulling the latest Dockerfile changes:
+
+```powershell
+docker compose down
+docker compose up -d --build
+```
+
+The Docker images invoke the entrypoint through `bash`, so the container no longer depends on host executable-bit handling.
+
 See [docs/DOCKER_GUIDE.md](docs/DOCKER_GUIDE.md) for Docker-specific notes.
 
 ## Documentation
