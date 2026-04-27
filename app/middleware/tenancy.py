@@ -27,8 +27,8 @@ class TenancyMiddleware:
         2. Subdomain extraction
         3. X-Tenant-Id header (fallback)
         """
-        # Skip tenant resolution for health check and auth endpoints
-        if request.path in ["/api/v1/health", "/api/v1/auth/login", "/api/v1/auth/register"]:
+        # Registration and health do not require an existing tenant. Login does.
+        if request.path in ["/api/v1/health", "/api/v1/auth/register"]:
             return
 
         tenant_id = None
@@ -61,7 +61,6 @@ class TenancyMiddleware:
             # For API endpoints, tenant is required
             if request.path.startswith("/api/v1/") and request.path not in [
                 "/api/v1/health",
-                "/api/v1/auth/login",
                 "/api/v1/auth/register",
             ]:
                 logger.warning("Tenant not resolved for API request", path=request.path)

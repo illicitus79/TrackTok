@@ -1,326 +1,211 @@
-# TrackTok - Multi-Tenant Expense Tracker
+# TrackTok
 
-[![CI](https://github.com/yourusername/tracktok/actions/workflows/ci.yml/badge.svg)](https://github.com/yourusername/tracktok/actions)
-[![Coverage](https://codecov.io/gh/yourusername/tracktok/branch/main/graph/badge.svg)](https://codecov.io/gh/yourusername/tracktok)
+TrackTok is a multi-tenant expense tracking application built with Flask, PostgreSQL, Redis, Celery, SQLAlchemy, and Alembic.
 
-A production-ready, API-first multi-tenant expense tracking platform built with Flask, PostgreSQL, Redis, and Celery.
+## Features
 
-## 🚀 Features
+- Multi-tenant expense, project, category, account, budget, and alert management
+- Web UI with Jinja templates and static CSS/JavaScript assets
+- REST API under `/api/v1/*`
+- OpenAPI documentation through Swagger UI and ReDoc
+- PostgreSQL schema management through Alembic migrations
+- Redis-backed rate limiting and Celery background jobs
 
-- **Multi-Tenancy**: Single-database architecture with subdomain/header-based tenant resolution
-- **RESTful API**: Full-featured `/api/v1/*` endpoints with OpenAPI 3.0 documentation
-- **Interactive API Docs**: Swagger UI and ReDoc for testing and exploring the API
-- **Postman Integration**: Auto-generated Postman collection for easy API testing
-- **Authentication**: JWT-based auth with refresh tokens
-- **Authorization**: Role-based access control (Owner, Admin, Analyst, Member)
-- **Budget Management**: Set budgets with automated alert system
-- **Real-time Analytics**: Interactive charts powered by Chart.js
-- **Background Jobs**: Celery-based async task processing
-- **Themeable UI**: Light/dark mode using CSS variables
-- **Audit Trail**: Immutable financial record tracking
-- **Rate Limiting**: Redis-powered API rate limiting
-- **Production-Ready**: Docker, CI/CD, comprehensive test coverage
+## Project Layout
 
-## Plan tiers (current defaults)
-
-- **Basic (default)**: 1 user, 3 projects, 3 accounts, up to 100 expenses per project (soft cap), total expense safety cap 100,000.
-- **Professional**: Higher limits (multi-user coming later). Pricing coming soon.
-- Tier changes are managed from the Tenants admin screen (restricted to the tier admin account).
-
-## 📋 Tech Stack
-
-**Backend:**
-
-- Python 3.11+
-- Flask 3.x
-- SQLAlchemy 2.x + Alembic
-- PostgreSQL 16
-- Redis 7
-- Celery 5.x
-- Flask-JWT-Extended
-- Flask-Smorest (OpenAPI)
-- Marshmallow 3.x
-
-**Frontend:**
-
-- Jinja2 templates
-- Custom CSS (theme variables)
-- Chart.js 4.x
-
-**DevOps:**
-
-- Docker & Docker Compose
-- GitHub Actions
-- pytest + factory_boy
-
-## 🏗️ Architecture
-
-```
+```text
 tracktok/
-├── app/
-│   ├── api/v1/          # REST API endpoints
-│   ├── core/            # Core configs, extensions, tenancy
-│   ├── models/          # SQLAlchemy models
-│   ├── schemas/         # Marshmallow schemas
-│   ├── tasks/           # Celery background tasks
-│   ├── utils/           # RBAC decorators, helpers
-│   ├── web/             # Web UI views
-│   └── templates/       # Jinja2 templates
-├── alembic/             # Database migrations
-├── docker/              # Dockerfiles
-├── scripts/             # Utility scripts
-├── static/              # CSS, JS, images
-└── tests/               # Test suite
+  app/                  Flask application package
+    api/v1/             REST API endpoints
+    core/               Configuration, extensions, security, logging
+    middleware/         Request and tenancy middleware
+    models/             SQLAlchemy models
+    schemas/            Marshmallow schemas
+    services/           Business logic services
+    tasks/              Celery app and tasks
+    templates/          Jinja templates
+    utils/              Shared helpers
+    web/                Web UI routes and forms
+  docs/                 Project documentation
+  docker/               Dockerfiles and container entrypoints
+  migrations/           Active Alembic migration environment
+  scripts/              Utility scripts
+  static/               CSS, JavaScript, and image assets
+  tests/                Test suite
+  uploads/              Local uploaded files
 ```
 
-## 🛠️ Quick Start
+## Launch Locally Without Docker
 
-### Using Docker (Recommended)
+These steps assume Windows PowerShell from the repository root.
+
+### 1. Install Services
+
+Install and start PostgreSQL and Redis locally.
+
+Create the PostgreSQL role and database if they do not already exist:
 
 ```powershell
-# Clone repository
-git clone https://github.com/yourusername/tracktok.git
-cd tracktok
-
-# Copy environment file
-cp .env.example .env
-
-# Start all services
-docker-compose up -d
-
-# Initialize database
-docker-compose exec web python scripts/init_db.py
-
-# Seed demo data
-docker-compose exec web python scripts/seed.py
-
-# Access the application
-# Web UI: http://localhost:5000
-# API Docs: http://localhost:5000/api/docs/swagger
-# Flower (Celery): http://localhost:5555
+psql -U postgres
 ```
 
-### Local Development
+```sql
+CREATE USER tracktok WITH PASSWORD 'tracktok';
+CREATE DATABASE tracktok OWNER tracktok;
+\q
+```
+
+If your local PostgreSQL user, password, host, port, or database name differs, use those values in `DATABASE_URL`.
+
+### 2. Create Python Environment
 
 ```powershell
-# Create virtual environment
 python -m venv venv
-.\venv\Scripts\activate
-
-# Install dependencies
+.\venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
 pip install -r requirements.txt
+```
 
-# Set environment variables
-$env:FLASK_APP="app"
-$env:FLASK_ENV="development"
-$env:DATABASE_URL="postgresql://tracktok:tracktok@localhost:5432/tracktok"
+### 3. Configure Local Environment
 
-# Initialize database
+Do not use the Docker service hostnames (`db` or `redis`) for a non-Docker launch. Use localhost values:
+
+```powershell
+$env:FLASK_APP = "app"
+$env:FLASK_ENV = "development"
+$env:DATABASE_URL = "postgresql://tracktok:tracktok@localhost:5432/tracktok"
+$env:REDIS_URL = "redis://localhost:6379/0"
+$env:CELERY_BROKER_URL = "redis://localhost:6379/0"
+$env:CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
+$env:RATELIMIT_STORAGE_URL = "redis://localhost:6379/1"
+$env:RATELIMIT_SWALLOW_ERRORS = "True"
+```
+
+You may also copy `.env.example` to `.env`, but adjust the database and Redis URLs to `localhost` for local execution.
+If you see `Error 11001 connecting to redis:6379`, your local process is still using Docker's `redis` hostname. Replace every Redis URL in `.env` with `redis://localhost:6379/...`, or set the PowerShell variables above before running Flask.
+
+### 4. Apply Database Migrations
+
+```powershell
 python scripts/init_db.py
+```
 
-# Run migrations
+This runs Alembic migrations from `migrations/` and updates the PostgreSQL schema to the latest revision. The equivalent Flask command is:
+
+```powershell
 flask db upgrade
+```
 
-# Seed demo data
+### 5. Optional Demo Data
+
+```powershell
 python scripts/seed.py
+```
 
-# Run development server
-flask run
+### 6. Run The App
 
-# Run Celery worker (separate terminal)
+```powershell
+flask run --host=127.0.0.1 --port=5000 --debug
+```
+
+Open:
+
+- Web UI: `http://localhost:5000`
+- API health check: `http://localhost:5000/api/v1/health`
+- Swagger UI: `http://localhost:5000/api/docs/swagger`
+- ReDoc: `http://localhost:5000/api/docs/redoc`
+
+### 7. Run Background Workers
+
+Use separate terminals with the same environment variables:
+
+```powershell
 celery -A app.tasks.celery_app worker --loglevel=info
-
-# Run Celery beat (separate terminal)
 celery -A app.tasks.celery_app beat --loglevel=info
+celery -A app.tasks.celery_app flower --port=5555
 ```
 
-## Navigation & help
+Flower is available at `http://localhost:5555`.
 
-- The top nav now uses a book icon that links to the “How to use” guide covering onboarding steps, analytics, and tips.
-- Use the Settings page to set tenant currency, timezone, and date format so dashboards, budgets, and alerts stay consistent across the workspace.
+## PostgreSQL Notes
 
-## 📝 API Documentation
+- The active migration directory is `migrations/`.
+- The root `alembic.ini` points to `migrations/`, so both `alembic upgrade head` and `flask db upgrade` use the same migration history.
+- `scripts/init_db.py` applies migrations instead of calling `db.create_all()`, so schema changes are tracked consistently.
+- The default local database URL is `postgresql://tracktok:tracktok@localhost:5432/tracktok`.
+- Docker Compose maps PostgreSQL to host port `5433`, but inside Docker the app uses `db:5432`. Do not use `db:5432` for a non-Docker app process.
 
-### Interactive Documentation
-
-Access comprehensive API documentation:
-
-- **Swagger UI**: `http://localhost:5000/api/docs/swagger` - Interactive testing interface
-- **ReDoc**: `http://localhost:5000/api/docs/redoc` - Clean, readable documentation
-
-### Export OpenAPI Specification
+## Useful Commands
 
 ```powershell
-# Export OpenAPI JSON
-python scripts/export_openapi.py --openapi -o openapi.json
-make openapi
-
-# Export Postman collection
-python scripts/export_openapi.py --postman -o postman_collection.json
-make postman
-
-# Export both
-python scripts/export_openapi.py --both
-make docs
-```
-
-### Postman Setup
-
-1. Export the collection: `make postman`
-2. Import `postman_collection.json` into Postman
-3. Set collection variables:
-   - `base_url`: `http://localhost:5000`
-   - `jwt_token`: Obtain from login endpoint
-   - `tenant_id`: Your tenant ID
-
-See [API_DOCS.md](./API_DOCS.md) for detailed API documentation.
-
-### API Features
-
-- **OpenAPI 3.0** specification
-- **Bearer token** authentication
-- **Multi-tenant** support (subdomain or header-based)
-- **Rate limiting** with headers
-- **Pagination** metadata
-- **Error schemas** with validation details
-- **Security schemes** documentation
-
-## 🔐 Authentication
-
-### Register New Tenant
-
-```http
-POST /api/v1/auth/register
-Content-Type: application/json
-
-{
-  "name": "Acme Corp",
-  "subdomain": "acme",
-  "owner_email": "owner@acme.com",
-  "owner_password": "SecurePass123",
-  "owner_first_name": "John",
-  "owner_last_name": "Doe"
-}
-```
-
-### Login
-
-```http
-POST /api/v1/auth/login
-Content-Type: application/json
-X-Tenant-Id: <tenant-id>
-
-{
-  "email": "owner@acme.com",
-  "password": "SecurePass123"
-}
-```
-
-Response includes `access_token` and `refresh_token`.
-
-### Access Protected Endpoints
-
-```http
-GET /api/v1/expenses
-Authorization: Bearer <access_token>
-X-Tenant-Id: <tenant-id>
-```
-
-## 🧪 Testing
-
-```powershell
-# Run all tests with coverage
-pytest
-
-# Run specific test categories
-pytest -m unit
-pytest -m integration
-pytest -m tenancy
-pytest -m rbac
-
-# Generate HTML coverage report
-pytest --cov=app --cov-report=html
-```
-
-## 📊 Database Migrations
-
-```powershell
-# Create new migration
-flask db migrate -m "Description of changes"
-
-# Apply migrations
+flask db current
+flask db heads
+flask db migrate -m "describe schema change"
 flask db upgrade
-
-# Rollback last migration
-flask db downgrade
+pytest
 ```
 
-## 🔧 Configuration
+## Docker
 
-Key environment variables (see `.env.example`):
+Docker remains available if needed:
+
+```powershell
+docker compose up -d
+docker compose exec web python scripts/init_db.py
+docker compose exec web python scripts/seed.py
+```
+
+### Updating Docker After Local Changes
+
+If the containers are already running and you only changed Python, template, CSS, or JavaScript files, restart the app services:
+
+```powershell
+docker compose restart web worker beat
+```
+
+Use a full rebuild when you change dependencies, Dockerfiles, `.env`, Compose files, or anything that affects the container image:
+
+```powershell
+docker compose down
+docker compose up -d --build
+docker compose exec web python scripts/init_db.py
+```
+
+Run `scripts/init_db.py` after pulling or creating database migration changes. It applies Alembic migrations and keeps PostgreSQL at the latest schema revision.
+
+Check the web container logs if the app does not start or a request fails:
+
+```powershell
+docker compose logs -f web
+```
+
+See [docs/DOCKER_GUIDE.md](docs/DOCKER_GUIDE.md) for Docker-specific notes.
+
+## Documentation
+
+- [API docs](docs/API_DOCS.md)
+- [Deployment](docs/DEPLOYMENT.md)
+- [Development](docs/DEVELOPMENT.md)
+- [OpenAPI export](docs/OPENAPI_EXPORT.md)
+- [OpenAPI implementation](docs/OPENAPI_IMPLEMENTATION.md)
+- [Network troubleshooting](docs/NETWORK_TROUBLESHOOTING.md)
+- [Project summary](docs/PROJECT_SUMMARY.md)
+
+## Configuration
+
+Important environment variables:
 
 ```env
-# Flask
-SECRET_KEY=your-secret-key
-JWT_SECRET_KEY=your-jwt-secret
-
-# Database
-DATABASE_URL=postgresql://user:pass@host:port/db
-
-# Redis & Celery
+FLASK_APP=app
+FLASK_ENV=development
+DATABASE_URL=postgresql://tracktok:tracktok@localhost:5432/tracktok
 REDIS_URL=redis://localhost:6379/0
 CELERY_BROKER_URL=redis://localhost:6379/0
-
-# Multi-Tenancy
-TENANT_RESOLUTION=subdomain  # or header
-BASE_DOMAIN=localhost:5000
+CELERY_RESULT_BACKEND=redis://localhost:6379/0
+RATELIMIT_STORAGE_URL=redis://localhost:6379/1
+RATELIMIT_SWALLOW_ERRORS=True
+SECRET_KEY=change-me
+JWT_SECRET_KEY=change-me-too
 ```
 
-## 📦 Deployment
-
-### Production Checklist
-
-- [ ] Set strong `SECRET_KEY` and `JWT_SECRET_KEY`
-- [ ] Configure production database (PostgreSQL)
-- [ ] Set up Redis instance
-- [ ] Enable HTTPS/SSL
-- [ ] Configure CORS origins
-- [ ] Set up Sentry for error tracking
-- [ ] Enable Prometheus metrics (optional)
-- [ ] Configure email service for notifications
-- [ ] Set up automated backups
-- [ ] Review rate limiting settings
-
-### Docker Production
-
-```powershell
-# Build production image
-docker build -f docker/Dockerfile -t tracktok:latest .
-
-# Run with production config
-docker-compose -f docker-compose.prod.yml up -d
-```
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add AmazingFeature'`)
-4. Push to branch (`git push origin feature/AmazingFeature`)
-5. Open Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License.
-
-## 🙏 Acknowledgments
-
-- Flask ecosystem
-- Chart.js
-- PostgreSQL & Redis teams
-
----
-
-Built with ❤️ using Flask & Python
-
-For questions or support, please open an issue on GitHub.
+Set `TRACKTOK_SKIP_DOTENV=true` when running diagnostics that must not load `.env`.

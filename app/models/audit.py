@@ -91,8 +91,10 @@ class AuditLog(db.Model, TimestampMixin, TenantMixin):
     @staticmethod
     def log_action(
         action: AuditAction,
-        entity_type: str,
+        entity_type: str = None,
         entity_id: str = None,
+        resource_type: str = None,
+        resource_id: str = None,
         old_values: dict = None,
         new_values: dict = None,
         metadata: dict = None,
@@ -104,6 +106,8 @@ class AuditLog(db.Model, TimestampMixin, TenantMixin):
             action: Action performed
             entity_type: Type of entity (expense, budget, user, etc.)
             entity_id: ID of affected entity
+            resource_type: Backward-compatible alias for entity_type
+            resource_id: Backward-compatible alias for entity_id
             old_values: Previous values (for updates)
             new_values: New values (for updates)
             metadata: Additional context
@@ -113,6 +117,9 @@ class AuditLog(db.Model, TimestampMixin, TenantMixin):
         from app.models.user import User
 
         import uuid
+
+        entity_type = entity_type or resource_type
+        entity_id = entity_id or resource_id
 
         user_id = g.get("user_id")
         tenant_id = g.get("tenant_id")
@@ -143,7 +150,7 @@ class AuditLog(db.Model, TimestampMixin, TenantMixin):
             ip_address=request.remote_addr if request else None,
             user_agent=request.headers.get("User-Agent") if request else None,
             request_id=g.get("request_id"),
-            metadata=metadata or {},
+            audit_metadata=metadata or {},
             created_at=datetime.utcnow(),
         )
 

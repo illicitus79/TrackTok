@@ -24,10 +24,11 @@ def setup_logging(app: Flask) -> None:
 
     if log_format == "json":
         # Structured JSON logging for production
-        def format_record(record: Dict) -> str:
-            """Format log record as JSON."""
+        def json_sink(message) -> None:
+            """Write a log record as JSON."""
             import json
-            
+
+            record = message.record
             base = {
                 "timestamp": record["time"].isoformat(),
                 "level": record["level"].name,
@@ -54,13 +55,11 @@ def setup_logging(app: Flask) -> None:
             if record["extra"]:
                 base.update(record["extra"])
 
-            return json.dumps(base) + "\n"
+            print(json.dumps(base), file=sys.stdout, flush=True)
 
         log.add(
-            sys.stdout,
-            format=format_record,
+            json_sink,
             level=log_level,
-            serialize=False,
         )
     else:
         # Human-readable format for development
@@ -80,7 +79,7 @@ def setup_logging(app: Flask) -> None:
             retention="30 days",
             compression="zip",
             level=log_level,
-            format=format_record,
+            serialize=True,
         )
     elif not app.debug:
         log.add(

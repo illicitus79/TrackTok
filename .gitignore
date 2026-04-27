@@ -67,7 +67,7 @@ logs/
 postgres-data/
 
 # Alembic
-alembic/versions/*.pyc
+migrations/versions/*.pyc
 
 # Docker
 docker-compose.override.yml

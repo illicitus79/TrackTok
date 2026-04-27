@@ -5,7 +5,8 @@ from typing import Any, Dict
 
 from dotenv import load_dotenv
 
-load_dotenv()
+if os.getenv("TRACKTOK_SKIP_DOTENV", "False").lower() != "true":
+    load_dotenv()
 
 
 class Config:
@@ -68,6 +69,7 @@ class Config:
     RATELIMIT_STORAGE_URL = os.getenv("RATELIMIT_STORAGE_URL", "redis://localhost:6379/1")
     RATELIMIT_DEFAULT = os.getenv("RATELIMIT_DEFAULT", "100 per hour")
     RATELIMIT_HEADERS_ENABLED = True
+    RATELIMIT_SWALLOW_ERRORS = os.getenv("RATELIMIT_SWALLOW_ERRORS", "False").lower() == "true"
 
     # Pagination
     DEFAULT_PAGE_SIZE = int(os.getenv("DEFAULT_PAGE_SIZE", "20"))
@@ -119,6 +121,7 @@ class DevelopmentConfig(Config):
 
     DEBUG = True
     SQLALCHEMY_ECHO = True
+    RATELIMIT_SWALLOW_ERRORS = os.getenv("RATELIMIT_SWALLOW_ERRORS", "True").lower() == "true"
 
 
 class TestingConfig(Config):
@@ -126,6 +129,7 @@ class TestingConfig(Config):
 
     TESTING = True
     SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
+    SQLALCHEMY_ENGINE_OPTIONS = {}
     WTF_CSRF_ENABLED = False
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=5)
 

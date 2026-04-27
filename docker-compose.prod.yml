@@ -14,6 +14,7 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - RATELIMIT_STORAGE_URL=redis://redis:6379/1
     env_file:
       - .env
     volumes:
@@ -83,6 +84,7 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - RATELIMIT_STORAGE_URL=redis://redis:6379/1
     env_file:
       - .env
     depends_on:
@@ -108,6 +110,7 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - RATELIMIT_STORAGE_URL=redis://redis:6379/1
     env_file:
       - .env
     command: celery -A app.tasks.celery_app beat --loglevel=info --schedule=/app/celerybeat/celerybeat-schedule

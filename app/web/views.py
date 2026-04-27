@@ -436,7 +436,7 @@ def combine_local_datetime(date_obj, time_obj, timezone_name: str):
 
     if tz:
         dt_local = dt_local.replace(tzinfo=tz)
-        dt_utc = dt_local.astimezone(datetime.timezone.utc)
+        dt_utc = dt_local.astimezone(timezone.utc)
         return dt_utc.replace(tzinfo=None)
     return dt_local
 

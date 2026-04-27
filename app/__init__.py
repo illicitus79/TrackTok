@@ -54,6 +54,7 @@ def create_app(config_name: str = None) -> Flask:
     jwt.init_app(app)
     cors.init_app(app, origins=app.config["CORS_ORIGINS"])
     api.init_app(app)
+    app.config["RATELIMIT_STORAGE_URI"] = app.config["RATELIMIT_STORAGE_URL"]
     limiter.init_app(app)
     mail.init_app(app)
     login_manager.init_app(app)
