@@ -209,9 +209,11 @@ class MobileMenu {
     this.menu.style.top = "100%";
     this.menu.style.left = "0";
     this.menu.style.right = "0";
-    this.menu.style.backgroundColor = "var(--panel)";
+    this.menu.style.background = "var(--glass-strong)";
+    this.menu.style.backdropFilter = "blur(24px) saturate(150%)";
     this.menu.style.padding = "var(--spacing-md)";
     this.menu.style.borderTop = "1px solid var(--border)";
+    this.menu.style.boxShadow = "var(--shadow-lg)";
   }
 
   close() {
@@ -221,9 +223,11 @@ class MobileMenu {
     this.menu.style.top = "";
     this.menu.style.left = "";
     this.menu.style.right = "";
-    this.menu.style.backgroundColor = "";
+    this.menu.style.background = "";
+    this.menu.style.backdropFilter = "";
     this.menu.style.padding = "";
     this.menu.style.borderTop = "";
+    this.menu.style.boxShadow = "";
   }
 }
 
