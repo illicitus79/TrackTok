@@ -540,13 +540,32 @@ def admin_tenants():
 def projects():
     """Projects list page."""
     from app.models.project import Project
+    from app.models.expense import Expense
+    from sqlalchemy import func
 
     projects = Project.query.filter_by(
         tenant_id=current_user.tenant_id,
         is_deleted=False,
     ).order_by(Project.created_at.desc()).all()
 
-    return render_template("projects/list.html", projects=projects)
+    spend_rows = (
+        db.session.query(Expense.project_id, func.sum(Expense.amount))
+        .filter(
+            Expense.tenant_id == current_user.tenant_id,
+            Expense.is_deleted == False,
+            Expense.project_id != None,
+        )
+        .group_by(Expense.project_id)
+        .all()
+    )
+    project_spend = {str(project_id): Decimal(total or 0) for project_id, total in spend_rows}
+
+    return render_template(
+        "projects/list.html",
+        projects=projects,
+        project_spend=project_spend,
+        total_project_spend=sum(project_spend.values(), Decimal("0.00")),
+    )
 
 
 @bp.route("/projects/new", methods=["GET", "POST"])
@@ -826,6 +845,7 @@ def project_detail(project_id):
     end_dt = datetime.combine(today, dt_time.max, tzinfo=timezone.utc)
 
     # Daily spend series (last 30 days)
+    daily_date = func.date(Expense.expense_date)
     daily_rows = (
         db.session.query(Expense.expense_date, func.sum(Expense.amount))
         .filter(
@@ -835,11 +855,15 @@ def project_detail(project_id):
             Expense.expense_date >= start_dt,
             Expense.expense_date <= end_dt,
         )
-        .group_by(Expense.expense_date)
-        .order_by(Expense.expense_date)
+        .with_entities(daily_date.label("expense_day"), func.sum(Expense.amount))
+        .group_by(daily_date)
+        .order_by(daily_date)
         .all()
     )
-    daily_map = {r[0].isoformat(): float(r[1] or 0) for r in daily_rows}
+    daily_map = {
+        (r[0].isoformat() if hasattr(r[0], "isoformat") else str(r[0])): float(r[1] or 0)
+        for r in daily_rows
+    }
     daily_labels = [(start_30d + timedelta(days=i)).isoformat() for i in range(30)]
     daily_data = [daily_map.get(d, 0.0) for d in daily_labels]
 
@@ -1065,6 +1089,14 @@ def project_categories(project_id):
             if not name:
                 raise ValueError("Category name is required.")
             color = request.form.get("color") or "#6366F1"
+            existing = Category.query.filter(
+                Category.tenant_id == tenant_id,
+                Category.project_id == project.id,
+                Category.is_deleted == False,
+                db.func.lower(Category.name) == name.lower(),
+            ).first()
+            if existing:
+                raise ValueError("A category with this name already exists for this project.")
 
             category = Category(
                 tenant_id=tenant_id,
@@ -1113,7 +1145,18 @@ def project_category_update(project_id, category_id):
         return redirect(url_for("web.project_categories", project_id=project_id))
 
     try:
-        category.name = (request.form.get("name") or category.name).strip() or category.name
+        new_name = (request.form.get("name") or category.name).strip() or category.name
+        existing = Category.query.filter(
+            Category.tenant_id == tenant_id,
+            Category.project_id == project.id,
+            Category.id != category.id,
+            Category.is_deleted == False,
+            db.func.lower(Category.name) == new_name.lower(),
+        ).first()
+        if existing:
+            raise ValueError("A category with this name already exists for this project.")
+
+        category.name = new_name
         category.color = request.form.get("color") or category.color
         category.icon = request.form.get("icon") or None
         category.description = request.form.get("description") or None

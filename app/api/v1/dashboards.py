@@ -2,6 +2,8 @@
 from collections import defaultdict
 from decimal import Decimal
 from datetime import date
+from datetime import datetime
+from datetime import time as dt_time
 from datetime import timedelta
 
 from flask import jsonify, g
@@ -188,21 +190,27 @@ class ProjectDashboard(MethodView):
         # ------------------------------------------------------------------
         today = date.today()
         start_30d = today - timedelta(days=29)
+        start_dt = datetime.combine(start_30d, dt_time.min)
+        end_dt = datetime.combine(today, dt_time.max)
 
+        daily_date = func.date(Expense.expense_date)
         daily_rows = (
-            db.session.query(Expense.expense_date, func.sum(Expense.amount))
+            db.session.query(daily_date.label("expense_day"), func.sum(Expense.amount))
             .filter(
                 Expense.tenant_id == tenant_id,
                 Expense.project_id == project.id,
                 Expense.is_deleted == False,
-                Expense.expense_date >= start_30d,
-                Expense.expense_date <= today,
+                Expense.expense_date >= start_dt,
+                Expense.expense_date <= end_dt,
             )
-            .group_by(Expense.expense_date)
-            .order_by(Expense.expense_date)
+            .group_by(daily_date)
+            .order_by(daily_date)
             .all()
         )
-        daily_map = {r[0].isoformat(): float(r[1] or 0) for r in daily_rows}
+        daily_map = {
+            (r[0].isoformat() if hasattr(r[0], "isoformat") else str(r[0])): float(r[1] or 0)
+            for r in daily_rows
+        }
         daily_labels = [(start_30d + timedelta(days=i)).isoformat() for i in range(30)]
         daily_data = [daily_map.get(d, 0.0) for d in daily_labels]
 

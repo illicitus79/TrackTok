@@ -61,11 +61,11 @@ block content %}
       <p class="eyebrow">Portfolio snapshot</p>
       <h1 class="hero-title">Dashboard</h1>
       <p class="hero-subtitle">
-        First-stop overview of spend, project health, and recent activity. Drill into projects or record a new expense without leaving this page.
+        A focused command center for spend, project health, and recent activity.
       </p>
       <div class="hero-actions">
         <a href="{{ url_for('web.expense_new') }}" class="btn btn-primary"><i class="ph ph-plus-circle"></i> Add Expense</a>
-        <a href="{{ url_for('web.projects') }}" class="btn btn-secondary"><i class="ph ph-briefcase"></i> New Project</a>
+        <a href="{{ url_for('web.project_new') }}" class="btn btn-secondary"><i class="ph ph-briefcase"></i> New Project</a>
       </div>
     </div>
     <div class="hero-stats">
@@ -202,7 +202,7 @@ block content %}
               </div>
             </div>
             <div class="project-footer">
-              <a class="link-action" href="{{ url_for('web.projects') }}"><i class="ph ph-arrow-square-out"></i>Open project</a>
+              <a class="link-action" href="{{ url_for('web.project_detail', project_id=project.id) }}"><i class="ph ph-arrow-square-out"></i>Open project</a>
               <span class="pill pill-soft">Stay under {{ format_money(project.starting_budget|float) }}</span>
             </div>
           </div>

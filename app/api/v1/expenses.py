@@ -259,6 +259,17 @@ class CategoryList(MethodView):
         if not project:
             return jsonify({"error": "Project not found"}), 404
 
+        name = (data.get("name") or "").strip()
+        existing = Category.query.filter(
+            Category.tenant_id == tenant_id,
+            Category.project_id == project.id,
+            Category.is_deleted == False,
+            db.func.lower(Category.name) == name.lower(),
+        ).first()
+        if existing:
+            return jsonify({"error": "A category with this name already exists for this project."}), 409
+        data["name"] = name
+
         category = Category(**data, tenant_id=tenant_id, project_id=project.id, created_by=user_id)
         db.session.add(category)
         db.session.commit()

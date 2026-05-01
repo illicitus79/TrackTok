@@ -2,9 +2,7 @@
 Tracker{% endblock %} {% block meta_description %}Track expenses, manage
 budgets, and forecast spending across multiple projects with TrackTok's powerful
 multi-tenant platform.{% endblock %} {% block content %}
-<!-- Hero Section with Gradient -->
-<section class="hero">
-  <div class="hero-gradient"></div>
+<section class="hero welcome-hero">
   <div class="container hero-content">
     <div class="hero-text">
       <div class="hero-logo">
@@ -21,13 +19,11 @@ multi-tenant platform.{% endblock %} {% block content %}
         </div>
       </div>
       <h1 class="hero-title">
-        Expense Tracking
-        <span class="gradient-text">Reimagined</span>
+        Control project spend before it drifts.
       </h1>
       <p class="hero-description">
-        Multi-tenant expense management with real-time forecasting, intelligent
-        alerts, and beautiful visualizations. Built for modern teams who demand
-        more.
+        TrackTok gives teams a clear operating view of accounts, project budgets,
+        expenses, categories, and forecast risk without spreadsheet cleanup.
       </p>
       <div class="hero-cta">
         <a href="{{ url_for('web.register') }}" class="btn btn-primary btn-lg">
@@ -45,45 +41,51 @@ multi-tenant platform.{% endblock %} {% block content %}
             <polyline points="12 5 19 12 12 19"></polyline>
           </svg>
         </a>
-        <a href="#features" class="btn btn-secondary btn-lg"> Learn More </a>
+        <a href="{{ url_for('web.login') }}" class="btn btn-secondary btn-lg">
+          Sign In
+        </a>
       </div>
       <div class="hero-stats">
         <div class="stat">
-          <div class="stat-value">10K+</div>
-          <div class="stat-label">Active Users</div>
+          <div class="stat-value">30-day</div>
+          <div class="stat-label">Spend visibility</div>
         </div>
         <div class="stat">
-          <div class="stat-value">$5M+</div>
-          <div class="stat-label">Tracked Monthly</div>
+          <div class="stat-value">Project</div>
+          <div class="stat-label">Budget health</div>
         </div>
         <div class="stat">
-          <div class="stat-value">99.9%</div>
-          <div class="stat-label">Uptime</div>
+          <div class="stat-value">Tenant</div>
+          <div class="stat-label">Currency settings</div>
         </div>
       </div>
     </div>
-    <div class="hero-visual">
-      <div class="hero-card card-gradient-indigo">
-        <div class="card-header">
-          <h3>Budget Overview</h3>
-          <span class="badge badge-success">On Track</span>
+    <div class="hero-visual welcome-visual">
+      <div class="hero-card welcome-dashboard-preview">
+        <div class="preview-topbar">
+          <span></span><span></span><span></span>
         </div>
-        <div class="card-stats">
-          <div class="stat-item">
-            <span class="stat-label">Total Budget</span>
-            <span class="stat-value">$50,000</span>
+        <div class="preview-header">
+          <div>
+            <p class="eyebrow">Project snapshot</p>
+            <h3>Renovation home</h3>
           </div>
-          <div class="stat-item">
-            <span class="stat-label">Spent</span>
-            <span class="stat-value">$18,950</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">Remaining</span>
-            <span class="stat-value gradient-text-emerald">$31,050</span>
-          </div>
+          <span class="badge-soft badge-success">active</span>
         </div>
-        <div class="progress-bar">
-          <div class="progress-fill" style="width: 38%"></div>
+        <div class="preview-metrics">
+          <div><span>Budget</span><strong>฿500,000</strong></div>
+          <div><span>Spent</span><strong>฿168,420</strong></div>
+          <div><span>Remaining</span><strong>฿331,580</strong></div>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width: 34%"></div></div>
+        <div class="preview-chart" aria-hidden="true">
+          <span style="height: 38%"></span>
+          <span style="height: 56%"></span>
+          <span style="height: 32%"></span>
+          <span style="height: 70%"></span>
+          <span style="height: 46%"></span>
+          <span style="height: 62%"></span>
+          <span style="height: 52%"></span>
         </div>
       </div>
     </div>

@@ -133,6 +133,19 @@ class DashboardApp {
     }
   }
 
+  formatMoney(value, maximumFractionDigits = 2) {
+    if (window.TrackTok?.formatCurrency) {
+      return window.TrackTok.formatCurrency(Number(value || 0), undefined, {
+        maximumFractionDigits,
+      });
+    }
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: window.TENANT_CURRENCY || "USD",
+      maximumFractionDigits,
+    }).format(Number(value || 0));
+  }
+
   renderCharts() {
     if (!this.data) {
       console.error("No data available for charts");
@@ -216,7 +229,10 @@ class DashboardApp {
                 const percentage = ((value / total) * 100).toFixed(1);
                 const formatted = window.TrackTok
                   ? window.TrackTok.formatCurrency(value)
-                  : `$${value.toFixed(2)}`;
+                  : new Intl.NumberFormat("en-US", {
+                      style: "currency",
+                      currency: window.TENANT_CURRENCY || "USD",
+                    }).format(value);
                 return `${label}: ${formatted} (${percentage}%)`;
               },
             },
@@ -282,7 +298,7 @@ class DashboardApp {
             ticks: {
               color: theme.textMuted,
               callback: function (value) {
-                return "$" + value.toFixed(2);
+                return window.TrackTok.formatCurrency(value);
               },
             },
           },
@@ -307,8 +323,8 @@ class DashboardApp {
             padding: 12,
             callbacks: {
               label: function (context) {
-                return `${context.dataset.label}: $${context.parsed.y.toFixed(
-                  2
+                return `${context.dataset.label}: ${window.TrackTok.formatCurrency(
+                  context.parsed.y
                 )}`;
               },
             },
@@ -375,7 +391,9 @@ class DashboardApp {
             ticks: {
               color: theme.textMuted,
               callback: function (value) {
-                return "$" + Number(value).toFixed(0);
+                return window.TrackTok.formatCurrency(value, undefined, {
+                  maximumFractionDigits: 0,
+                });
               },
             },
           },
@@ -393,8 +411,8 @@ class DashboardApp {
             padding: 12,
             callbacks: {
               label: function (context) {
-                return `${context.dataset.label}: $${context.parsed.y.toFixed(
-                  2
+                return `${context.dataset.label}: ${window.TrackTok.formatCurrency(
+                  context.parsed.y
                 )}`;
               },
             },
@@ -442,7 +460,9 @@ class DashboardApp {
             ticks: {
               color: theme.textMuted,
               callback: function (value) {
-                return "$" + Number(value).toFixed(0);
+                return window.TrackTok.formatCurrency(value, undefined, {
+                  maximumFractionDigits: 0,
+                });
               },
             },
           },
@@ -464,7 +484,7 @@ class DashboardApp {
             padding: 12,
             callbacks: {
               label: function (context) {
-                return `Spend: $${context.parsed.x.toFixed(2)}`;
+                return `Spend: ${window.TrackTok.formatCurrency(context.parsed.x)}`;
               },
             },
           },
@@ -553,7 +573,7 @@ class DashboardApp {
             ticks: {
               color: theme.textMuted,
               callback: function (value) {
-                return "$" + value.toFixed(2);
+                return window.TrackTok.formatCurrency(value);
               },
             },
           },
@@ -579,8 +599,8 @@ class DashboardApp {
             padding: 12,
             callbacks: {
               label: function (context) {
-                return `${context.dataset.label}: $${context.parsed.y.toFixed(
-                  2
+                return `${context.dataset.label}: ${window.TrackTok.formatCurrency(
+                  context.parsed.y
                 )}`;
               },
             },

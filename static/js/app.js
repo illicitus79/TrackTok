@@ -231,11 +231,12 @@ class MobileMenu {
 // ============================================================================
 
 // Format currency
-function formatCurrency(amount, currency = "USD") {
+function formatCurrency(amount, currency = "USD", options = {}) {
   const code = window.TENANT_CURRENCY || currency || "USD";
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: code,
+    ...options,
   }).format(amount);
 }
 

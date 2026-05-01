@@ -2,13 +2,15 @@
 block content %}
 {% set project_count = projects|length if projects else 0 %}
 {% set total_budget = projects|sum(attribute='starting_budget') if projects else 0 %}
+{% set total_spend = total_project_spend if total_project_spend else 0 %}
+{% set total_remaining = (total_budget|float) - (total_spend|float) %}
 
 <div class="container projects-page">
   <header class="projects-hero">
     <div>
       <p class="eyebrow">Portfolio</p>
       <h1>Projects</h1>
-      <p class="page-subtitle">All projects for your tenant.</p>
+      <p class="page-subtitle">Budgets, spend, timelines, and project actions in one scan-friendly view.</p>
     </div>
     <div class="action-toolbar">
       <a href="{{ url_for('web.project_new') }}" class="btn btn-primary">
@@ -39,10 +41,28 @@ block content %}
         <p class="summary-value">{{ format_money(total_budget|float) }}</p>
       </div>
     </div>
+    <div class="summary-card">
+      <div class="summary-icon gradient-bg-warning">
+        <i class="ph ph-receipt"></i>
+      </div>
+      <div>
+        <p class="summary-label">Total expenses</p>
+        <p class="summary-value">{{ format_money(total_spend|float) }}</p>
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-icon gradient-bg-cyan">
+        <i class="ph ph-trend-up"></i>
+      </div>
+      <div>
+        <p class="summary-label">Remaining budget</p>
+        <p class="summary-value">{{ format_money(total_remaining|float) }}</p>
+      </div>
+    </div>
   </section>
 
   {% if projects %}
-  <div class="card project-list-card">
+  <section class="project-list-card">
     <div class="card-header">
       <div>
         <p class="eyebrow">Overview</p>
@@ -50,21 +70,69 @@ block content %}
       </div>
       <span class="pill pill-soft">{{ project_count }} total</span>
     </div>
-    <div class="card-body project-card-list">
+    <div class="project-card-list project-cards-grid">
       {% for project in projects %}
-      <div class="project-row">
+      {% set spent = project_spend.get(project.id|string, 0) if project_spend else 0 %}
+      {% set remaining = (project.starting_budget|float) - (spent|float) %}
+      {% set utilization = ((spent|float) / (project.starting_budget|float) * 100) if project.starting_budget else 0 %}
+      {% set utilization_width = 100 if utilization > 100 else utilization %}
+      <article class="project-row project-portfolio-card">
         <div class="project-row-main">
           <div class="project-row-title">
-            <i class="ph ph-briefcase"></i>
+            <span class="project-card-icon"><i class="ph ph-briefcase"></i></span>
             <div>
               <p class="project-row-name">{{ project.name }}</p>
               <p class="project-row-meta">
-                Budget {{ format_money(project.starting_budget|float) }}
+                {% if project.description %}{{ project.description }}{% else %}No description{% endif %}
               </p>
             </div>
           </div>
-          <span class="badge badge-success">{{ project.status }}</span>
+          <div class="project-card-controls">
+            <span class="badge-soft {% if project.status == 'active' %}badge-success{% elif project.status == 'on_hold' %}badge-warning{% else %}badge-info{% endif %}">{{ project.status.replace('_', ' ') }}</span>
+            <div class="project-row-actions">
+              <a
+                href="{{ url_for('web.project_detail', project_id=project.id) }}"
+                class="btn btn-primary btn-sm"
+              >
+                <i class="ph ph-arrow-square-out"></i>
+                Open
+              </a>
+              <a
+                href="{{ url_for('web.project_edit', project_id=project.id) }}"
+                class="btn btn-secondary btn-sm"
+              >
+                <i class="ph ph-pencil-simple-line"></i>
+                Edit
+              </a>
+            </div>
+          </div>
         </div>
+
+        <div class="project-card-money-grid">
+          <div>
+            <span class="metric-label">Budget</span>
+            <strong>{{ format_money(project.starting_budget|float) }}</strong>
+          </div>
+          <div>
+            <span class="metric-label">Spent</span>
+            <strong>{{ format_money(spent|float) }}</strong>
+          </div>
+          <div>
+            <span class="metric-label">Remaining</span>
+            <strong class="{% if remaining < 0 %}text-danger{% endif %}">{{ format_money(remaining|float) }}</strong>
+          </div>
+        </div>
+
+        <div class="project-progress">
+          <div class="progress-bar">
+            <div class="progress-fill{% if utilization > 100 %} progress-fill-danger{% endif %}" style="width: {{ utilization_width }}%"></div>
+          </div>
+          <div class="progress-meta">
+            <span>Budget used</span>
+            <span>{{ "%.1f"|format(utilization) }}%</span>
+          </div>
+        </div>
+
         <div class="project-row-meta-grid">
           <div class="meta-item">
             <span class="meta-label">Start</span>
@@ -79,30 +147,14 @@ block content %}
             </span>
           </div>
           <div class="meta-item">
-            <span class="meta-label">Budget</span>
-            <span class="meta-value">{{ format_money(project.starting_budget|float) }}</span>
+            <span class="meta-label">Status</span>
+            <span class="meta-value">{{ project.status.replace('_', ' ') }}</span>
           </div>
         </div>
-        <div class="project-row-actions">
-          <a
-            href="{{ url_for('web.project_detail', project_id=project.id) }}"
-            class="btn btn-secondary btn-sm"
-          >
-            <i class="ph ph-arrow-square-out"></i>
-            Open
-          </a>
-          <a
-            href="{{ url_for('web.project_edit', project_id=project.id) }}"
-            class="btn btn-ghost btn-sm"
-          >
-            <i class="ph ph-pencil-simple-line"></i>
-            Edit
-          </a>
-        </div>
-      </div>
+      </article>
       {% endfor %}
     </div>
-  </div>
+  </section>
   {% else %}
   <div class="card empty-card">
     <div class="card-body">

@@ -28,8 +28,9 @@ def upgrade():
         ondelete="CASCADE",
     )
 
-    # Drop tenant-level name index to allow per-project reuse
+    # Drop tenant-level name index/constraint to allow per-project reuse
     with op.batch_alter_table("categories") as batch_op:
+        batch_op.drop_constraint("uq_category_tenant_name", type_="unique")
         batch_op.drop_index("ix_categories_tenant_name")
 
     # Backfill project_id using the oldest project per tenant; create a default project if none exist
@@ -96,4 +97,5 @@ def downgrade():
     op.drop_column("categories", "project_id")
 
     with op.batch_alter_table("categories") as batch_op:
+        batch_op.create_unique_constraint("uq_category_tenant_name", ["tenant_id", "name"])
         batch_op.create_index("ix_categories_tenant_name", ["tenant_id", "name"], unique=False)
