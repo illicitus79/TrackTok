@@ -120,9 +120,8 @@ html {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-    sans-serif;
+  font-family: "Inter", "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    "Helvetica Neue", sans-serif;
   line-height: 1.6;
   color: var(--text);
   background-color: var(--bg);
@@ -2268,6 +2267,20 @@ a:hover {
   border-radius: var(--radius-lg);
   padding: var(--spacing-lg);
   transition: all var(--transition-base);
+  min-width: 0;
+}
+
+.stat-card-button {
+  width: 100%;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.stat-card-button:hover,
+.stat-card-button:focus-visible {
+  border-color: var(--focus);
 }
 
 .stat-card:hover {
@@ -2293,6 +2306,26 @@ a:hover {
   font-weight: 700;
   color: var(--text-bright);
   margin-bottom: var(--spacing-sm);
+}
+
+.dashboard-container .stat-card .stat-value,
+.dashboard-container .stat-chip .chip-value,
+.dashboard-container .recent-amount {
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: normal;
+  line-height: 1.12;
+}
+
+.dashboard-container .stat-card .stat-value {
+  font-size: clamp(1.35rem, 1.45vw, 1.85rem);
+}
+
+.dashboard-container .stat-card .stat-unit {
+  display: inline;
+  font-size: 0.8em;
 }
 
 .stat-unit {
@@ -2327,11 +2360,12 @@ a:hover {
 
 .project-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: var(--spacing-md);
 }
 
 .project-card {
+  min-width: 0;
   background: var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -2348,14 +2382,20 @@ a:hover {
   gap: var(--spacing-sm);
 }
 
+.project-head > div {
+  min-width: 0;
+}
+
 .project-name {
   font-weight: 700;
   margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .project-meta {
   color: var(--text-muted);
   margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .project-progress {
@@ -2377,6 +2417,45 @@ a:hover {
   align-items: center;
   gap: var(--spacing-sm);
   flex-wrap: wrap;
+}
+
+.dashboard-project-money {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--spacing-sm);
+}
+
+.dashboard-project-money > div {
+  min-width: 0;
+  background: var(--panel);
+}
+
+.dashboard-project-money .metric-label {
+  display: block;
+  margin-bottom: 2px;
+}
+
+.dashboard-project-money strong {
+  font-size: 0.95rem;
+  line-height: 1.25;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.dashboard-page .project-footer {
+  justify-content: flex-start;
+}
+
+.dashboard-page .project-footer .btn {
+  flex: 1 1 132px;
+  justify-content: center;
+  min-width: 0;
+  white-space: normal;
+  text-align: center;
+}
+
+.dashboard-spending-card {
+  order: -1;
 }
 
 .projects-page {
@@ -2880,17 +2959,31 @@ a:hover {
   background: var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
+  color: var(--text);
+  text-decoration: none;
+  min-width: 0;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.list-row:hover {
+  color: var(--text);
+  background: var(--panel-hover);
+  border-color: var(--text-muted);
+  transform: translateY(-1px);
 }
 
 .list-main {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
 }
 
 .list-title {
   font-weight: 700;
   margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .list-subtitle {
@@ -2901,7 +2994,21 @@ a:hover {
 
 .list-value {
   font-weight: 700;
-  white-space: nowrap;
+  text-align: right;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  max-width: 42%;
+}
+
+@media (max-width: 560px) {
+  .list-row {
+    flex-direction: column;
+  }
+
+  .list-value {
+    max-width: 100%;
+    text-align: left;
+  }
 }
 
 /* Charts Section */
@@ -2928,6 +3035,24 @@ a:hover {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: var(--spacing-lg);
+}
+
+.chart-card-action {
+  cursor: pointer;
+  transition: border-color var(--transition-base), box-shadow var(--transition-base),
+    transform var(--transition-base);
+}
+
+.chart-card-action:hover,
+.chart-card-action:focus-visible {
+  border-color: var(--focus);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.chart-card-action:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
 }
 
 .chart-wide {
@@ -3048,6 +3173,135 @@ a:hover {
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
+}
+
+/* Project expenses drill-down modal */
+body.modal-open {
+  overflow: hidden;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-lg);
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(10px);
+}
+
+.modal-backdrop[hidden] {
+  display: none;
+}
+
+.modal-panel {
+  width: min(1120px, 100%);
+  max-height: min(86vh, 900px);
+  overflow: hidden;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  animation: modalIn 160ms ease-out;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  padding: var(--spacing-lg);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+}
+
+.modal-header h2 {
+  margin: 0;
+}
+
+.modal-subtitle {
+  margin: var(--spacing-xs) 0 0;
+  color: var(--text-muted);
+}
+
+.modal-close {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.modal-close:hover {
+  background: var(--panel-hover);
+  color: var(--text-bright);
+}
+
+.modal-filters {
+  padding: var(--spacing-lg);
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: minmax(180px, 1.5fr) minmax(140px, 1fr) minmax(140px, 1fr) auto;
+  gap: var(--spacing-md);
+  align-items: end;
+}
+
+.modal-filter-actions {
+  justify-content: flex-start;
+}
+
+.modal-table-wrap {
+  overflow: auto;
+  padding: var(--spacing-sm) var(--spacing-lg) var(--spacing-lg);
+}
+
+.project-expenses-table {
+  min-width: 980px;
+}
+
+.project-expenses-table td {
+  white-space: normal;
+}
+
+.table-note {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  margin-top: 2px;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .modal-backdrop {
+    align-items: stretch;
+    padding: var(--spacing-sm);
+  }
+
+  .modal-panel {
+    max-height: 96vh;
+  }
+
+  .modal-filters {
+    grid-template-columns: 1fr;
+    padding: var(--spacing-md);
+  }
+
+  .modal-header {
+    padding: var(--spacing-md);
+  }
+
+  .modal-table-wrap {
+    padding: var(--spacing-md);
+  }
 }
 
 .recent-main {
@@ -3542,6 +3796,75 @@ a:hover {
   flex-wrap: wrap;
   justify-content: flex-start;
 }
+
+.expenses-filter-card {
+  margin-bottom: 1rem;
+}
+
+.expenses-filter-body {
+  padding: 0.9rem 1rem;
+}
+
+.expenses-filter-primary {
+  display: grid;
+  grid-template-columns: minmax(280px, 1.3fr) minmax(280px, 1.3fr) minmax(280px, auto);
+  gap: 0.75rem 1rem;
+  align-items: end;
+}
+
+.expenses-filter-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.8rem 1rem;
+  align-items: end;
+}
+
+.advanced-expense-filters {
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border);
+}
+
+.advanced-expense-filters[hidden] {
+  display: none;
+}
+
+.expenses-filter-primary > div,
+.expenses-filter-grid > div {
+  min-width: 0;
+}
+
+.expenses-filter-primary .form-label,
+.expenses-filter-grid .form-label {
+  margin-bottom: 0.3rem;
+  font-size: 0.85rem;
+}
+
+.expenses-filter-primary .form-input,
+.expenses-filter-grid .form-input {
+  min-height: 38px;
+  padding-top: 0.45rem;
+  padding-bottom: 0.45rem;
+}
+
+.expenses-filter-grid .form-hint {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+}
+
+.expenses-filter-actions {
+  align-self: end;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex-wrap: nowrap;
+}
+
+.expenses-filter-actions .btn {
+  min-height: 38px;
+  padding: 0.45rem 0.85rem;
+  justify-content: center;
+  white-space: nowrap;
+}
+
 /* Use a fixed column count so controls align predictably, but allow columns
    to shrink (minmax(0, 1fr)) to avoid overflow. The grid children use
    a column-internal layout so labels stack above inputs consistently. */
@@ -3622,6 +3945,22 @@ a:hover {
 }
 
 @media (max-width: 900px) {
+  .expenses-filter-primary {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .expenses-filter-primary .expenses-filter-actions {
+    grid-column: 1 / -1;
+  }
+
+  .expenses-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .expenses-filter-actions {
+    grid-column: 1 / -1;
+  }
+
   .expenses-grid {
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   }
@@ -3644,6 +3983,13 @@ a:hover {
     padding: 1rem 0.75rem;
   }
   .expenses-grid {
+    grid-template-columns: 1fr;
+  }
+  .expenses-filter-body {
+    padding: 1rem;
+  }
+  .expenses-filter-primary,
+  .expenses-filter-grid {
     grid-template-columns: 1fr;
   }
   .expenses-actions {

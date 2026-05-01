@@ -75,6 +75,13 @@
       </div>
 
       <div class="form-group">
+        <div class="form-label">Description</div>
+        <div class="form-value form-value-pre">
+          {{ expense.description or 'No description provided.' }}
+        </div>
+      </div>
+
+      <div class="form-group">
         <div class="form-label">Note</div>
         <div class="form-value form-value-pre">
           {{ expense.note or 'No note provided.' }}

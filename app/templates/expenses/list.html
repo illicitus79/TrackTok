@@ -16,10 +16,9 @@
     </div>
   </div>
 
-  <form method="GET" class="card" style="margin-bottom: 1rem;">
-    <div class="card-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
-      <!-- Filters row 1 -->
-      <div class="expenses-grid">
+  <form method="GET" class="card expenses-filter-card">
+    <div class="card-body expenses-filter-body">
+      <div class="expenses-filter-primary">
         <div>
           <label class="form-label" for="project_id">Project</label>
           <select class="form-input" name="project_id" id="project_id">
@@ -38,6 +37,22 @@
             {% endfor %}
           </select>
         </div>
+        <div class="filter-actions expenses-filter-actions">
+          <button type="submit" class="btn btn-primary">Apply Filters</button>
+          <a class="btn btn-secondary" href="{{ url_for('web.expenses') }}">Reset</a>
+          <button
+            type="button"
+            class="btn btn-secondary"
+            id="toggleAdvancedFilters"
+            aria-expanded="false"
+            aria-controls="advancedExpenseFilters"
+          >
+            Expand
+          </button>
+        </div>
+      </div>
+
+      <div class="expenses-grid expenses-filter-grid advanced-expense-filters" id="advancedExpenseFilters" hidden>
         <div>
           <label class="form-label" for="account_id">Source Account</label>
           <select class="form-input" name="account_id" id="account_id">
@@ -55,9 +70,6 @@
           <label class="form-label" for="max_amount">Max Amount</label>
           <input class="form-input" type="number" step="0.01" name="max_amount" id="max_amount" value="{{ filters.max_amount }}">
         </div>
-      </div>
-      <!-- Filters row 2 -->
-      <div class="expenses-grid narrow">
         <div>
           <label class="form-label" for="start_date">Start Date</label>
           <input class="form-input date-input" type="text" inputmode="numeric" name="start_date" id="start_date" value="{{ filters.start_date }}" placeholder="{{ date_format }}">
@@ -78,10 +90,6 @@
         </div>
       </div>
     </div>
-    <div class="card-footer filter-actions">
-      <a class="btn btn-secondary" href="{{ url_for('web.expenses') }}">Reset</a>
-      <button type="submit" class="btn btn-primary">Apply Filters</button>
-    </div>
   </form>
 
   {% if expenses %}
@@ -92,6 +100,7 @@
           <thead>
             <tr>
               <th>Vendor / Note</th>
+              <th>Description</th>
               <th>Project</th>
               <th>Date</th>
               <th>Category</th>
@@ -105,6 +114,7 @@
             {% for expense in expenses %}
             <tr>
               <td data-label="Vendor" style="font-weight: 500;">{{ expense.vendor or expense.note or 'Expense' }}</td>
+              <td data-label="Description">{{ expense.description or '-' }}</td>
               <td data-label="Project">{{ expense.project.name if expense.project else '-' }}</td>
               <td data-label="Date">{{ format_date(expense.expense_date, include_time=True) }}</td>
               <td data-label="Category">{{ expense.category.name if expense.category else 'Uncategorized' }}</td>
@@ -164,4 +174,101 @@
   </div>
   {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  (function initExpenseFilterCategoryDropdown() {
+    const projectSelect = document.getElementById("project_id");
+    const categorySelect = document.getElementById("category_id");
+    if (!projectSelect || !categorySelect) return;
+
+    const allCategoryOptions = Array.from(categorySelect.options).map((option) => ({
+      value: option.value,
+      label: option.textContent,
+      selected: option.selected,
+    }));
+    let selectedCategoryId = "{{ filters.category_id or '' }}";
+
+    function setOptions(options, placeholder) {
+      categorySelect.innerHTML = "";
+      const defaultOption = document.createElement("option");
+      defaultOption.value = "";
+      defaultOption.textContent = placeholder;
+      categorySelect.appendChild(defaultOption);
+
+      options.forEach((category) => {
+        const option = document.createElement("option");
+        option.value = category.id || category.value;
+        option.textContent = category.name || category.label;
+        categorySelect.appendChild(option);
+      });
+
+      if (options.some((category) => String(category.id || category.value) === selectedCategoryId)) {
+        categorySelect.value = selectedCategoryId;
+      }
+    }
+
+    function restoreAllCategories() {
+      categorySelect.innerHTML = "";
+      allCategoryOptions.forEach((category) => {
+        const option = document.createElement("option");
+        option.value = category.value;
+        option.textContent = category.label;
+        option.selected = category.selected;
+        categorySelect.appendChild(option);
+      });
+    }
+
+    async function loadProjectCategories(projectId) {
+      if (!projectId) {
+        restoreAllCategories();
+        categorySelect.disabled = false;
+        return;
+      }
+
+      categorySelect.disabled = true;
+      categorySelect.innerHTML = '<option value="">Loading categories...</option>';
+      try {
+        const response = await fetch(`/projects/${projectId}/categories/json`, {
+          credentials: "include",
+        });
+        if (!response.ok) throw new Error("Failed to load categories");
+        const categories = await response.json();
+        setOptions(categories, categories.length ? "All project categories" : "No categories for this project");
+      } catch (error) {
+        categorySelect.innerHTML = '<option value="">Could not load categories</option>';
+      } finally {
+        categorySelect.disabled = false;
+      }
+    }
+
+    projectSelect.addEventListener("change", (event) => {
+      selectedCategoryId = "";
+      categorySelect.value = "";
+      loadProjectCategories(event.target.value);
+    });
+  })();
+
+  (function initAdvancedExpenseFilters() {
+    const advanced = document.getElementById("advancedExpenseFilters");
+    const toggle = document.getElementById("toggleAdvancedFilters");
+    if (!advanced || !toggle) return;
+
+    const hasAdvancedFilters = Boolean(
+      "{{ filters.account_id or filters.min_amount or filters.max_amount or filters.start_date or filters.end_date or '' }}"
+    ) || "{{ filters.per_page }}" !== "25";
+
+    function setExpanded(expanded) {
+      advanced.hidden = !expanded;
+      toggle.setAttribute("aria-expanded", String(expanded));
+      toggle.textContent = expanded ? "Collapse" : "Expand";
+    }
+
+    setExpanded(hasAdvancedFilters);
+    toggle.addEventListener("click", () => {
+      setExpanded(advanced.hidden);
+    });
+  })();
+</script>
 {% endblock %}

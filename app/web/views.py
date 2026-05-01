@@ -259,6 +259,46 @@ def dashboard():
         status='active'
     ).limit(5).all()
 
+    active_project_ids = [project.id for project in active_projects]
+    project_spend = {}
+    project_expense_counts = {}
+    if active_project_ids:
+        spend_rows = (
+            db.session.query(
+                Expense.project_id,
+                func.sum(Expense.amount).label("spent"),
+                func.count(Expense.id).label("expense_count"),
+            )
+            .filter(
+                Expense.tenant_id == tenant_id,
+                Expense.project_id.in_(active_project_ids),
+                Expense.is_deleted == False,
+            )
+            .group_by(Expense.project_id)
+            .all()
+        )
+        project_spend = {str(row.project_id): float(row.spent or 0) for row in spend_rows}
+        project_expense_counts = {str(row.project_id): int(row.expense_count or 0) for row in spend_rows}
+
+    active_project_spend = sum(project_spend.values())
+    active_project_budget = sum(float(project.starting_budget or 0) for project in active_projects)
+    active_project_remaining = active_project_budget - active_project_spend
+    at_risk_project_count = 0
+    for project in active_projects:
+        budget = float(project.starting_budget or 0)
+        spent = project_spend.get(str(project.id), 0)
+        if budget > 0 and (spent / budget) >= 0.8:
+            at_risk_project_count += 1
+    active_projects = sorted(
+        active_projects,
+        key=lambda project: (
+            project_spend.get(str(project.id), 0) / float(project.starting_budget or 1)
+            if float(project.starting_budget or 0) > 0
+            else 0
+        ),
+        reverse=True,
+    )
+
     show_onboarding = account_count == 0 and project_count == 0 and total_expense_count == 0
     
     return render_template("dashboard.html",
@@ -269,6 +309,11 @@ def dashboard():
                          account_count=account_count,
                          recent_expenses=recent_expenses,
                          active_projects=active_projects,
+                         project_spend=project_spend,
+                         project_expense_counts=project_expense_counts,
+                         active_project_spend=active_project_spend,
+                         active_project_remaining=active_project_remaining,
+                         at_risk_project_count=at_risk_project_count,
                          show_onboarding=show_onboarding)
 
 
@@ -981,6 +1026,54 @@ def project_detail(project_id):
         for r in recent_rows
     ]
 
+    # Full expense drill-down for the Total Spent modal. Keep this payload
+    # intentionally narrow; details/editing still live on the expense pages.
+    expense_rows = (
+        db.session.query(
+            Expense.id,
+            Expense.expense_date,
+            Expense.vendor,
+            Expense.description,
+            Expense.note,
+            Expense.amount,
+            Expense.currency,
+            Expense.status,
+            Category.name.label("category"),
+            Account.name.label("account"),
+        )
+        .outerjoin(Category, Category.id == Expense.category_id)
+        .join(Account, Account.id == Expense.account_id)
+        .filter(
+            Expense.tenant_id == tenant_id,
+            Expense.project_id == project.id,
+            Expense.is_deleted == False,
+        )
+        .order_by(Expense.expense_date.desc(), Expense.id.desc())
+        .all()
+    )
+    expense_drilldown = [
+        {
+            "id": str(r.id),
+            "date": r.expense_date.isoformat() if r.expense_date else None,
+            "vendor": r.vendor or r.description or r.note or "Expense",
+            "description": r.description or "",
+            "note": r.note or "",
+            "amount": float(r.amount or 0),
+            "currency": r.currency or "USD",
+            "category": r.category or "Uncategorized",
+            "account": r.account or "-",
+            "status": r.status or "",
+            "url": url_for("web.expense_detail", expense_id=r.id),
+        }
+        for r in expense_rows
+    ]
+    expense_count_total = len(expense_drilldown)
+    avg_expense_amount = (
+        float(total_spend or 0) / expense_count_total
+        if expense_count_total
+        else 0
+    )
+
     # Category concentration
     total_spend_float = float(total_spend or 0)
     top_category_name = None
@@ -1020,6 +1113,8 @@ def project_detail(project_id):
             'projected_end_total': projected_end_total,
             'projected_end_variance': projected_end_variance,
             'biggest_expense': biggest_expense,
+            'expense_count_total': expense_count_total,
+            'avg_expense_amount': avg_expense_amount,
         },
         'daily_spend': {
             'labels': daily_labels,
@@ -1030,6 +1125,7 @@ def project_detail(project_id):
             'data': top_vendor_data,
         },
         'recent_expenses': recent_expenses,
+        'expense_drilldown': expense_drilldown,
         'forecast': {
             'projected_total': forecast_total,
             'confidence': 75,
@@ -1463,6 +1559,7 @@ def expense_new():
                 amount=amount,
                 currency=request.form.get("currency", "USD"),
                 vendor=request.form.get("vendor") or None,
+                description=request.form.get("description") or None,
                 note=request.form.get("note") or None,
                 category_id=category_id,
                 project_id=project_id,
@@ -1597,6 +1694,7 @@ def expense_edit(expense_id):
             )
 
             expense.vendor = request.form.get("vendor") or None
+            expense.description = request.form.get("description") or None
             expense.note = request.form.get("note") or None
             expense.amount = Decimal(request.form.get("amount", expense.amount))
             expense.currency = request.form.get("currency", expense.currency)

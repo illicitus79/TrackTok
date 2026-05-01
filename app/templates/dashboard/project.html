@@ -223,7 +223,13 @@ endblock %} {% block content %}
           </div>
         </div>
 
-        <div class="stat-card card-gradient-emerald">
+        <button
+          type="button"
+          class="stat-card stat-card-button card-gradient-emerald"
+          id="openExpensesModal"
+          aria-haspopup="dialog"
+          aria-controls="projectExpensesModal"
+        >
           <div class="stat-card-header">
             <div class="stat-label">Total Spent</div>
             <svg
@@ -254,8 +260,9 @@ endblock %} {% block content %}
                 >{{ "%.0f"|format(dashboard_data.budget_utilization) }}</span
               >% of budget</span
             >
+            <span class="stat-hint">Click to view expense details</span>
           </div>
-        </div>
+        </button>
 
         <div
           class="stat-card{% if dashboard_data.is_over_budget %} card-gradient-error{% elif dashboard_data.budget_utilization > 80 %} card-gradient-warning{% else %} card-gradient-emerald{% endif %}"
@@ -314,6 +321,34 @@ endblock %} {% block content %}
             <span class="stat-hint">Daily average</span>
           </div>
         </div>
+
+        <div class="stat-card">
+          <div class="stat-card-header">
+            <div class="stat-label">Avg Expense</div>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M3 3v18h18"></path>
+              <path d="M7 15l4-4 3 3 5-6"></path>
+            </svg>
+          </div>
+          <div class="stat-value" data-stat="avg_expense_amount">
+            {{ format_money(dashboard_data.insights.avg_expense_amount) if
+            dashboard_data.insights else format_money(0) }}
+          </div>
+          <div class="stat-footer">
+            <span class="stat-hint"
+              >{{ dashboard_data.insights.expense_count_total if
+              dashboard_data.insights else 0 }} expense entries</span
+            >
+          </div>
+        </div>
       </div>
 
       <!-- Charts Section -->
@@ -332,7 +367,14 @@ endblock %} {% block content %}
             </div>
           </div>
 
-          <div class="chart-card">
+          <div
+            class="chart-card chart-card-action"
+            id="categoryBreakdownCard"
+            role="button"
+            tabindex="0"
+            data-category="{{ dashboard_data.insights.top_category_name or '' }}"
+            aria-label="Open category expenses"
+          >
             <div class="chart-header">
               <h3>Category Breakdown</h3>
               <div class="chart-legend" id="categoryLegend"></div>
@@ -341,7 +383,9 @@ endblock %} {% block content %}
               <canvas id="categoryChart"></canvas>
             </div>
             <div class="chart-footer">
-              <span class="chart-hint">Total expenses by category</span>
+              <span class="chart-hint"
+                >Click a slice to view expenses for that category</span
+              >
             </div>
           </div>
         </div>
@@ -462,6 +506,92 @@ endblock %} {% block content %}
     </aside>
   </div>
 </div>
+
+<div
+  class="modal-backdrop"
+  id="projectExpensesModal"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="projectExpensesModalTitle"
+  hidden
+>
+  <div class="modal-panel project-expenses-modal" role="document">
+    <div class="modal-header">
+      <div>
+        <p class="eyebrow">Project drill-down</p>
+        <h2 id="projectExpensesModalTitle">Expenses for {{ project.name }}</h2>
+        <p class="modal-subtitle">
+          <span id="expensesModalCount">0</span> matching expenses
+        </p>
+      </div>
+      <button
+        type="button"
+        class="modal-close"
+        id="closeExpensesModal"
+        aria-label="Close expenses modal"
+      >
+        &times;
+      </button>
+    </div>
+
+    <div class="modal-filters" aria-label="Expense filters">
+      <div class="form-group">
+        <label class="form-label" for="expenseCategoryFilter">Category</label>
+        <select class="form-input" id="expenseCategoryFilter">
+          <option value="">All categories</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="expenseMinAmountFilter">Min amount</label>
+        <input
+          class="form-input"
+          type="number"
+          step="0.01"
+          min="0"
+          id="expenseMinAmountFilter"
+          placeholder="0.00"
+        />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="expenseMaxAmountFilter">Max amount</label>
+        <input
+          class="form-input"
+          type="number"
+          step="0.01"
+          min="0"
+          id="expenseMaxAmountFilter"
+          placeholder="Any"
+        />
+      </div>
+      <div class="filter-actions modal-filter-actions">
+        <button type="button" class="btn btn-secondary" id="resetExpenseFilters">
+          Reset
+        </button>
+      </div>
+    </div>
+
+    <div class="modal-table-wrap">
+      <table class="table project-expenses-table">
+        <thead>
+          <tr>
+            <th>Vendor / Note</th>
+            <th>Description</th>
+            <th>Category</th>
+            <th>Account</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th class="text-right">Amount</th>
+            <th class="text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody id="projectExpensesTableBody"></tbody>
+      </table>
+      <div class="empty-state" id="projectExpensesEmpty" hidden>
+        <p>No expenses match the selected filters.</p>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %} {% block extra_scripts %}
 <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
 <script>
@@ -469,6 +599,7 @@ endblock %} {% block content %}
   const projectId = {{ project.id|tojson }};
   const serverData = {{ dashboard_data|tojson }};
   const dashboardApp = new DashboardApp(projectId, serverData);
+  const projectExpenses = serverData.expense_drilldown || [];
 
   // Export report function
   async function exportReport() {
@@ -484,5 +615,127 @@ endblock %} {% block content %}
           resolve(choice ? 'csv' : 'xlsx');
       });
   }
+
+  (function initProjectExpensesModal() {
+      const modal = document.getElementById('projectExpensesModal');
+      const openButton = document.getElementById('openExpensesModal');
+      const closeButton = document.getElementById('closeExpensesModal');
+      const categoryFilter = document.getElementById('expenseCategoryFilter');
+      const minAmountFilter = document.getElementById('expenseMinAmountFilter');
+      const maxAmountFilter = document.getElementById('expenseMaxAmountFilter');
+      const resetButton = document.getElementById('resetExpenseFilters');
+      const tableBody = document.getElementById('projectExpensesTableBody');
+      const emptyState = document.getElementById('projectExpensesEmpty');
+      const countLabel = document.getElementById('expensesModalCount');
+      if (!modal || !openButton || !tableBody) return;
+
+      const formatDate = (value) => {
+          if (!value) return '-';
+          return window.TrackTok?.formatDate ? window.TrackTok.formatDate(value) : new Date(value).toLocaleDateString();
+      };
+      const formatAmount = (value) => window.TrackTok?.formatCurrency
+          ? window.TrackTok.formatCurrency(Number(value || 0))
+          : Number(value || 0).toFixed(2);
+      const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;',
+      }[char]));
+
+      function populateCategories() {
+          const categories = [...new Set(projectExpenses.map((expense) => expense.category || 'Uncategorized'))].sort();
+          categoryFilter.innerHTML = '<option value="">All categories</option>' + categories
+              .map((category) => `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`)
+              .join('');
+      }
+
+      function getFilteredExpenses() {
+          const category = categoryFilter.value;
+          const min = minAmountFilter.value === '' ? null : Number(minAmountFilter.value);
+          const max = maxAmountFilter.value === '' ? null : Number(maxAmountFilter.value);
+          return projectExpenses.filter((expense) => {
+              const amount = Number(expense.amount || 0);
+              if (category && expense.category !== category) return false;
+              if (min !== null && amount < min) return false;
+              if (max !== null && amount > max) return false;
+              return true;
+          });
+      }
+
+      function renderExpenses() {
+          const filtered = getFilteredExpenses();
+          countLabel.textContent = filtered.length;
+          emptyState.hidden = filtered.length > 0;
+          tableBody.innerHTML = filtered.map((expense) => `
+              <tr>
+                  <td data-label="Vendor / Note">
+                      <strong>${escapeHtml(expense.vendor || 'Expense')}</strong>
+                      ${expense.note ? `<div class="table-note">${escapeHtml(expense.note)}</div>` : ''}
+                  </td>
+                  <td data-label="Description">${escapeHtml(expense.description || '-')}</td>
+                  <td data-label="Category">${escapeHtml(expense.category || 'Uncategorized')}</td>
+                  <td data-label="Account">${escapeHtml(expense.account || '-')}</td>
+                  <td data-label="Date">${escapeHtml(formatDate(expense.date))}</td>
+                  <td data-label="Status">${escapeHtml(expense.status || '-')}</td>
+                  <td data-label="Amount" class="text-right"><strong>${escapeHtml(formatAmount(expense.amount))}</strong></td>
+                  <td data-label="Action" class="text-right">
+                      <a class="btn btn-secondary btn-sm" href="${escapeHtml(expense.url)}">View</a>
+                  </td>
+              </tr>
+          `).join('');
+      }
+
+      function openModal(initialCategory = '') {
+          categoryFilter.value = initialCategory || '';
+          modal.hidden = false;
+          document.body.classList.add('modal-open');
+          renderExpenses();
+          closeButton.focus();
+      }
+
+      function closeModal() {
+          modal.hidden = true;
+          document.body.classList.remove('modal-open');
+          openButton.focus();
+      }
+
+      populateCategories();
+      renderExpenses();
+      window.openProjectExpensesModal = openModal;
+      openButton.addEventListener('click', () => openModal());
+      closeButton.addEventListener('click', closeModal);
+      const categoryCard = document.getElementById('categoryBreakdownCard');
+      if (categoryCard) {
+          const openTopCategory = () => openModal(categoryCard.dataset.category || '');
+          categoryCard.addEventListener('click', (event) => {
+              if (event.target.closest('canvas')) return;
+              openTopCategory();
+          });
+          categoryCard.addEventListener('keydown', (event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  openTopCategory();
+              }
+          });
+      }
+      modal.addEventListener('click', (event) => {
+          if (event.target === modal) closeModal();
+      });
+      document.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape' && !modal.hidden) closeModal();
+      });
+      [categoryFilter, minAmountFilter, maxAmountFilter].forEach((input) => {
+          input.addEventListener('input', renderExpenses);
+          input.addEventListener('change', renderExpenses);
+      });
+      resetButton.addEventListener('click', () => {
+          categoryFilter.value = '';
+          minAmountFilter.value = '';
+          maxAmountFilter.value = '';
+          renderExpenses();
+      });
+  })();
 </script>
 {% endblock %}

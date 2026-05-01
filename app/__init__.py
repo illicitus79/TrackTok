@@ -32,7 +32,7 @@ def create_app(config_name: str = None) -> Flask:
     if config_name:
         from app.core.config import config_by_name
 
-        app.config.from_object(config_by_name[config_name])
+        app.config.from_object(config_by_name[config_name]())
     else:
         app.config.from_object(get_config())
 

@@ -25,6 +25,18 @@ from app.models.user import UserRole
 blp = Blueprint("expenses", __name__, url_prefix="/expenses", description="Expense operations")
 
 
+def normalize_expense_payload(data):
+    """Map API field aliases to Expense model columns."""
+    normalized = dict(data)
+    if "title" in normalized:
+        normalized["vendor"] = normalized.pop("title")
+    if "notes" in normalized:
+        normalized["note"] = normalized.pop("notes")
+    if "metadata" in normalized:
+        normalized["expense_metadata"] = normalized.pop("metadata")
+    return normalized
+
+
 @blp.route("/")
 class ExpenseList(MethodView):
     """Expense list endpoint."""
@@ -94,7 +106,8 @@ class ExpenseList(MethodView):
         user_id = get_jwt_identity()
         tenant_id = g.get("tenant_id")
 
-        expense = Expense(**data, tenant_id=tenant_id, created_by=user_id)
+        expense_data = normalize_expense_payload(data)
+        expense = Expense(**expense_data, tenant_id=tenant_id, created_by=user_id)
         db.session.add(expense)
         db.session.commit()
 
@@ -104,7 +117,7 @@ class ExpenseList(MethodView):
             action=AuditAction.CREATE,
             resource_type="expense",
             resource_id=expense.id,
-            new_values=data,
+            new_values=expense_data,
         )
 
         logger.info(f"Expense created", expense_id=expense.id, user_id=user_id)
@@ -150,7 +163,6 @@ class ExpenseDetail(MethodView):
 
         field_map = {
             "title": "vendor",
-            "description": "note",
             "notes": "note",
             "metadata": "expense_metadata",
         }

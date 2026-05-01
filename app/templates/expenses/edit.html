@@ -27,6 +27,11 @@
         </div>
 
         <div class="form-group">
+          <label class="form-label" for="description">Description</label>
+          <textarea class="form-input" name="description" id="description" rows="2" placeholder="Short description for expense tables and reports">{{ expense.description or '' }}</textarea>
+        </div>
+
+        <div class="form-group">
           <label class="form-label" for="note">Note</label>
           <textarea class="form-input" name="note" id="note" rows="2">{{ expense.note or '' }}</textarea>
         </div>

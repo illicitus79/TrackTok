@@ -46,8 +46,9 @@ class Expense(BaseModel, TenantMixin, AuditMixin):
     )  # Support up to 999,999,999,999.99
     currency: Mapped[str] = mapped_column(db.String(3), nullable=False, default="USD")
     
-    # Description (vendor + note from spec)
+    # Description (vendor + description + note from spec)
     vendor: Mapped[str] = mapped_column(db.String(255), nullable=True)
+    description: Mapped[str] = mapped_column(db.Text, nullable=True)
     note: Mapped[str] = mapped_column(db.Text, nullable=True)
     
     # Categorization (nullable as per spec)

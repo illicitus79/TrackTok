@@ -465,7 +465,7 @@ def export_csv():
         
         # Header
         writer.writerow([
-            "Date", "Vendor", "Amount", "Currency", "Category", 
+            "Date", "Vendor", "Description", "Amount", "Currency", "Category",
             "Project", "Account", "Note", "Created At"
         ])
         yield output.getvalue()
@@ -477,6 +477,7 @@ def export_csv():
             writer.writerow([
                 expense.expense_date.strftime("%Y-%m-%d"),
                 expense.vendor or "",
+                expense.description or "",
                 expense.amount,
                 expense.currency or "USD",
                 expense.category.name if expense.category else "",
@@ -544,7 +545,7 @@ def export_xlsx():
     header_font = Font(bold=True, color="FFFFFF")
     
     # Headers
-    headers = ["Date", "Vendor", "Amount", "Currency", "Category", 
+    headers = ["Date", "Vendor", "Description", "Amount", "Currency", "Category",
                "Project", "Account", "Note", "Created At"]
     
     for col_idx, header in enumerate(headers, 1):
@@ -556,13 +557,14 @@ def export_xlsx():
     for row_idx, expense in enumerate(expenses, 2):
         ws.cell(row=row_idx, column=1, value=expense.expense_date.strftime("%Y-%m-%d"))
         ws.cell(row=row_idx, column=2, value=expense.vendor or "")
-        ws.cell(row=row_idx, column=3, value=expense.amount)
-        ws.cell(row=row_idx, column=4, value=expense.currency or "USD")
-        ws.cell(row=row_idx, column=5, value=expense.category.name if expense.category else "")
-        ws.cell(row=row_idx, column=6, value=expense.project.name if expense.project else "")
-        ws.cell(row=row_idx, column=7, value=expense.account.name if expense.account else "")
-        ws.cell(row=row_idx, column=8, value=expense.note or "")
-        ws.cell(row=row_idx, column=9, value=expense.created_at.strftime("%Y-%m-%d %H:%M:%S"))
+        ws.cell(row=row_idx, column=3, value=expense.description or "")
+        ws.cell(row=row_idx, column=4, value=expense.amount)
+        ws.cell(row=row_idx, column=5, value=expense.currency or "USD")
+        ws.cell(row=row_idx, column=6, value=expense.category.name if expense.category else "")
+        ws.cell(row=row_idx, column=7, value=expense.project.name if expense.project else "")
+        ws.cell(row=row_idx, column=8, value=expense.account.name if expense.account else "")
+        ws.cell(row=row_idx, column=9, value=expense.note or "")
+        ws.cell(row=row_idx, column=10, value=expense.created_at.strftime("%Y-%m-%d %H:%M:%S"))
     
     # Adjust column widths
     for col_idx in range(1, len(headers) + 1):

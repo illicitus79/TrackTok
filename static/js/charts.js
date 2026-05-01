@@ -88,6 +88,7 @@ class DashboardApp {
       this.updateStat("spend_7d", data.insights.spend_7d || 0);
       this.updateStat("avg_daily_7d", data.insights.avg_daily_7d || 0);
       this.updateStat("spend_mtd", data.insights.spend_mtd || 0);
+      this.updateStat("avg_expense_amount", data.insights.avg_expense_amount || 0);
     }
 
     // Update progress bar
@@ -118,6 +119,7 @@ class DashboardApp {
         if (
           key.includes("budget") ||
           key.includes("spend") ||
+          key.includes("amount") ||
           key.includes("rate") ||
           key.includes("avg_daily")
         ) {
@@ -202,6 +204,19 @@ class DashboardApp {
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        onClick: (event, elements, chart) => {
+          if (!elements.length || typeof window.openProjectExpensesModal !== "function") {
+            return;
+          }
+          const category = chart.data.labels[elements[0].index];
+          window.openProjectExpensesModal(category);
+        },
+        onHover: (event, elements) => {
+          const target = event?.native?.target;
+          if (target) {
+            target.style.cursor = elements.length ? "pointer" : "default";
+          }
+        },
         plugins: {
           legend: {
             position: "bottom",

@@ -106,8 +106,6 @@ services:
   beat:
     restart: always
     entrypoint: ["bash", "docker/entrypoint.sh"]
-    volumes:
-      - celerybeat-data:/app/celerybeat
     environment:
       - DATABASE_URL=postgresql://tracktok:tracktok@db:5432/tracktok
       - REDIS_URL=redis://redis:6379/0
@@ -116,7 +114,7 @@ services:
       - RATELIMIT_STORAGE_URL=redis://redis:6379/1
     env_file:
       - .env
-    command: celery -A app.tasks.celery_app beat --loglevel=info --schedule=/app/celerybeat/celerybeat-schedule
+    command: celery -A app.tasks.celery_app beat --loglevel=info --schedule=/tmp/celerybeat-schedule
     depends_on:
       db:
         condition: service_healthy
@@ -144,4 +142,3 @@ volumes:
   postgres-data-prod:
   redis-data-prod:
   uploads-data:
-  celerybeat-data:
