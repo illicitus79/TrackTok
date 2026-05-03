@@ -3227,6 +3227,39 @@ body.modal-open {
   color: var(--text-muted);
 }
 
+.modal-summary {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  margin-top: var(--spacing-sm);
+}
+
+.modal-summary > div {
+  min-width: 132px;
+  padding: 0.55rem 0.75rem;
+  background: color-mix(in srgb, var(--panel-hover) 72%, transparent);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.modal-summary .summary-label {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.modal-summary strong {
+  display: block;
+  margin-top: 0.1rem;
+  color: var(--text-bright);
+  font-size: 1rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
 .modal-close {
   width: 40px;
   height: 40px;
@@ -3886,6 +3919,40 @@ body.modal-open {
   overflow-x: hidden;
   margin-top: 0.5rem;
   padding: 0 0.25rem;
+}
+
+.expenses-list-summary {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  margin: 0 0 var(--spacing-md);
+}
+
+.expenses-list-summary > div {
+  min-width: 146px;
+  padding: 0.6rem 0.8rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.expenses-list-summary .summary-label {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.expenses-list-summary strong {
+  display: block;
+  margin-top: 0.1rem;
+  color: var(--text-bright);
+  font-size: 1rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 .expenses-grid .field-small {

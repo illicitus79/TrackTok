@@ -93,14 +93,25 @@
   </form>
 
   {% if expenses %}
+  {% set visible_total = expenses|sum(attribute='amount') %}
+  <div class="expenses-list-summary" aria-label="Visible expense summary">
+    <div>
+      <span class="summary-label">Visible rows</span>
+      <strong>{{ expenses|length }}</strong>
+    </div>
+    <div>
+      <span class="summary-label">Amount total</span>
+      <strong>{{ format_money(visible_total|float) }}</strong>
+    </div>
+  </div>
+
   <div class="card">
     <div class="card-body" style="padding: 0.5rem 0; overflow: hidden;">
       <div class="expenses-table-wrapper">
         <table class="table stackable">
           <thead>
             <tr>
-              <th>Vendor / Note</th>
-              <th>Description</th>
+              <th>Vendor / Description</th>
               <th>Project</th>
               <th>Date</th>
               <th>Category</th>
@@ -113,8 +124,12 @@
           <tbody>
             {% for expense in expenses %}
             <tr>
-              <td data-label="Vendor" style="font-weight: 500;">{{ expense.vendor or expense.note or 'Expense' }}</td>
-              <td data-label="Description">{{ expense.description or '-' }}</td>
+              <td data-label="Vendor / Description" style="font-weight: 500;">
+                <strong>{{ expense.vendor or 'Expense' }}</strong>
+                {% if expense.description %}
+                <div class="table-note">{{ expense.description }}</div>
+                {% endif %}
+              </td>
               <td data-label="Project">{{ expense.project.name if expense.project else '-' }}</td>
               <td data-label="Date">{{ format_date(expense.expense_date, include_time=True) }}</td>
               <td data-label="Category">{{ expense.category.name if expense.category else 'Uncategorized' }}</td>

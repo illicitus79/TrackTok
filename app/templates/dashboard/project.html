@@ -520,9 +520,16 @@ endblock %} {% block content %}
       <div>
         <p class="eyebrow">Project drill-down</p>
         <h2 id="projectExpensesModalTitle">Expenses for {{ project.name }}</h2>
-        <p class="modal-subtitle">
-          <span id="expensesModalCount">0</span> matching expenses
-        </p>
+        <div class="modal-summary" aria-label="Visible expense summary">
+          <div>
+            <span class="summary-label">Visible rows</span>
+            <strong><span id="expensesModalCount">0</span></strong>
+          </div>
+          <div>
+            <span class="summary-label">Amount total</span>
+            <strong id="expensesModalTotal">{{ format_money(0) }}</strong>
+          </div>
+        </div>
       </div>
       <button
         type="button"
@@ -574,8 +581,7 @@ endblock %} {% block content %}
       <table class="table project-expenses-table">
         <thead>
           <tr>
-            <th>Vendor / Note</th>
-            <th>Description</th>
+            <th>Vendor / Description</th>
             <th>Category</th>
             <th>Account</th>
             <th>Date</th>
@@ -627,6 +633,7 @@ endblock %} {% block content %}
       const tableBody = document.getElementById('projectExpensesTableBody');
       const emptyState = document.getElementById('projectExpensesEmpty');
       const countLabel = document.getElementById('expensesModalCount');
+      const totalLabel = document.getElementById('expensesModalTotal');
       if (!modal || !openButton || !tableBody) return;
 
       const formatDate = (value) => {
@@ -666,15 +673,16 @@ endblock %} {% block content %}
 
       function renderExpenses() {
           const filtered = getFilteredExpenses();
+          const visibleTotal = filtered.reduce((total, expense) => total + Number(expense.amount || 0), 0);
           countLabel.textContent = filtered.length;
+          totalLabel.textContent = formatAmount(visibleTotal);
           emptyState.hidden = filtered.length > 0;
           tableBody.innerHTML = filtered.map((expense) => `
               <tr>
-                  <td data-label="Vendor / Note">
+                  <td data-label="Vendor / Description">
                       <strong>${escapeHtml(expense.vendor || 'Expense')}</strong>
-                      ${expense.note ? `<div class="table-note">${escapeHtml(expense.note)}</div>` : ''}
+                      ${expense.description ? `<div class="table-note">${escapeHtml(expense.description)}</div>` : ''}
                   </td>
-                  <td data-label="Description">${escapeHtml(expense.description || '-')}</td>
                   <td data-label="Category">${escapeHtml(expense.category || 'Uncategorized')}</td>
                   <td data-label="Account">${escapeHtml(expense.account || '-')}</td>
                   <td data-label="Date">${escapeHtml(formatDate(expense.date))}</td>
