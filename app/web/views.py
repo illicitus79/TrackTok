@@ -623,9 +623,6 @@ def project_new():
     tenant_id = current_user.tenant_id
     tenant_currency, tz_name = get_tenant_preferences()
     date_format = (current_user.tenant.settings or {}).get("date_format", "dd/mm/yyyy")
-    date_format = (current_user.tenant.settings or {}).get("date_format", "dd/mm/yyyy")
-    date_format = (current_user.tenant.settings or {}).get("date_format", "dd/mm/yyyy")
-    date_format = (current_user.tenant.settings or {}).get("date_format", "dd/mm/yyyy")
     accounts = Account.query.filter_by(tenant_id=tenant_id, is_deleted=False).order_by(Account.name).all()
     limits = get_plan_limits(current_user.tenant)
 
@@ -1203,6 +1200,7 @@ def project_expense_quick_create(project_id):
         return jsonify({"error": "Project mismatch."}), 400
 
     tenant_currency, tz_name = get_tenant_preferences()
+    date_format = (current_user.tenant.settings or {}).get("date_format", "dd/mm/yyyy")
 
     try:
         amount_raw = (request.form.get("amount") or "").strip()

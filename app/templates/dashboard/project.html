@@ -931,8 +931,12 @@ endblock %} {% block content %}
         if (!quickAddModal || !quickAddForm) return;
         quickAddForm.reset();
         if (quickProjectSelect) quickProjectSelect.value = projectId;
-        if (quickDateInput && !quickDateInput.value) {
-          quickDateInput.value = "{{ quick_add_today_display }}";
+        if (quickDateInput) {
+          if (quickDateInput._flatpickr) {
+            quickDateInput._flatpickr.setDate("{{ quick_add_today_display }}", true, "{{ quick_add_date_format }}" === "yyyy-mm-dd" ? "Y-m-d" : undefined);
+          } else if (!quickDateInput.value) {
+            quickDateInput.value = "{{ quick_add_today_display }}";
+          }
         }
         if (quickTimeInput && !quickTimeInput.value) {
           const now = new Date();
