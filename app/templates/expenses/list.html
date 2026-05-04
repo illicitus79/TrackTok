@@ -114,10 +114,10 @@
               <th>Vendor</th>
               <th>Description</th>
               <th>Project</th>
-              <th>Date</th>
+              <th data-sort="date">Date</th>
               <th>Category</th>
               <th>Account</th>
-              <th>Amount</th>
+              <th data-sort="number">Amount</th>
               <th data-sort="none">Actions</th>
             </tr>
           </thead>
@@ -127,10 +127,10 @@
               <td data-label="Vendor" style="font-weight: 500;"><strong>{{ expense.vendor or 'Expense' }}</strong></td>
               <td data-label="Description">{{ expense.description or '-' }}</td>
               <td data-label="Project">{{ expense.project.name if expense.project else '-' }}</td>
-              <td data-label="Date">{{ format_date(expense.expense_date, include_time=True) }}</td>
+              <td data-label="Date" data-sort-value="{{ expense.expense_date.isoformat() if expense.expense_date else '' }}">{{ format_date(expense.expense_date, include_time=True) }}</td>
               <td data-label="Category">{{ expense.category.name if expense.category else 'Uncategorized' }}</td>
               <td data-label="Account">{{ expense.account.name if expense.account else '-' }}</td>
-              <td data-label="Amount" style="font-weight: 600;">{{ format_money(expense.amount|float) }}</td>
+              <td data-label="Amount" data-sort-value="{{ expense.amount|float }}" style="font-weight: 600;">{{ format_money(expense.amount|float) }}</td>
               {% set meta = expense.expense_metadata or {} %}
               <td data-label="Actions" class="table-actions">
                 <a href="{{ url_for('web.expense_detail', expense_id=expense.id) }}" class="btn btn-primary btn-sm action-btn">View</a>

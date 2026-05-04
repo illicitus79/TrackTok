@@ -363,17 +363,17 @@ class SortableExpenseTables {
 
     if (!sampleValues.length) return "string";
 
-    const mostlyNumbers =
-      sampleValues.filter((value) => Number.isFinite(this.parseNumber(value)))
-        .length >=
-      Math.ceil(sampleValues.length * 0.7);
-    if (mostlyNumbers) return "number";
-
     const mostlyDates =
       sampleValues.filter((value) => Number.isFinite(this.parseDate(value)))
         .length >=
       Math.ceil(sampleValues.length * 0.7);
     if (mostlyDates) return "date";
+
+    const mostlyNumbers =
+      sampleValues.filter((value) => Number.isFinite(this.parseNumber(value)))
+        .length >=
+      Math.ceil(sampleValues.length * 0.7);
+    if (mostlyNumbers) return "number";
 
     return "string";
   }

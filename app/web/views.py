@@ -625,6 +625,7 @@ def project_new():
     date_format = (current_user.tenant.settings or {}).get("date_format", "dd/mm/yyyy")
     date_format = (current_user.tenant.settings or {}).get("date_format", "dd/mm/yyyy")
     date_format = (current_user.tenant.settings or {}).get("date_format", "dd/mm/yyyy")
+    date_format = (current_user.tenant.settings or {}).get("date_format", "dd/mm/yyyy")
     accounts = Account.query.filter_by(tenant_id=tenant_id, is_deleted=False).order_by(Account.name).all()
     limits = get_plan_limits(current_user.tenant)
 
@@ -1157,7 +1158,9 @@ def project_detail(project_id):
     }
 
     _, tz_name = get_tenant_preferences()
+    date_format = (current_user.tenant.settings or {}).get("date_format", "dd/mm/yyyy")
     quick_add_today = date.today().isoformat()
+    quick_add_today_display = format_for_input(date.today(), date_format)
     try:
         from zoneinfo import ZoneInfo
 
@@ -1171,6 +1174,8 @@ def project_detail(project_id):
         project=project,
         dashboard_data=dashboard_data,
         quick_add_today=quick_add_today,
+        quick_add_today_display=quick_add_today_display,
+        quick_add_date_format=date_format,
         quick_add_time=quick_add_time,
     )
 
@@ -1210,9 +1215,8 @@ def project_expense_quick_create(project_id):
         expense_date_raw = (request.form.get("expense_date") or "").strip()
         if not expense_date_raw:
             raise ValueError("Date is required.")
-        try:
-            expense_date_val = date.fromisoformat(expense_date_raw)
-        except Exception:
+        expense_date_val = parse_date_input(expense_date_raw, date_format)
+        if not expense_date_val:
             raise ValueError("Invalid date format.")
 
         expense_time_val = parse_time_input(request.form.get("expense_time"))
