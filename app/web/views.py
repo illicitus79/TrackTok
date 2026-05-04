@@ -1156,7 +1156,168 @@ def project_detail(project_id):
         }
     }
 
-    return render_template("dashboard/project.html", project=project, dashboard_data=dashboard_data)
+    _, tz_name = get_tenant_preferences()
+    quick_add_today = date.today().isoformat()
+    try:
+        from zoneinfo import ZoneInfo
+
+        now_local = datetime.now(ZoneInfo(tz_name))
+    except Exception:
+        now_local = datetime.utcnow()
+    quick_add_time = now_local.strftime("%H:%M")
+
+    return render_template(
+        "dashboard/project.html",
+        project=project,
+        dashboard_data=dashboard_data,
+        quick_add_today=quick_add_today,
+        quick_add_time=quick_add_time,
+    )
+
+
+@bp.route("/projects/<project_id>/expenses/quick-create", methods=["POST"])
+@login_required
+def project_expense_quick_create(project_id):
+    """Create an expense for a project from the dashboard modal."""
+    from app.models.expense import Expense
+    from app.models.account import Account
+    from app.models.category import Category
+    from app.models.project import Project
+
+    tenant_id = current_user.tenant_id
+    project = Project.query.filter_by(
+        id=project_id,
+        tenant_id=tenant_id,
+        is_deleted=False,
+    ).first()
+    if not project:
+        return jsonify({"error": "Project not found."}), 404
+
+    posted_project_id = request.form.get("project_id") or project_id
+    if str(posted_project_id) != str(project.id):
+        return jsonify({"error": "Project mismatch."}), 400
+
+    tenant_currency, tz_name = get_tenant_preferences()
+
+    try:
+        amount_raw = (request.form.get("amount") or "").strip()
+        if not amount_raw:
+            raise ValueError("Amount is required.")
+        amount = Decimal(amount_raw)
+        if amount <= 0:
+            raise ValueError("Amount must be greater than zero.")
+
+        expense_date_raw = (request.form.get("expense_date") or "").strip()
+        if not expense_date_raw:
+            raise ValueError("Date is required.")
+        try:
+            expense_date_val = date.fromisoformat(expense_date_raw)
+        except Exception:
+            raise ValueError("Invalid date format.")
+
+        expense_time_val = parse_time_input(request.form.get("expense_time"))
+        expense_dt_utc = combine_local_datetime(expense_date_val, expense_time_val, tz_name)
+
+        account_id = request.form.get("account_id")
+        if not account_id:
+            raise ValueError("Source account is required.")
+
+        account = Account.query.filter_by(
+            id=account_id,
+            tenant_id=tenant_id,
+            is_deleted=False,
+        ).first()
+        if not account:
+            raise ValueError("Invalid source account.")
+
+        allowed_account_ids = get_project_allowed_account_ids(project.id)
+        if allowed_account_ids and account.id not in allowed_account_ids:
+            raise ValueError("Selected account is not allowed for this project.")
+
+        category_id = request.form.get("category_id") or None
+        category = None
+        if category_id:
+            category = Category.query.filter_by(
+                id=category_id,
+                tenant_id=tenant_id,
+                project_id=project.id,
+                is_deleted=False,
+            ).first()
+            if not category:
+                raise ValueError("Category must belong to the selected project.")
+
+        limits = get_plan_limits(current_user.tenant)
+        project_expense_count = Expense.query.filter_by(
+            tenant_id=tenant_id,
+            project_id=project.id,
+            is_deleted=False,
+        ).count()
+        if project_expense_count >= limits.get("max_project_expenses", 999999):
+            raise ValueError(
+                f"Expense limit reached for this project ({limits.get('max_project_expenses')} max)."
+            )
+
+        expense = Expense(
+            tenant_id=tenant_id,
+            amount=amount,
+            currency=tenant_currency,
+            vendor=request.form.get("vendor") or None,
+            description=request.form.get("description") or None,
+            note=request.form.get("note") or None,
+            category_id=category.id if category else None,
+            project_id=project.id,
+            is_project_related=True,
+            account_id=account.id,
+            expense_date=expense_dt_utc or expense_date_val,
+            payment_method=request.form.get("payment_method", "cash"),
+            status="submitted",
+            created_by=current_user.id,
+        )
+
+        db.session.add(expense)
+        db.session.commit()
+
+        total_spend = db.session.query(db.func.sum(Expense.amount)).filter(
+            Expense.tenant_id == tenant_id,
+            Expense.project_id == project.id,
+            Expense.is_deleted == False,
+        ).scalar() or Decimal("0.00")
+        expense_count_total = Expense.query.filter_by(
+            tenant_id=tenant_id,
+            project_id=project.id,
+            is_deleted=False,
+        ).count()
+        budget_utilization = (
+            float((total_spend / project.starting_budget) * 100)
+            if project.starting_budget
+            else 0.0
+        )
+
+        return jsonify(
+            {
+                "expense": {
+                    "id": str(expense.id),
+                    "date": expense.expense_date.isoformat() if expense.expense_date else None,
+                    "vendor": expense.vendor or expense.description or expense.note or "Expense",
+                    "description": expense.description or "",
+                    "note": expense.note or "",
+                    "amount": float(expense.amount or 0),
+                    "currency": expense.currency or tenant_currency,
+                    "category": category.name if category else "Uncategorized",
+                    "account": account.name or "-",
+                    "status": expense.status or "",
+                    "url": url_for("web.expense_detail", expense_id=expense.id),
+                },
+                "summary": {
+                    "expense_count_total": expense_count_total,
+                    "total_spend": float(total_spend or 0),
+                    "budget_utilization": budget_utilization,
+                },
+            }
+        )
+    except Exception as exc:
+        db.session.rollback()
+        return jsonify({"error": str(exc)}), 400
 
 
 @bp.route("/projects/<project_id>/categories", methods=["GET", "POST"])

@@ -80,6 +80,28 @@ endblock %} {% block content %}
         </svg>
         Add Expense
       </button>
+      <button
+        type="button"
+        class="btn btn-secondary"
+        id="openViewExpensesModal"
+        aria-haspopup="dialog"
+        aria-controls="projectExpensesModal"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          aria-hidden="true"
+        >
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"></path>
+          <circle cx="12" cy="12" r="3"></circle>
+        </svg>
+        View Expenses
+      </button>
       <button class="btn btn-secondary" onclick="exportReport()">
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -531,14 +553,19 @@ endblock %} {% block content %}
           </div>
         </div>
       </div>
-      <button
-        type="button"
-        class="modal-close"
-        id="closeExpensesModal"
-        aria-label="Close expenses modal"
-      >
-        &times;
-      </button>
+      <div class="modal-header-actions">
+        <button type="button" class="btn btn-primary" id="openQuickAddExpenseModal">
+          Add Expense
+        </button>
+        <button
+          type="button"
+          class="modal-close"
+          id="closeExpensesModal"
+          aria-label="Close expenses modal"
+        >
+          &times;
+        </button>
+      </div>
     </div>
 
     <div class="modal-filters" aria-label="Expense filters">
@@ -598,6 +625,109 @@ endblock %} {% block content %}
     </div>
   </div>
 </div>
+
+<div
+  class="modal-backdrop"
+  id="quickAddExpenseModal"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="quickAddExpenseModalTitle"
+  hidden
+>
+  <div class="modal-panel quick-expense-modal" role="document">
+    <div class="modal-header">
+      <div>
+        <p class="eyebrow">Fast entry</p>
+        <h2 id="quickAddExpenseModalTitle">Add Expense to {{ project.name }}</h2>
+        <p class="modal-subtitle">Project is preselected so you can log expenses quickly.</p>
+      </div>
+      <button
+        type="button"
+        class="modal-close"
+        id="closeQuickAddExpenseModal"
+        aria-label="Close quick add expense modal"
+      >
+        &times;
+      </button>
+    </div>
+
+    <form id="quickAddExpenseForm" class="quick-expense-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="quick-expense-form-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label" for="quickExpenseProjectId">Project</label>
+            <select class="form-input" name="project_id" id="quickExpenseProjectId">
+              <option value="{{ project.id }}" selected>{{ project.name }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="quickExpenseVendor">Vendor / Title</label>
+            <input class="form-input" type="text" name="vendor" id="quickExpenseVendor" placeholder="Acme Cloud" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="quickExpenseDescription">Description</label>
+          <textarea class="form-input" name="description" id="quickExpenseDescription" rows="2" placeholder="Short description for tables and reports"></textarea>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label" for="quickExpenseAmount">Amount <span class="required">*</span></label>
+            <input class="form-input" type="number" step="0.01" min="0.01" name="amount" id="quickExpenseAmount" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="quickExpenseDate">Date <span class="required">*</span></label>
+            <input class="form-input" type="date" name="expense_date" id="quickExpenseDate" value="{{ quick_add_today }}" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="quickExpenseTime">Time</label>
+            <input class="form-input" type="time" name="expense_time" id="quickExpenseTime" value="{{ quick_add_time }}" />
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label" for="quickExpenseAccount">Source Account <span class="required">*</span></label>
+            <select class="form-input" name="account_id" id="quickExpenseAccount" required>
+              <option value="">Loading accounts...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="quickExpenseCategory">Category</label>
+            <select class="form-input" name="category_id" id="quickExpenseCategory">
+              <option value="">Uncategorized</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="quickExpensePaymentMethod">Payment Method</label>
+            <select class="form-input" name="payment_method" id="quickExpensePaymentMethod">
+              <option value="cash">Cash</option>
+              <option value="credit_card">Credit Card</option>
+              <option value="debit_card">Debit Card</option>
+              <option value="bank_transfer">Bank Transfer</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="quickExpenseNote">Note</label>
+          <textarea class="form-input" name="note" id="quickExpenseNote" rows="2" placeholder="Optional notes"></textarea>
+        </div>
+      </div>
+
+      <div class="quick-expense-footer">
+        <p id="quickExpenseStatus" class="quick-expense-status" aria-live="polite"></p>
+        <div class="filter-actions">
+          <button type="button" class="btn btn-secondary" id="cancelQuickAddExpense">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="submitQuickAddExpense">Save Expense</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
 {% endblock %} {% block extra_scripts %}
 <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
 <script>
@@ -622,10 +752,13 @@ endblock %} {% block content %}
       });
   }
 
-  (function initProjectExpensesModal() {
+    (function initProjectExpensesModal() {
       const modal = document.getElementById('projectExpensesModal');
-      const openButton = document.getElementById('openExpensesModal');
+      const openFromTotalSpentButton = document.getElementById('openExpensesModal');
+      const openViewExpensesButton = document.getElementById('openViewExpensesModal');
+      const openButtons = [openFromTotalSpentButton, openViewExpensesButton].filter(Boolean);
       const closeButton = document.getElementById('closeExpensesModal');
+      const openQuickAddButton = document.getElementById('openQuickAddExpenseModal');
       const categoryFilter = document.getElementById('expenseCategoryFilter');
       const minAmountFilter = document.getElementById('expenseMinAmountFilter');
       const maxAmountFilter = document.getElementById('expenseMaxAmountFilter');
@@ -634,113 +767,285 @@ endblock %} {% block content %}
       const emptyState = document.getElementById('projectExpensesEmpty');
       const countLabel = document.getElementById('expensesModalCount');
       const totalLabel = document.getElementById('expensesModalTotal');
-      if (!modal || !openButton || !tableBody) return;
+
+      const quickAddModal = document.getElementById('quickAddExpenseModal');
+      const quickAddForm = document.getElementById('quickAddExpenseForm');
+      const quickAddCloseButton = document.getElementById('closeQuickAddExpenseModal');
+      const quickAddCancelButton = document.getElementById('cancelQuickAddExpense');
+      const quickAddSubmitButton = document.getElementById('submitQuickAddExpense');
+      const quickAddStatus = document.getElementById('quickExpenseStatus');
+      const quickProjectSelect = document.getElementById('quickExpenseProjectId');
+      const quickAccountSelect = document.getElementById('quickExpenseAccount');
+      const quickCategorySelect = document.getElementById('quickExpenseCategory');
+      const quickDateInput = document.getElementById('quickExpenseDate');
+      const quickTimeInput = document.getElementById('quickExpenseTime');
+
+      if (!modal || !openButtons.length || !tableBody) return;
+
+      let lastOpenTrigger = openFromTotalSpentButton || openViewExpensesButton || null;
 
       const formatDate = (value) => {
-          if (!value) return '-';
-          return window.TrackTok?.formatDate ? window.TrackTok.formatDate(value) : new Date(value).toLocaleDateString();
+        if (!value) return '-';
+        return window.TrackTok?.formatDate ? window.TrackTok.formatDate(value) : new Date(value).toLocaleDateString();
       };
       const formatAmount = (value) => window.TrackTok?.formatCurrency
-          ? window.TrackTok.formatCurrency(Number(value || 0))
-          : Number(value || 0).toFixed(2);
+        ? window.TrackTok.formatCurrency(Number(value || 0))
+        : Number(value || 0).toFixed(2);
       const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
-          '&': '&amp;',
-          '<': '&lt;',
-          '>': '&gt;',
-          '"': '&quot;',
-          "'": '&#39;',
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
       }[char]));
 
+      function updateProjectSummary(summary) {
+        if (!summary) return;
+        const totalSpendNodes = document.querySelectorAll('[data-stat="total_spend"]');
+        totalSpendNodes.forEach((node) => {
+          node.textContent = formatAmount(summary.total_spend || 0);
+        });
+
+        const utilization = Number(summary.budget_utilization || 0);
+        document.querySelectorAll('[data-stat="utilization"]').forEach((node) => {
+          node.textContent = String(Math.round(utilization));
+        });
+        document.querySelectorAll('[data-progress="utilization"]').forEach((bar) => {
+          bar.style.width = `${Math.max(0, Math.min(100, utilization))}%`;
+        });
+      }
+
       function populateCategories() {
-          const categories = [...new Set(projectExpenses.map((expense) => expense.category || 'Uncategorized'))].sort();
-          categoryFilter.innerHTML = '<option value="">All categories</option>' + categories
-              .map((category) => `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`)
-              .join('');
+        const categories = [...new Set(projectExpenses.map((expense) => expense.category || 'Uncategorized'))].sort();
+        categoryFilter.innerHTML = '<option value="">All categories</option>' + categories
+          .map((category) => `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`)
+          .join('');
       }
 
       function getFilteredExpenses() {
-          const category = categoryFilter.value;
-          const min = minAmountFilter.value === '' ? null : Number(minAmountFilter.value);
-          const max = maxAmountFilter.value === '' ? null : Number(maxAmountFilter.value);
-          return projectExpenses.filter((expense) => {
-              const amount = Number(expense.amount || 0);
-              if (category && expense.category !== category) return false;
-              if (min !== null && amount < min) return false;
-              if (max !== null && amount > max) return false;
-              return true;
-          });
+        const category = categoryFilter.value;
+        const min = minAmountFilter.value === '' ? null : Number(minAmountFilter.value);
+        const max = maxAmountFilter.value === '' ? null : Number(maxAmountFilter.value);
+        return projectExpenses.filter((expense) => {
+          const amount = Number(expense.amount || 0);
+          if (category && expense.category !== category) return false;
+          if (min !== null && amount < min) return false;
+          if (max !== null && amount > max) return false;
+          return true;
+        });
       }
 
       function renderExpenses() {
-          const filtered = getFilteredExpenses();
-          const visibleTotal = filtered.reduce((total, expense) => total + Number(expense.amount || 0), 0);
-          countLabel.textContent = filtered.length;
-          totalLabel.textContent = formatAmount(visibleTotal);
-          emptyState.hidden = filtered.length > 0;
-          tableBody.innerHTML = filtered.map((expense) => `
-              <tr>
-                <td data-label="Vendor"><strong>${escapeHtml(expense.vendor || 'Expense')}</strong></td>
-                <td data-label="Description">${escapeHtml(expense.description || '-')}</td>
-                  <td data-label="Category">${escapeHtml(expense.category || 'Uncategorized')}</td>
-                  <td data-label="Account">${escapeHtml(expense.account || '-')}</td>
-                  <td data-label="Date">${escapeHtml(formatDate(expense.date))}</td>
-                  <td data-label="Amount" class="text-right"><strong>${escapeHtml(formatAmount(expense.amount))}</strong></td>
-                  <td data-label="Action" class="text-right">
-                      <a class="btn btn-secondary btn-sm" href="${escapeHtml(expense.url)}">View</a>
-                  </td>
-              </tr>
-          `).join('');
+        const filtered = getFilteredExpenses();
+        const visibleTotal = filtered.reduce((total, expense) => total + Number(expense.amount || 0), 0);
+        countLabel.textContent = filtered.length;
+        totalLabel.textContent = formatAmount(visibleTotal);
+        emptyState.hidden = filtered.length > 0;
+        tableBody.innerHTML = filtered.map((expense) => `
+          <tr>
+          <td data-label="Vendor"><strong>${escapeHtml(expense.vendor || 'Expense')}</strong></td>
+          <td data-label="Description">${escapeHtml(expense.description || '-')}</td>
+          <td data-label="Category">${escapeHtml(expense.category || 'Uncategorized')}</td>
+          <td data-label="Account">${escapeHtml(expense.account || '-')}</td>
+          <td data-label="Date">${escapeHtml(formatDate(expense.date))}</td>
+          <td data-label="Amount" class="text-right"><strong>${escapeHtml(formatAmount(expense.amount))}</strong></td>
+          <td data-label="Action" class="text-right">
+            <a class="btn btn-secondary btn-sm" href="${escapeHtml(expense.url)}">View</a>
+          </td>
+          </tr>
+        `).join('');
       }
 
-      function openModal(initialCategory = '') {
-          categoryFilter.value = initialCategory || '';
-          modal.hidden = false;
-          document.body.classList.add('modal-open');
-          renderExpenses();
-          closeButton.focus();
+      function openModal(initialCategory = '', trigger = null) {
+        if (trigger) lastOpenTrigger = trigger;
+        categoryFilter.value = initialCategory || '';
+        modal.hidden = false;
+        document.body.classList.add('modal-open');
+        renderExpenses();
+        if (openQuickAddButton) openQuickAddButton.focus();
       }
 
       function closeModal() {
-          modal.hidden = true;
+        modal.hidden = true;
+        if (!quickAddModal || quickAddModal.hidden) {
           document.body.classList.remove('modal-open');
-          openButton.focus();
+        }
+        if (lastOpenTrigger) lastOpenTrigger.focus();
+      }
+
+      function setQuickAddStatus(message, isError = false) {
+        if (!quickAddStatus) return;
+        quickAddStatus.textContent = message || '';
+        quickAddStatus.classList.toggle('is-error', Boolean(isError));
+      }
+
+      async function loadQuickAddAccounts() {
+        if (!quickAccountSelect) return;
+        quickAccountSelect.disabled = true;
+        quickAccountSelect.innerHTML = '<option value="">Loading accounts...</option>';
+        try {
+          const response = await fetch(`/projects/${projectId}/allowed-accounts`, { credentials: 'include' });
+          if (!response.ok) throw new Error('Could not load accounts.');
+          const accounts = await response.json();
+          if (!accounts.length) {
+            quickAccountSelect.innerHTML = '<option value="">No accounts available</option>';
+            return;
+          }
+          quickAccountSelect.innerHTML = '<option value="">Select account</option>';
+          accounts.forEach((account) => {
+            const option = document.createElement('option');
+            option.value = account.id;
+            option.textContent = `${account.name} (${account.account_type})`;
+            quickAccountSelect.appendChild(option);
+          });
+          quickAccountSelect.disabled = false;
+        } catch (error) {
+          quickAccountSelect.innerHTML = '<option value="">Error loading accounts</option>';
+        }
+      }
+
+      async function loadQuickAddCategories() {
+        if (!quickCategorySelect) return;
+        quickCategorySelect.disabled = true;
+        quickCategorySelect.innerHTML = '<option value="">Loading categories...</option>';
+        try {
+          const response = await fetch(`/projects/${projectId}/categories/json`, { credentials: 'include' });
+          if (!response.ok) throw new Error('Could not load categories.');
+          const categories = await response.json();
+          quickCategorySelect.innerHTML = '<option value="">Uncategorized</option>';
+          categories.forEach((category) => {
+            const option = document.createElement('option');
+            option.value = category.id;
+            option.textContent = category.name;
+            quickCategorySelect.appendChild(option);
+          });
+          quickCategorySelect.disabled = false;
+        } catch (error) {
+          quickCategorySelect.innerHTML = '<option value="">Uncategorized</option>';
+          quickCategorySelect.disabled = false;
+        }
+      }
+
+      function openQuickAddModal() {
+        if (!quickAddModal || !quickAddForm) return;
+        quickAddForm.reset();
+        if (quickProjectSelect) quickProjectSelect.value = projectId;
+        if (quickDateInput && !quickDateInput.value) {
+          quickDateInput.value = new Date().toISOString().slice(0, 10);
+        }
+        if (quickTimeInput && !quickTimeInput.value) {
+          const now = new Date();
+          quickTimeInput.value = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        }
+        setQuickAddStatus('');
+        quickAddModal.hidden = false;
+        document.body.classList.add('modal-open');
+        loadQuickAddAccounts();
+        loadQuickAddCategories();
+        quickAccountSelect?.focus();
+      }
+
+      function closeQuickAddModal() {
+        if (!quickAddModal) return;
+        quickAddModal.hidden = true;
+        if (modal.hidden) {
+          document.body.classList.remove('modal-open');
+        }
+        if (openQuickAddButton) openQuickAddButton.focus();
+      }
+
+      async function submitQuickAddExpense(event) {
+        event.preventDefault();
+        if (!quickAddForm || !quickAddSubmitButton) return;
+        quickAddSubmitButton.disabled = true;
+        setQuickAddStatus('Saving expense...');
+
+        const formData = new FormData(quickAddForm);
+        formData.set('project_id', projectId);
+
+        try {
+          const response = await fetch(`/projects/${projectId}/expenses/quick-create`, {
+            method: 'POST',
+            credentials: 'include',
+            body: formData,
+          });
+          const payload = await response.json();
+          if (!response.ok) {
+            throw new Error(payload?.error || 'Could not save expense.');
+          }
+
+          if (payload.expense) {
+            projectExpenses.unshift(payload.expense);
+            populateCategories();
+            categoryFilter.value = '';
+            minAmountFilter.value = '';
+            maxAmountFilter.value = '';
+            renderExpenses();
+          }
+          updateProjectSummary(payload.summary);
+          setQuickAddStatus('Expense added successfully.');
+          closeQuickAddModal();
+        } catch (error) {
+          setQuickAddStatus(error.message || 'Could not save expense.', true);
+        } finally {
+          quickAddSubmitButton.disabled = false;
+        }
       }
 
       populateCategories();
       renderExpenses();
       window.openProjectExpensesModal = openModal;
-      openButton.addEventListener('click', () => openModal());
-      closeButton.addEventListener('click', closeModal);
+
+      openFromTotalSpentButton?.addEventListener('click', () => openModal('', openFromTotalSpentButton));
+      openViewExpensesButton?.addEventListener('click', () => openModal('', openViewExpensesButton));
+      closeButton?.addEventListener('click', closeModal);
+
+      openQuickAddButton?.addEventListener('click', openQuickAddModal);
+      quickAddCloseButton?.addEventListener('click', closeQuickAddModal);
+      quickAddCancelButton?.addEventListener('click', closeQuickAddModal);
+      quickAddForm?.addEventListener('submit', submitQuickAddExpense);
+
       const categoryCard = document.getElementById('categoryBreakdownCard');
       if (categoryCard) {
-          const openTopCategory = () => openModal(categoryCard.dataset.category || '');
-          categoryCard.addEventListener('click', (event) => {
-              if (event.target.closest('canvas')) return;
-              openTopCategory();
-          });
-          categoryCard.addEventListener('keydown', (event) => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault();
-                  openTopCategory();
-              }
-          });
+        const openTopCategory = () => openModal(categoryCard.dataset.category || '', categoryCard);
+        categoryCard.addEventListener('click', (event) => {
+          if (event.target.closest('canvas')) return;
+          openTopCategory();
+        });
+        categoryCard.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            openTopCategory();
+          }
+        });
       }
+
       modal.addEventListener('click', (event) => {
-          if (event.target === modal) closeModal();
+        if (event.target === modal) closeModal();
       });
+      quickAddModal?.addEventListener('click', (event) => {
+        if (event.target === quickAddModal) closeQuickAddModal();
+      });
+
       document.addEventListener('keydown', (event) => {
-          if (event.key === 'Escape' && !modal.hidden) closeModal();
+        if (event.key !== 'Escape') return;
+        if (quickAddModal && !quickAddModal.hidden) {
+          closeQuickAddModal();
+          return;
+        }
+        if (!modal.hidden) closeModal();
       });
+
       [categoryFilter, minAmountFilter, maxAmountFilter].forEach((input) => {
-          input.addEventListener('input', renderExpenses);
-          input.addEventListener('change', renderExpenses);
+        input.addEventListener('input', renderExpenses);
+        input.addEventListener('change', renderExpenses);
       });
       resetButton.addEventListener('click', () => {
-          categoryFilter.value = '';
-          minAmountFilter.value = '';
-          maxAmountFilter.value = '';
-          renderExpenses();
+        categoryFilter.value = '';
+        minAmountFilter.value = '';
+        maxAmountFilter.value = '';
+        renderExpenses();
       });
-  })();
+    })();
 </script>
 {% endblock %}
