@@ -111,42 +111,30 @@
         <table class="table stackable">
           <thead>
             <tr>
-              <th>Vendor / Description</th>
+              <th>Vendor</th>
+              <th>Description</th>
               <th>Project</th>
               <th>Date</th>
               <th>Category</th>
               <th>Account</th>
               <th>Amount</th>
-              <th>Edited</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {% for expense in expenses %}
             <tr>
-              <td data-label="Vendor / Description" style="font-weight: 500;">
-                <strong>{{ expense.vendor or 'Expense' }}</strong>
-                {% if expense.description %}
-                <div class="table-note">{{ expense.description }}</div>
-                {% endif %}
-              </td>
+              <td data-label="Vendor" style="font-weight: 500;"><strong>{{ expense.vendor or 'Expense' }}</strong></td>
+              <td data-label="Description">{{ expense.description or '-' }}</td>
               <td data-label="Project">{{ expense.project.name if expense.project else '-' }}</td>
               <td data-label="Date">{{ format_date(expense.expense_date, include_time=True) }}</td>
               <td data-label="Category">{{ expense.category.name if expense.category else 'Uncategorized' }}</td>
               <td data-label="Account">{{ expense.account.name if expense.account else '-' }}</td>
               <td data-label="Amount" style="font-weight: 600;">{{ format_money(expense.amount|float) }}</td>
               {% set meta = expense.expense_metadata or {} %}
-              <td data-label="Edited" style="color: {% if meta.get('edited') %}#10b981{% else %}var(--text-muted){% endif %};">
-                {% if meta.get("edited") %}
-                  Yes (by {{ meta.get("last_updated_by_name") or meta.get("last_updated_by") or "?" }} at {{ meta.get("last_updated_at") or "?" }}
-                  {% if meta.get("last_amount") is not none %} | prev {{ format_money(meta.get("last_amount")|float) }}{% endif %})
-                {% else %}
-                  No
-                {% endif %}
-              </td>
               <td data-label="Actions" class="table-actions">
                 <a href="{{ url_for('web.expense_detail', expense_id=expense.id) }}" class="btn btn-primary btn-sm action-btn">View</a>
-                <a href="{{ url_for('web.expense_edit', expense_id=expense.id) }}" class="btn btn-secondary btn-sm action-btn">Edit</a>
+                <a href="{{ url_for('web.expense_edit', expense_id=expense.id) }}" class="btn btn-secondary btn-sm action-btn">{% if meta.get('edited') %}Re-edit{% else %}Edit{% endif %}</a>
               </td>
             </tr>
             {% endfor %}

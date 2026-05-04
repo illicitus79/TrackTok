@@ -581,11 +581,11 @@ endblock %} {% block content %}
       <table class="table project-expenses-table">
         <thead>
           <tr>
-            <th>Vendor / Description</th>
+            <th>Vendor</th>
+            <th>Description</th>
             <th>Category</th>
             <th>Account</th>
             <th>Date</th>
-            <th>Status</th>
             <th class="text-right">Amount</th>
             <th class="text-right">Action</th>
           </tr>
@@ -679,14 +679,11 @@ endblock %} {% block content %}
           emptyState.hidden = filtered.length > 0;
           tableBody.innerHTML = filtered.map((expense) => `
               <tr>
-                  <td data-label="Vendor / Description">
-                      <strong>${escapeHtml(expense.vendor || 'Expense')}</strong>
-                      ${expense.description ? `<div class="table-note">${escapeHtml(expense.description)}</div>` : ''}
-                  </td>
+                <td data-label="Vendor"><strong>${escapeHtml(expense.vendor || 'Expense')}</strong></td>
+                <td data-label="Description">${escapeHtml(expense.description || '-')}</td>
                   <td data-label="Category">${escapeHtml(expense.category || 'Uncategorized')}</td>
                   <td data-label="Account">${escapeHtml(expense.account || '-')}</td>
                   <td data-label="Date">${escapeHtml(formatDate(expense.date))}</td>
-                  <td data-label="Status">${escapeHtml(expense.status || '-')}</td>
                   <td data-label="Amount" class="text-right"><strong>${escapeHtml(formatAmount(expense.amount))}</strong></td>
                   <td data-label="Action" class="text-right">
                       <a class="btn btn-secondary btn-sm" href="${escapeHtml(expense.url)}">View</a>
