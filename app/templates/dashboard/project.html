@@ -605,7 +605,7 @@ endblock %} {% block content %}
     </div>
 
     <div class="modal-table-wrap">
-      <table class="table project-expenses-table">
+      <table class="table project-expenses-table sortable-expenses-table">
         <thead>
           <tr>
             <th>Vendor</th>
@@ -614,7 +614,7 @@ endblock %} {% block content %}
             <th>Account</th>
             <th>Date</th>
             <th class="text-right">Amount</th>
-            <th class="text-right">Action</th>
+            <th class="text-right" data-sort="none">Action</th>
           </tr>
         </thead>
         <tbody id="projectExpensesTableBody"></tbody>

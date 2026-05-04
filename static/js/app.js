@@ -227,6 +227,187 @@ class MobileMenu {
   }
 }
 
+// Expense Table Sorting
+// ============================================================================
+class SortableExpenseTables {
+  constructor() {
+    this.tables = Array.from(
+      document.querySelectorAll("table.sortable-expenses-table")
+    );
+    this.init();
+  }
+
+  init() {
+    if (!this.tables.length) return;
+    this.tables.forEach((table) => this.setupTable(table));
+  }
+
+  setupTable(table) {
+    const headRow = table.tHead?.rows?.[0];
+    const tbody = table.tBodies?.[0];
+    if (!headRow || !tbody) return;
+
+    Array.from(headRow.cells).forEach((headerCell, columnIndex) => {
+      if (headerCell.dataset.sort === "none") {
+        headerCell.setAttribute("aria-sort", "none");
+        return;
+      }
+
+      headerCell.classList.add("is-sortable");
+      headerCell.setAttribute("role", "button");
+      headerCell.setAttribute("tabindex", "0");
+      headerCell.setAttribute("aria-sort", "none");
+
+      const sortHandler = () => {
+        this.sortByColumn(table, columnIndex, headerCell);
+      };
+
+      headerCell.addEventListener("click", sortHandler);
+      headerCell.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        sortHandler();
+      });
+    });
+  }
+
+  sortByColumn(table, columnIndex, headerCell) {
+    const tbody = table.tBodies?.[0];
+    const headRow = table.tHead?.rows?.[0];
+    if (!tbody || !headRow) return;
+
+    const rows = Array.from(tbody.rows);
+    if (!rows.length) return;
+
+    const currentColumn = Number(table.dataset.sortColumn || -1);
+    const currentDirection = table.dataset.sortDirection || "asc";
+    const direction =
+      currentColumn === columnIndex && currentDirection === "asc"
+        ? "desc"
+        : "asc";
+
+    const sortType =
+      headerCell.dataset.sort || this.detectSortType(rows, columnIndex);
+    const directionMultiplier = direction === "asc" ? 1 : -1;
+
+    const sortableRows = rows.map((row, originalIndex) => ({
+      row,
+      originalIndex,
+      value: this.getSortValue(row, columnIndex, sortType),
+    }));
+
+    sortableRows.sort((a, b) => {
+      let comparison = 0;
+      if (sortType === "number" || sortType === "date") {
+        comparison = (a.value || 0) - (b.value || 0);
+      } else {
+        comparison = String(a.value || "").localeCompare(String(b.value || ""));
+      }
+
+      if (comparison === 0) {
+        comparison = a.originalIndex - b.originalIndex;
+      }
+
+      return comparison * directionMultiplier;
+    });
+
+    const fragment = document.createDocumentFragment();
+    sortableRows.forEach((item) => fragment.appendChild(item.row));
+    tbody.appendChild(fragment);
+
+    table.dataset.sortColumn = String(columnIndex);
+    table.dataset.sortDirection = direction;
+
+    Array.from(headRow.cells).forEach((cell) => {
+      if (cell.dataset.sort === "none") return;
+      cell.classList.remove("is-sorted-asc", "is-sorted-desc");
+      cell.setAttribute("aria-sort", "none");
+    });
+
+    headerCell.classList.add(
+      direction === "asc" ? "is-sorted-asc" : "is-sorted-desc"
+    );
+    headerCell.setAttribute(
+      "aria-sort",
+      direction === "asc" ? "ascending" : "descending"
+    );
+  }
+
+  getSortValue(row, columnIndex, sortType) {
+    const rawValue = (row.cells[columnIndex]?.dataset.sortValue ||
+      row.cells[columnIndex]?.textContent ||
+      "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (sortType === "number") {
+      return this.parseNumber(rawValue);
+    }
+    if (sortType === "date") {
+      return this.parseDate(rawValue);
+    }
+    return rawValue.toLowerCase();
+  }
+
+  detectSortType(rows, columnIndex) {
+    const sampleValues = rows
+      .map((row) =>
+        (row.cells[columnIndex]?.dataset.sortValue ||
+          row.cells[columnIndex]?.textContent ||
+          "")
+          .replace(/\s+/g, " ")
+          .trim()
+      )
+      .filter(Boolean)
+      .slice(0, 8);
+
+    if (!sampleValues.length) return "string";
+
+    const mostlyNumbers =
+      sampleValues.filter((value) => Number.isFinite(this.parseNumber(value)))
+        .length >=
+      Math.ceil(sampleValues.length * 0.7);
+    if (mostlyNumbers) return "number";
+
+    const mostlyDates =
+      sampleValues.filter((value) => Number.isFinite(this.parseDate(value)))
+        .length >=
+      Math.ceil(sampleValues.length * 0.7);
+    if (mostlyDates) return "date";
+
+    return "string";
+  }
+
+  parseNumber(value) {
+    const cleaned = String(value || "")
+      .replace(/[^0-9,.-]/g, "")
+      .replace(/,/g, "");
+    const parsed = Number.parseFloat(cleaned);
+    return Number.isFinite(parsed) ? parsed : Number.NEGATIVE_INFINITY;
+  }
+
+  parseDate(value) {
+    const text = String(value || "").trim();
+    if (!text) return Number.NEGATIVE_INFINITY;
+
+    const direct = Date.parse(text);
+    if (Number.isFinite(direct)) return direct;
+
+    const match = text.match(
+      /^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})(?:\s+(\d{1,2}):(\d{2}))?/
+    );
+    if (!match) return Number.NEGATIVE_INFINITY;
+
+    const day = Number(match[1]);
+    const month = Number(match[2]);
+    const year = Number(match[3]) < 100 ? 2000 + Number(match[3]) : Number(match[3]);
+    const hour = Number(match[4] || 0);
+    const minute = Number(match[5] || 0);
+    const parsed = new Date(year, month - 1, day, hour, minute).getTime();
+    return Number.isFinite(parsed) ? parsed : Number.NEGATIVE_INFINITY;
+  }
+}
+
 // Utility Functions
 // ============================================================================
 
@@ -338,6 +519,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Initialize date pickers
   initDatePickers();
+
+  // Initialize sortable expense tables
+  new SortableExpenseTables();
 
   console.log("TrackTok initialized");
 });
